@@ -1,0 +1,158 @@
+<% content_for :title, t("views.reports.show_title", name: @report.name) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.reports"), reporting_reports_path %>
+  <%= breadcrumb @report.name %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= @report.name %> <%= status_badge(@report.status) %> <%= deadline_badge(@report) %></h2>
+  <% if @report.description.present? %>
+    <p><%= @report.description %></p>
+  <% end %>
+</div>
+
+<div class="info-grid">
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.creator") %></span>
+    <span class="info-value d-flex align-items-center gap-2"><%= user_avatar(@report.creator, size: :comment) %> <%= user_display(@report.creator) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.reporter") %></span>
+    <span class="info-value d-flex align-items-center gap-2"><%= user_avatar(@report.reporter, size: :comment) %> <%= user_display(@report.reporter) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.reviewer") %></span>
+    <span class="info-value d-flex align-items-center gap-2"><%= user_avatar(@report.reviewer, size: :comment) %> <%= user_display(@report.reviewer) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.deadline") %></span>
+    <span class="info-value <%= 'deadline-overdue' if @report.overdue? %><%= 'deadline-soon' if @report.deadline_soon? %>"><%= format_datetime(@report.deadline) %></span>
+  </div>
+  <% if @report.submitted_at %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.shared.labels.submitted") %></span>
+      <span class="info-value"><%= format_datetime(@report.submitted_at) %></span>
+    </div>
+  <% end %>
+  <% if @report.reviewed_at %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.shared.labels.reviewed") %></span>
+      <span class="info-value"><%= format_datetime(@report.reviewed_at) %></span>
+    </div>
+  <% end %>
+  <div class="info-item" id="report_total_grade">
+    <span class="info-label"><%= t("views.shared.labels.total_grade") %></span>
+    <span class="info-value"><strong><%= @report.total_grade || @report.report_items.sum(:grade) %></strong></span>
+  </div>
+  <% if @report.pdf_file.attached? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.shared.labels.pdf_file") %></span>
+      <span class="info-value">
+        <%= t("views.shared.labels.pdf_created_at", time: l(@report.pdf_file.blob.created_at, format: :short)) %>
+        (<%= number_to_human_size(@report.pdf_file.blob.byte_size) %>)
+      </span>
+    </div>
+  <% end %>
+</div>
+
+<% if @report.rejected? && @report.rejection_reason.present? %>
+  <div class="alert alert-danger mb-4" role="alert">
+    <i class="bi bi-x-circle me-2"></i>
+    <strong><%= t("views.shared.labels.rejection_reason") %>:</strong> <%= @report.rejection_reason %>
+  </div>
+<% elsif @report.overdue? %>
+  <div class="alert alert-danger mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong><%= t("views.reports.alert_overdue") %></strong>
+    <%= t("views.reports.alert_overdue_detail", deadline: format_datetime(@report.deadline)) %>
+  </div>
+<% end %>
+
+ <%= render "reporting/reports/warnings", report: @report %>
+ <%= render "reporting/reports/action_bar", report: @report %>
+
+ <hr class="my-4 border">
+
+ <h3 class="mb-4"><%= t("views.shared.labels.report_items") %></h3>
+
+<% if @report_items.any? %>
+  <% @report_items.each do |item| %>
+    <%= render item %>
+  <% end %>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-list-check", message: t("views.shared.empty_state.no_items") %>
+<% end %>
+
+ <% if policy(@report).access_comments? %>
+   <hr class="my-4 border">
+
+   <h3 class="mb-4"><%= t("views.shared.labels.comments") %> (<%= @comments.size %>)</h3>
+
+   <% if @comments.any? %>
+     <div class="comments-list">
+       <% grouped_comments = @comments.group_by { |c| c.created_at.to_date } %>
+       <% grouped_comments.each do |date, comments_for_date| %>
+         <div class="comment-date-separator">
+           <% if date == Date.today %>
+             <%= t("views.shared.comments.today") %>
+           <% elsif date == Date.yesterday %>
+             <%= t("views.shared.comments.yesterday") %>
+           <% else %>
+             <%= l(date, format: :short) %>
+           <% end %>
+         </div>
+         <% comments_for_date.each do |comment| %>
+            <div class="comment-item" id="<%= dom_id(comment) %>">
+              <div class="comment-header d-flex align-items-center gap-2">
+                <%= user_avatar(comment.user, size: :comment) %>
+                <strong><%= user_display(comment.user) %></strong>
+                <small><%= l(comment.created_at, format: :short).split.last %></small>
+                <% if policy(comment).destroy? %>
+                  <%= button_to t("views.shared.actions.delete"), reporting_report_comment_path(@report, comment), method: :delete, class: "btn btn-outline-secondary btn-sm ms-auto", data: { turbo_confirm: t("views.shared.confirm_dialogs.delete_comment") } %>
+                <% end %>
+              </div>
+             <div class="comment-body"><%= simple_format(comment.body) %></div>
+           </div>
+         <% end %>
+       <% end %>
+     </div>
+   <% end %>
+
+   <%= form_with model: [@report, @comment], url: reporting_report_comments_path(@report) do |f| %>
+     <div class="mb-3">
+       <%= f.label :body, t("views.shared.labels.add_comment"), class: "form-label" %>
+       <%= f.text_area :body, rows: 2, placeholder: t("views.shared.placeholders.comment"), class: "form-control" %>
+     </div>
+     <%= f.submit t("views.shared.actions.send"), class: "btn btn-primary" %>
+   <% end %>
+ <% end %>
+
+ <% if @events.any? && policy(@report).view_history? %>
+   <hr class="my-4 border">
+
+   <details class="report-history">
+     <summary class="mb-3"><h3 class="d-inline"><%= t("views.shared.labels.history") %></h3></summary>
+     <div class="activity-feed">
+       <% @events.each do |event| %>
+         <div class="activity-item">
+           <div class="activity-icon">
+              <%= activity_icon(event.action) %>
+           </div>
+            <div class="activity-content">
+              <div class="activity-header d-flex align-items-center gap-2">
+                <%= user_avatar(event.actor, size: :comment) %>
+                <span class="activity-user"><%= user_display(event.actor) %></span>
+                <span class="activity-action"><%= t("activity.actions.#{event.action}", default: event.action.humanize) %></span>
+              </div>
+             <div class="activity-time">
+               <span title="<%= format_datetime(event.created_at) %>">
+                  <%= time_ago_in_words(event.created_at) %> <%= t("activity_feed.ago") %>
+               </span>
+             </div>
+           </div>
+         </div>
+       <% end %>
+     </div>
+   </details>
+ <% end %>

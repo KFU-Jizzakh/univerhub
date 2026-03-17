@@ -1,0 +1,10 @@
+unread_notification:
+  recipient: manager_user
+  notifiable: new_report (Reporting::Report)
+  action: reporting.report.assigned
+
+read_notification:
+  recipient: manager_user
+  notifiable: in_review_report (Reporting::Report)
+  action: reporting.report.submitted
+  read_at: <%= Time.current %>

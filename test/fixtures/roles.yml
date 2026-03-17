@@ -1,0 +1,26 @@
+admin:
+  name: admin
+
+reporting_manager:
+  name: reporting.manager
+
+reporting_reporter:
+  name: reporting.reporter
+
+reporting_reviewer:
+  name: reporting.reviewer
+
+supervisor:
+  name: supervisor
+
+reporting_visitor:
+  name: reporting.visitor
+
+reporting_admin:
+  name: reporting.admin
+
+dormitory_admin:
+  name: dormitory.admin
+
+dormitory_commandant:
+  name: dormitory.commandant

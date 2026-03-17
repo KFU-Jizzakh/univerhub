@@ -1,0 +1,7 @@
+commandant_building_one:
+  user: dormitory_commandant_user
+  building: building_one
+
+commandant_building_two:
+  user: dormitory_commandant_user
+  building: building_two

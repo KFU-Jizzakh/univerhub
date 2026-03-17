@@ -1,0 +1,53 @@
+<% content_for :title, t("views.shared.page_titles.activity_feed") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.activity_feed") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.shared.page_titles.activity_feed") %></h2>
+</div>
+
+<% if @events.any? %>
+  <div class="activity-feed">
+    <% @events.each do |event| %>
+      <div class="activity-item">
+        <div class="activity-icon">
+            <%= activity_icon(event.action) %>
+        </div>
+        <div class="activity-content">
+          <div class="activity-header d-flex align-items-center gap-2">
+            <%= user_avatar(event.actor, size: :index) %>
+            <span class="activity-user"><%= user_display(event.actor) %></span>
+            <span class="activity-action">
+              <%= t("activity.actions.#{event.action}", default: event.action.humanize) %>
+            </span>
+            <% if event.record_type == "Reporting::Report" && event.record_id %>
+              <%= link_to "#{t('activity_feed.report')} ##{event.record_id}", reporting_report_path(event.record_id), class: "activity-object" %>
+            <% elsif event.record_type == "Reporting::ReportTemplate" && event.record_id %>
+              <%= link_to "#{t('activity_feed.template')} ##{event.record_id}", reporting_report_template_path(event.record_id), class: "activity-object" %>
+            <% elsif event.record_type == "Dormitory::Resident" && event.record_id %>
+              <%= link_to "#{t('activity_feed.resident')} ##{event.record_id}", dormitory_resident_path(event.record_id), class: "activity-object" %>
+            <% elsif event.record_type == "Dormitory::Accommodation" && event.record_id %>
+              <%= link_to "#{t('activity_feed.accommodation')} ##{event.record_id}", dormitory_accommodation_path(event.record_id), class: "activity-object" %>
+            <% elsif event.record_type == "Dormitory::Room" && event.record_id %>
+              <%= link_to "#{t('activity_feed.room')} ##{event.record_id}", dormitory_room_path(event.record_id), class: "activity-object" %>
+            <% elsif event.record_type == "Dormitory::Building" && event.record_id %>
+              <%= link_to "#{t('activity_feed.building')} ##{event.record_id}", dormitory_building_path(event.record_id), class: "activity-object" %>
+            <% elsif event.record_type.present? %>
+              <span class="activity-object"><%= "#{event.record_type} ##{event.record_id}" %></span>
+            <% end %>
+          </div>
+          <div class="activity-time">
+            <%= format_datetime(event.created_at) %>
+            <span class="time-ago">(<%= time_ago_in_words(event.created_at) %> <%= t("activity_feed.ago") %>)</span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-clock-history", message: t("views.shared.empty_state.no_events") %>
+<% end %>

@@ -1,0 +1,60 @@
+<turbo-frame id="<%= dom_id(report_item) %>">
+  <div class="report-item-card">
+    <header>
+      <span class="item-name"><%= report_item.name %></span>
+      <span class="item-badges">
+        <% if report_item.max_grade %>
+          <span class="item-grade-badge"><%= t("views.shared.report_item.max_grade", grade: report_item.max_grade) %></span>
+        <% end %>
+        <% if report_item.attachments_required? %>
+          <% if report_item.attachments.attached? %>
+            <span class="item-attachment-badge item-attachment-badge--ok"><%= t("views.shared.report_item.attachment_ok") %></span>
+          <% else %>
+            <span class="item-attachment-badge item-attachment-badge--missing"><%= t("views.shared.report_item.attachment_required") %></span>
+          <% end %>
+        <% end %>
+      </span>
+    </header>
+
+    <% if report_item.description.present? %>
+      <div class="item-description"><%= report_item.description %></div>
+    <% end %>
+
+    <% if report_item.content.present? %>
+      <div class="item-content"><%= simple_format(report_item.content) %></div>
+    <% end %>
+
+    <% if report_item.attachments.attached? %>
+      <div class="attachment-list">
+        <% report_item.attachments.each do |attachment| %>
+          <%= link_to attachment.filename, rails_blob_path(attachment, disposition: attachment_disposition(attachment)), class: "attachment-link", target: "_blank", rel: "noopener" %>
+        <% end %>
+      </div>
+    <% end %>
+
+     <% can_update = policy(report_item.report).update_items? %>
+     <% can_grade = policy(report_item.report).grade? %>
+     <% if report_item.grade.present? || can_update || can_grade %>
+       <div class="item-meta d-flex flex-wrap gap-2 align-items-center">
+         <% if report_item.grade.present? %>
+           <span>
+             <%= t("views.shared.report_item.grade_label") %> <span class="grade-display"><%= report_item.grade %><%= "/#{report_item.max_grade}" if report_item.max_grade %></span>
+           </span>
+         <% end %>
+
+         <% if report_item.grade_comment.present? %>
+           <span><%= report_item.grade_comment %></span>
+         <% end %>
+
+         <div class="d-inline-flex gap-2">
+           <% if can_update %>
+             <%= link_to t("views.shared.report_item.edit"), edit_reporting_report_report_item_path(report_item.report, report_item), data: { turbo_frame: dom_id(report_item) }, class: "btn btn-sm btn-outline-secondary" %>
+           <% end %>
+           <% if can_grade %>
+             <%= link_to t("views.shared.report_item.grade_button"), edit_grade_reporting_report_report_item_path(report_item.report, report_item), data: { turbo_frame: dom_id(report_item) }, class: "btn btn-sm btn-primary" %>
+           <% end %>
+         </div>
+       </div>
+     <% end %>
+  </div>
+</turbo-frame>

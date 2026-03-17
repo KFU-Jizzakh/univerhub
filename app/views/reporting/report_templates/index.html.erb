@@ -1,0 +1,52 @@
+<% content_for :title, t("views.report_templates.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.report_templates") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.report_templates.page_title") %></h2>
+</div>
+
+<% if policy(Reporting::ReportTemplate).create? %>
+  <p class="mb-4"><%= link_to t("views.shared.actions.create"), new_reporting_report_template_path, class: "btn btn-primary" %></p>
+<% end %>
+
+<% if @report_templates.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.shared.labels.name") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"><%= t("views.shared.labels.items_count") %></th>
+          <th scope="col"><%= t("views.shared.labels.created") %></th>
+          <th scope="col" class="text-end"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @report_templates.each do |template| %>
+          <tr class="table-row-link" data-url="<%= reporting_report_template_path(template) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td><%= link_to template.name, reporting_report_template_path(template) %></td>
+            <td><%= status_badge(template.status) %></td>
+            <td><%= template.items.size %></td>
+            <td><%= format_datetime(template.created_at) %></td>
+            <td class="text-end">
+              <% if policy(template).update? %>
+                <%= link_to t("views.shared.actions.edit"), edit_reporting_report_template_path(template), class: "btn btn-sm btn-outline-secondary" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "bi-layout-text-window-reverse",
+      message: t("views.shared.empty_state.no_templates"),
+      cta_text: policy(Reporting::ReportTemplate).create? ? t("views.shared.buttons.create_first_template") : nil,
+      cta_path: policy(Reporting::ReportTemplate).create? ? new_reporting_report_template_path : nil %>
+<% end %>

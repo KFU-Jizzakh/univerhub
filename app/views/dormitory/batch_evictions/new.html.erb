@@ -1,0 +1,86 @@
+<% content_for :title, t("dormitory.batch_operations.title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_batch_operations"), dormitory_batch_evictions_path %>
+  <%= breadcrumb t("dormitory.batch_operations.new_operation") %>
+<% end %>
+
+<h1 class="h3 mb-4"><%= t("dormitory.batch_operations.title") %></h1>
+
+<%= form_with url: dormitory_batch_evictions_path, method: :post, local: true, data: { controller: "wizard" } do |f| %>
+  <%# Step 1: Building selection %>
+  <div class="card shadow-sm mb-4" data-wizard-target="step" data-step="1">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><%= t("dormitory.batch_operations.step1_title") %></h5>
+      <span class="badge bg-primary">1</span>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label"><%= t("activerecord.attributes.dormitory/batch_operation.building") %></label>
+        <%= f.select :building_id,
+              @buildings.map { |b| [ b.name, b.id ] },
+              { prompt: t("views.shared.placeholders.select_building") },
+              class: "form-select",
+              required: true,
+              data: { wizard_target: "buildingSelect", action: "wizard#loadResidents" } %>
+      </div>
+      <div class="text-end">
+        <button type="button" class="btn btn-primary" data-action="wizard#nextStep" data-wizard-target="nextBtn">
+          <%= t("dormitory.batch_operations.next") %>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# Step 2: Resident selection %>
+  <div class="card shadow-sm mb-4 d-none" data-wizard-target="step" data-step="2">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><%= t("dormitory.batch_operations.step2_title") %></h5>
+      <span class="badge bg-primary">2</span>
+    </div>
+    <div class="card-body">
+      <div id="residents-list" data-wizard-target="residentList">
+        <p class="text-muted"><%= t("dormitory.batch_operations.select_building_first") %></p>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-outline-secondary" data-action="wizard#prevStep">
+          <%= t("dormitory.batch_operations.back") %>
+        </button>
+        <button type="button" class="btn btn-primary" data-action="wizard#nextStep" data-wizard-target="nextBtn">
+          <%= t("dormitory.batch_operations.next") %>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# Step 3: Reason and params %>
+  <div class="card shadow-sm mb-4 d-none" data-wizard-target="step" data-step="3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><%= t("dormitory.batch_operations.step3_title") %></h5>
+      <span class="badge bg-primary">3</span>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label"><%= t("activerecord.attributes.dormitory/accommodation.eviction_reason") %></label>
+        <%= f.select :eviction_reason,
+              Dormitory::BatchEvictionService::BATCH_EVICTION_REASONS.map { |r| [ t("eviction_reasons.#{r}"), r ] },
+              { prompt: t("views.shared.placeholders.select_reason") },
+              class: "form-select",
+              required: true %>
+      </div>
+      <div class="mb-3">
+        <label class="form-label"><%= t("activerecord.attributes.dormitory/accommodation.comment") %></label>
+        <%= f.text_area :comment, class: "form-control", rows: 3 %>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-action="wizard#prevStep">
+          <%= t("dormitory.batch_operations.back") %>
+        </button>
+        <%= f.submit t("dormitory.batch_operations.execute"),
+              class: "btn btn-danger",
+              data: { turbo_confirm: t("dormitory.batch_operations.confirm_execute") } %>
+      </div>
+    </div>
+  </div>
+<% end %>

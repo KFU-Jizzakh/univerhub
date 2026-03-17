@@ -1,0 +1,11 @@
+<% @report.reload %>
+<%= turbo_stream.replace @report_item %>
+<%= turbo_stream.replace "report_action_bar" do %>
+  <%= render "reporting/reports/action_bar", report: @report %>
+<% end %>
+<%= turbo_stream.replace "report_total_grade" do %>
+  <div class="info-item" id="report_total_grade">
+    <span class="info-label"><%= t("views.shared.labels.total_grade") %></span>
+    <span class="info-value"><strong><%= @report.report_items.sum(:grade) %></strong></span>
+  </div>
+<% end %>

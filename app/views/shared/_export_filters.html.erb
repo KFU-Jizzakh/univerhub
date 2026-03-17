@@ -1,0 +1,47 @@
+<% show_status = local_assigns.fetch(:show_status, false) %>
+<% show_dates = local_assigns.fetch(:show_dates, false) %>
+
+<%= form_tag url, method: :get, class: "card shadow-sm mb-4" do %>
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label"><%= t("activerecord.attributes.dormitory/room.building") %></label>
+        <%= select_tag :building_id,
+              options_from_collection_for_select(@buildings, :id, :name, params[:building_id]),
+              include_blank: true,
+              class: "form-select" %>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label"><%= t("activerecord.attributes.dormitory/accommodation.academic_year") %></label>
+        <%= select_tag :academic_year_id,
+              options_from_collection_for_select(@academic_years, :id, :name, params[:academic_year_id]),
+              include_blank: true,
+              class: "form-select" %>
+      </div>
+      <% if show_status %>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("activerecord.attributes.dormitory/accommodation.status") %></label>
+          <%= select_tag :status,
+                options_for_select(Dormitory::Accommodation.aasm.states.map { |s| [ t("statuses.#{s.name}"), s.name.to_s ] }, params[:status]),
+                include_blank: true,
+                class: "form-select" %>
+        </div>
+      <% end %>
+      <div class="col-md-2">
+        <%= submit_tag t("views.shared.actions.filter"), class: "btn btn-outline-primary w-100" %>
+      </div>
+    </div>
+    <% if show_dates %>
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.exports.date_from") %></label>
+          <%= date_field_tag :date_from, params[:date_from], class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.exports.date_to") %></label>
+          <%= date_field_tag :date_to, params[:date_to], class: "form-control" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

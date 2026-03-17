@@ -1,0 +1,40 @@
+<% form_url = item.persisted? ? reporting_report_template_report_template_item_path(@report_template, item) : reporting_report_template_report_template_items_path(@report_template) %>
+<%= form_with(model: [ @report_template, item ], url: form_url) do |f| %>
+  <% if item.errors.any? %>
+    <div class="alert alert-danger"><%= item.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :name, t("views.shared.labels.name"), class: "form-label" %>
+    <%= f.text_field :name, required: true, placeholder: t("views.shared.placeholders.item_name"), class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, t("views.shared.labels.description"), class: "form-label" %>
+    <%= f.text_area :description, rows: 2, placeholder: t("views.shared.placeholders.item_description"), class: "form-control" %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <%= f.label :position, t("views.shared.labels.position"), class: "form-label" %>
+      <%= f.number_field :position, min: 0, class: "form-control" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :max_grade, t("views.shared.labels.max_grade"), class: "form-label" %>
+      <%= f.number_field :max_grade, min: 0, class: "form-control" %>
+    </div>
+
+    <div class="col-md-4 d-flex align-items-center">
+      <div class="form-check">
+        <%= f.check_box :attachments_required, class: "form-check-input" %>
+        <%= f.label :attachments_required, t("views.shared.labels.attachments_required"), class: "form-check-label" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit item.persisted? ? t("views.shared.actions.save") : t("views.shared.actions.create"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), reporting_report_template_path(@report_template), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

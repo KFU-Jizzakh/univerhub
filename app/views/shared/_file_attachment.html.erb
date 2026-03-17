@@ -1,0 +1,8 @@
+<% if attachment.attached? %>
+  <span>
+    <i class="bi <%= file_icon_class(attachment) %>"></i>
+    <%= link_to t("views.dormitory.accommodations.download"), url_for(attachment), target: "_blank" %>
+  </span>
+<% else %>
+  <span class="text-muted">—</span>
+<% end %>

@@ -1,0 +1,60 @@
+<% content_for :title, t("dormitory.batch_operations.results_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_batch_operations"), dormitory_batch_evictions_path %>
+  <%= breadcrumb t("dormitory.batch_operations.results_title") %>
+<% end %>
+
+<h1 class="h3 mb-4"><%= t("dormitory.batch_operations.results_title") %></h1>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card text-center p-3 shadow-sm">
+      <div class="text-muted small"><%= t("dormitory.batch_operations.total") %></div>
+      <div class="h2 mb-0"><%= @batch_operation.total_count %></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center p-3 shadow-sm bg-success-subtle">
+      <div class="text-muted small"><%= t("dormitory.batch_operations.success") %></div>
+      <div class="h2 mb-0"><%= @batch_operation.success_count %></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center p-3 shadow-sm <%= @batch_operation.error_count > 0 ? 'bg-danger-subtle' : 'bg-light' %>">
+      <div class="text-muted small"><%= t("dormitory.batch_operations.errors_title") %></div>
+      <div class="h2 mb-0"><%= @batch_operation.error_count %></div>
+    </div>
+  </div>
+</div>
+
+<% if @batch_operation.batch_operation_errors.any? %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold"><%= t("dormitory.batch_operations.errors_title") %></div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><%= t("activerecord.attributes.dormitory/resident.full_name") %></th>
+            <th><%= t("dormitory.batch_operations.error_message") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @batch_operation.batch_operation_errors.includes(:resident).each do |error| %>
+            <tr>
+              <td><%= error.resident&.full_name || "—" %></td>
+              <td><%= error.error_message %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<div class="d-flex gap-2">
+  <%= link_to dormitory_batch_evictions_path, class: "btn btn-outline-secondary" do %>
+    <i class="bi bi-arrow-left"></i> <%= t("dormitory.batch_operations.back_to_list") %>
+  <% end %>
+</div>

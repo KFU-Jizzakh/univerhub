@@ -1,0 +1,29 @@
+<% content_for :title, t("views.shared.page_titles.login") %>
+
+<div class="auth-container">
+  <h2 class="mb-3"><%= t("views.shared.page_titles.login") %></h2>
+  <p class="auth-subtitle text-muted"><%= t("views.shared.page_titles.login_subtitle") %></p>
+
+  <% if flash[:alert] %>
+    <div class="alert alert-danger"><%= flash[:alert] %></div>
+  <% end %>
+  <% if flash[:notice] %>
+    <div class="alert alert-success"><%= flash[:notice] %></div>
+  <% end %>
+
+  <%= form_with url: session_path, data: { controller: "form-validation" } do |form| %>
+    <div class="mb-3">
+      <%= form.label :email_address, t("views.shared.labels.email"), class: "form-label" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: t("views.shared.placeholders.email"), value: params[:email_address], class: "form-control" %>
+    </div>
+
+    <div class="mb-3">
+      <%= form.label :password, t("views.shared.labels.password"), class: "form-label" %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: t("views.shared.placeholders.password"), maxlength: 72, class: "form-control", data: { form_validation_target: "password", min_length: "6", min_message: t("views.shared.validation.password_min", count: 6) } %>
+    </div>
+
+    <%= form.submit t("views.shared.buttons.login"), class: "btn btn-primary w-100" %>
+  <% end %>
+
+  <p class="auth-footer mt-3 text-muted"><%= link_to t("views.shared.buttons.forgot_password"), new_password_path %></p>
+</div>

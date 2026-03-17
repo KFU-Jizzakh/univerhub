@@ -1,0 +1,63 @@
+<% content_for :title, t("views.dormitory.exports.free_slots") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_dashboard"), dormitory_dashboard_path %>
+  <%= breadcrumb t("views.dormitory.exports.free_slots") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.exports.free_slots") %></h1>
+  <%= link_to dormitory_exports_free_slots_path(format: :csv, building_id: params[:building_id]), class: "btn btn-success" do %>
+    <i class="bi bi-download"></i> <%= t("views.dormitory.exports.download_csv") %>
+  <% end %>
+</div>
+
+<%= form_tag dormitory_exports_free_slots_path, method: :get, class: "card shadow-sm mb-4" do %>
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label"><%= t("activerecord.attributes.dormitory/room.building") %></label>
+        <%= select_tag :building_id,
+              options_from_collection_for_select(@buildings, :id, :name, params[:building_id]),
+              include_blank: true,
+              class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= submit_tag t("views.shared.actions.filter"), class: "btn btn-outline-primary w-100" %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<% if @preview.any? %>
+  <div class="card shadow-sm">
+    <div class="card-header bg-white">
+      <span class="fw-bold"><%= t("views.dormitory.exports.preview", count: [ @preview.size, 50 ].min) %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><%= t("views.dormitory.exports.building") %></th>
+            <th><%= t("activerecord.attributes.dormitory/room.floor") %></th>
+            <th><%= t("activerecord.attributes.dormitory/room.number") %></th>
+            <th class="text-center"><%= t("views.dormitory.exports.free") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @preview.each do |room| %>
+            <tr>
+              <td><%= room.building.name %></td>
+              <td><%= room.floor %></td>
+              <td><%= room.number %></td>
+              <td class="text-center"><%= room.available_slots %> / <%= room.capacity %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-door-open", message: t("views.dormitory.exports.no_data") %>
+<% end %>

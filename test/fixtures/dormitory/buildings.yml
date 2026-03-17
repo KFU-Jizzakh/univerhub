@@ -1,0 +1,10 @@
+building_one:
+  name: "Корпус 1"
+  address: "ул. Университетская, 1"
+  floors_count: 5
+  description: "Основной корпус общежития"
+
+building_two:
+  name: "Корпус 2"
+  address: "ул. Университетская, 3"
+  floors_count: 3

@@ -1,0 +1,4 @@
+<%= turbo_stream.append "items", @item %>
+<%= turbo_stream.update "new_item" do %>
+  <%= link_to t("views.shared.buttons.add_item"), new_reporting_report_template_report_template_item_path(@report_template), role: "button", class: "outline", data: { turbo_frame: "new_item" } %>
+<% end %>

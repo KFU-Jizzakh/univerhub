@@ -1,0 +1,82 @@
+<% content_for :title, t("views.dormitory.accommodations.new_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_residents"), dormitory_residents_path %>
+  <%= breadcrumb @resident.full_name, dormitory_resident_path(@resident) %>
+  <%= breadcrumb t("views.dormitory.accommodations.new_title") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.accommodations.new_title") %> — <%= @resident.full_name %></h1>
+</div>
+
+<%= form_with(model: @accommodation, url: dormitory_accommodations_path,
+               multipart: true,
+               data: { controller: "room-select",
+                        room_select_resident_gender_value: @resident.gender,
+                        room_select_is_admin_value: (Current.user.has_role?("admin") || Current.user.has_role?("dormitory.admin")).to_s,
+                        room_select_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
+                        room_select_room_template_value: t("views.shared.room_select.room_template") }) do |f| %>
+  <%= f.hidden_field :resident_id, value: @resident.id %>
+
+  <%= render "shared/form_errors", object: @accommodation %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <%= render "document_fields", f: f %>
+    </div>
+
+    <div class="col-md-6">
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_room") %></h5>
+
+      <div class="mb-3">
+        <%= label_tag :building_id, t("views.dormitory.accommodations.building"), class: "form-label" %>
+        <%= select_tag :building_id,
+                       options_from_collection_for_select(@buildings, :id, :name),
+                       { prompt: t("views.dormitory.accommodations.building_prompt"),
+                         class: "form-select",
+                         data: { room_select_target: "building", action: "change->room-select#changeBuilding" } } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :room_id, t("views.dormitory.accommodations.room"), class: "form-label" %>
+        <%= f.select :room_id, [],
+                     { prompt: t("views.dormitory.accommodations.room_prompt") },
+                     { class: "form-select", required: true,
+                       data: { room_select_target: "room", action: "change->room-select#changeRoom focus->room-select#checkBuilding" } } %>
+        <div data-room-select-target="loading" class="form-text d-none">
+          <%= t("views.dormitory.accommodations.loading_rooms") %>
+        </div>
+      </div>
+
+      <% if Current.user.has_role?("admin") || Current.user.has_role?("dormitory.admin") %>
+        <div class="mb-3 d-none" data-room-select-target="forceGroup">
+          <div class="alert alert-warning">
+            <%= check_box_tag :force, "1", false, data: { room_select_target: "forceInput" } %>
+            <%= label_tag :force, t("views.dormitory.accommodations.force_label"), class: "form-check-label ms-1" %>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="mb-3">
+        <%= f.label :start_date, t("views.dormitory.accommodations.start_date"), class: "form-label" %>
+        <%= f.date_field :start_date, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :planned_end_date, t("views.dormitory.accommodations.planned_end_date"), class: "form-label" %>
+        <%= f.date_field :planned_end_date, required: true, value: Date.current + 1.year, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :comment, t("views.dormitory.accommodations.comment"), class: "form-label" %>
+        <%= f.text_area :comment, class: "form-control", rows: 3 %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.confirm"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_resident_path(@resident), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

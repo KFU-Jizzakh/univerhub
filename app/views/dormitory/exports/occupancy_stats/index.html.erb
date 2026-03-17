@@ -1,0 +1,16 @@
+<% content_for :title, t("views.dormitory.exports.occupancy_stats") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_dashboard"), dormitory_dashboard_path %>
+  <%= breadcrumb t("views.dormitory.exports.occupancy_stats") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.exports.occupancy_stats") %></h1>
+  <%= link_to dormitory_exports_occupancy_stats_path(format: :csv), class: "btn btn-success" do %>
+    <i class="bi bi-download"></i> <%= t("views.dormitory.exports.download_csv") %>
+  <% end %>
+</div>
+
+<p class="text-muted mb-4"><%= t("views.dormitory.exports.occupancy_stats_description") %></p>

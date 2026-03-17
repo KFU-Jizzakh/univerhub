@@ -1,0 +1,93 @@
+<% has_primary = policy(report).publish? || policy(report).take_in_progress? || policy(report).submit? || policy(report).grade? %>
+<% has_secondary = (policy(report).update? && report.draft?) || (policy(report).pdf? && !report.draft?) || (policy(report).regenerate_pdf? && !report.draft?) %>
+<% has_destructive = policy(report).reject? || policy(report).reopen? || policy(report).destroy? %>
+
+<div id="report_action_bar" class="d-flex justify-content-between align-items-start gap-3 flex-wrap my-3">
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <% if policy(report).publish? %>
+      <%= button_to t("views.shared.buttons.publish"), publish_reporting_report_path(report), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.publish_report") }, class: "btn btn-primary" %>
+    <% end %>
+    <% if policy(report).take_in_progress? %>
+      <%= button_to t("views.shared.buttons.take_in_progress"), take_in_progress_reporting_report_path(report), method: :patch, class: "btn btn-primary" %>
+    <% end %>
+    <% if policy(report).submit? %>
+      <%= button_to t("views.shared.buttons.submit_for_review"), submit_reporting_report_path(report), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.submit_report") }, class: "btn btn-success" %>
+    <% end %>
+    <% if policy(report).grade? %>
+      <% if report.all_items_graded? %>
+        <%= button_to t("views.shared.buttons.accept"), accept_reporting_report_path(report), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.accept_report") }, class: "btn btn-success" %>
+      <% else %>
+        <button disabled class="btn btn-success"><%= t("views.shared.buttons.accept") %></button>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <% if policy(report).update? && report.draft? %>
+      <%= link_to t("views.shared.actions.edit"), edit_reporting_report_path(report), class: "btn btn-outline-secondary" %>
+    <% end %>
+    <% if policy(report).pdf? && !report.draft? %>
+      <%= link_to t("views.shared.buttons.download_pdf"), pdf_reporting_report_path(report), class: "btn btn-outline-primary", target: "_blank" %>
+    <% end %>
+    <% if policy(report).regenerate_pdf? && !report.draft? %>
+      <%= button_to t("views.shared.buttons.regenerate_pdf"), regenerate_pdf_reporting_report_path(report), method: :post, class: "btn btn-outline-secondary", data: { turbo_confirm: t("views.shared.confirm_dialogs.regenerate_pdf") } %>
+    <% end %>
+
+    <% if has_destructive %>
+      <div class="dropdown">
+        <button class="btn btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t("accessibility.more_actions") %>">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <% if policy(report).reject? %>
+            <li>
+              <button class="dropdown-item text-danger" type="button" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                <i class="bi bi-x-circle me-1"></i> <%= t("views.shared.buttons.reject") %>
+              </button>
+            </li>
+          <% end %>
+          <% if policy(report).reopen? %>
+            <li>
+              <%= button_to reopen_reporting_report_path(report), method: :patch, class: "dropdown-item", form: { data: { turbo_confirm: t("views.shared.confirm_dialogs.reject_report") } } do %>
+                <i class="bi bi-arrow-counterclockwise me-1"></i> <%= t("views.shared.buttons.reopen") %>
+              <% end %>
+            </li>
+          <% end %>
+          <% if policy(report).destroy? %>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <%= button_to reporting_report_path(report), method: :delete, class: "dropdown-item text-danger", form: { data: { turbo_confirm: t("views.shared.confirm_dialogs.delete_report") } } do %>
+                <i class="bi bi-trash me-1"></i> <%= t("views.shared.actions.delete") %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if policy(report).reject? %>
+  <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true" role="dialog" aria-labelledby="rejectModalLabel">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="rejectModalLabel"><%= t("views.shared.buttons.reject") %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <%= form_with url: reject_reporting_report_path(report), method: :patch do |f| %>
+          <div class="modal-body">
+            <div class="mb-0">
+              <%= f.label :rejection_reason, t("views.shared.labels.rejection_reason"), class: "form-label" %>
+              <%= f.text_area :rejection_reason, rows: 3, required: true, placeholder: t("views.shared.placeholders.rejection_reason"), class: "form-control" %>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t("views.shared.actions.cancel") %></button>
+            <%= f.submit t("views.shared.buttons.confirm_rejection"), class: "btn btn-danger" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

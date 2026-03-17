@@ -1,0 +1,50 @@
+<% content_for :title, t("dormitory.batch_operations.history_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_batch_operations") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("dormitory.batch_operations.history_title") %></h1>
+  <% if policy(Dormitory::BatchOperation).new? && Dormitory::AcademicYear.active.exists? %>
+    <%= link_to new_dormitory_batch_eviction_path, class: "btn btn-warning" do %>
+      <i class="bi bi-box-arrow-right"></i> <%= t("dormitory.batch_operations.new_operation") %>
+    <% end %>
+  <% end %>
+</div>
+
+<% if @batch_operations.any? %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><%= t("activerecord.attributes.dormitory/batch_operation.created_at") %></th>
+            <th><%= t("activerecord.attributes.dormitory/batch_operation.building") %></th>
+            <th><%= t("activerecord.attributes.dormitory/batch_operation.operation_type") %></th>
+            <th><%= t("activerecord.attributes.dormitory/batch_operation.status") %></th>
+            <th><%= t("activerecord.attributes.dormitory/batch_operation.total_count") %></th>
+            <th><%= t("dormitory.batch_operations.success") %></th>
+            <th><%= t("dormitory.batch_operations.errors_title") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @batch_operations.each do |op| %>
+            <tr>
+              <td><%= link_to l(op.created_at, format: :short), dormitory_batch_eviction_path(op) %></td>
+              <td><%= op.building.name %></td>
+              <td><%= t("dormitory.batch_operations.operation_types.#{op.operation_type}") %></td>
+              <td><%= status_badge(op.status) %></td>
+              <td><%= op.total_count %></td>
+              <td class="text-success"><%= op.success_count %></td>
+              <td class="<%= op.error_count > 0 ? 'text-danger' : '' %>"><%= op.error_count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-list-task", message: t("dormitory.batch_operations.no_operations") %>
+<% end %>

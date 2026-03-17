@@ -1,0 +1,130 @@
+#set text(font: "Liberation Sans", size: 11pt, lang: "ru")
+#set page(
+  paper: "a4",
+  margin: (top: 2.5cm, bottom: 2cm, left: 2.5cm, right: 1.5cm),
+  header: [
+    #align(center)[
+      #text(size: 8pt, fill: gray)[
+        Филиал Казанского (Приволжского) федерального университета в г. Джизаке
+      ]
+    ]
+  ],
+  footer: context [
+    #align(center)[
+      #text(size: 8pt)[Стр. #counter(page).display()]
+    ]
+  ],
+)
+
+<%= render_watermark %>
+
+#align(center)[
+  #text(size: 10pt)[
+    Филиал Казанского (Приволжского) федерального университета\
+    в городе Джизаке Республики Узбекистан
+  ]
+  #v(0.5cm)
+  #line(length: 100%)
+]
+
+#v(1cm)
+
+#align(center)[
+  #text(size: 16pt, weight: "bold")[<%= typst_escape(@report.name) %>]
+]
+
+<% if @report.description.present? %>
+  #v(0.3cm)
+  #align(center)[
+    #text(size: 11pt, style: "italic")[<%= typst_escape(@report.description) %>]
+  ]
+<% end %>
+
+#v(0.5cm)
+
+#grid(
+  columns: (auto, 1fr),
+  row-gutter: 0.4cm,
+  column-gutter: 0.5cm,
+  [*Создатель:*], [<%= typst_escape(user_name(@report.creator)) %>],
+  [*Исполнитель:*], [<%= typst_escape(user_name(@report.reporter)) %>],
+  [*Проверяющий:*], [<%= typst_escape(user_name(@report.reviewer)) %>],
+  [*Дедлайн:*], [<%= format_date(@report.deadline) %>],
+  <% if @report.submitted_at.present? %>
+    [*Отправлен:*], [<%= format_datetime(@report.submitted_at) %>],
+  <% end %>
+  <% if @report.reviewed_at.present? %>
+    [*Проверен:*], [<%= format_datetime(@report.reviewed_at) %>],
+  <% end %>
+  [*Статус:*], [<%= typst_escape(I18n.t("statuses.#{@report.status}", default: @report.status)) %>],
+)
+
+#v(0.5cm)
+
+#table(
+  columns: (auto, 2fr, 3fr, auto, auto),
+  align: (center, left, left, center, center),
+  stroke: 0.5pt,
+  inset: 6pt,
+  table.header(
+    table.cell(fill: luma(230))[*№*],
+    table.cell(fill: luma(230))[*Пункт*],
+    table.cell(fill: luma(230))[*Содержание*],
+    table.cell(fill: luma(230))[*Балл*],
+    table.cell(fill: luma(230))[*Макс.*],
+  ),
+  <% @report.report_items.each_with_index do |item, i| %>
+    table.cell[<%= i + 1 %>],
+    table.cell[
+      *<%= typst_escape(item.name) %>*
+      <% if item.description.present? %>
+        \
+        #text(size: 9pt, fill: gray)[<%= typst_escape(item.description) %>]
+      <% end %>
+    ],
+    table.cell[<% if item.content.present? %><%= typst_escape(item.content) %><% else %>\u2014<% end %>],
+    table.cell[<%= item.grade || "\u2014" %>],
+    table.cell[<%= item.max_grade || "\u2014" %>],
+  <% end %>
+  table.cell(fill: luma(240))[ ],
+  table.cell(fill: luma(240), align: (right + horizon))[*ИТОГО:*],
+  table.cell(fill: luma(240))[ ],
+  table.cell(fill: luma(240))[*<%= @report.total_grade || @report.report_items.sum(:grade) || 0 %>*],
+  table.cell(fill: luma(240))[*<%= @report.report_items.sum(:max_grade) %>*],
+)
+
+<% if @report.rejected? && @report.rejection_reason.present? %>
+  #v(0.5cm)
+  #rect(
+    fill: rgb(255, 235, 235),
+    stroke: red.lighten(60%),
+    inset: 10pt,
+    width: 100%,
+  )[
+    *Причина отклонения:* <%= typst_escape(@report.rejection_reason) %>
+  ]
+<% end %>
+
+#v(2cm)
+
+#grid(
+  columns: (1fr, 1fr),
+  column-gutter: 2cm,
+)[
+  [*Исполнитель:*] \
+  #box(width: 5cm, underline(stroke: 0.5pt)[\ ])\ / <%= typst_escape(user_name(@report.reporter)) %> \
+  #text(size: 9pt, fill: gray)[подпись]
+  #v(0.3cm)
+  Дата: #box(width: 3cm, underline(stroke: 0.5pt)[\ ])
+][
+  [*Проверяющий:*] \
+  #box(width: 5cm, underline(stroke: 0.5pt)[\ ])\ / <%= typst_escape(user_name(@report.reviewer)) %> \
+  #text(size: 9pt, fill: gray)[подпись]
+  #v(0.3cm)
+  Дата: #box(width: 3cm, underline(stroke: 0.5pt)[\ ])
+]
+
+#v(0.5cm)
+#align(center)[
+  #text(size: 8pt, fill: gray)[Дата генерации: <%= format_datetime(Time.current) %>]
+]

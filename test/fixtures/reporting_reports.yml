@@ -1,0 +1,43 @@
+_fixture:
+  model_class: Reporting::Report
+
+draft_report:
+  name: Draft Report
+  status: draft
+  creator: manager_user
+
+new_report:
+  name: New Report
+  status: new
+  creator: manager_user
+  reporter: reporter_user
+  reviewer: reviewer_user
+  deadline: <%= 1.month.from_now %>
+
+in_progress_report:
+  name: In Progress Report
+  status: in_progress
+  creator: manager_user
+  reporter: reporter_user
+  reviewer: reviewer_user
+  deadline: <%= 1.month.from_now %>
+
+in_review_report:
+  name: In Review Report
+  status: in_review
+  creator: manager_user
+  reporter: reporter_user
+  reviewer: reviewer_user
+  deadline: <%= 1.month.from_now %>
+  submitted_at: <%= Time.current %>
+
+rejected_report:
+  name: Rejected Report
+  status: rejected
+  creator: manager_user
+  reporter: reporter_user
+  reviewer: reviewer_user
+  deadline: <%= 1.month.from_now %>
+  submitted_at: <%= 2.days.ago %>
+  reviewed_at: <%= 1.day.ago %>
+  rejection_reason: Недостаточно данных

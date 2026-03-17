@@ -1,0 +1,73 @@
+<% content_for :title, t("views.dormitory.accommodations.evict_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_accommodations"), dormitory_accommodations_path %>
+  <%= breadcrumb @accommodation.resident.full_name, dormitory_accommodation_path(@accommodation) %>
+  <%= breadcrumb t("views.dormitory.accommodations.evict_title") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.accommodations.evict_title") %> — <%= @accommodation.resident.full_name %></h1>
+</div>
+
+<%= form_with(model: @accommodation, url: evict_dormitory_accommodation_path(@accommodation),
+              method: :patch,
+              data: { controller: "eviction-reason",
+                      turbo_confirm: t("views.dormitory.accommodations.confirm_eviction", name: @accommodation.resident.full_name) }) do |f| %>
+  <%= render "shared/form_errors", object: @accommodation %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_current") %></h5>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.residents.full_name") %></span>
+        <span class="info-value"><%= link_to @accommodation.resident.full_name, dormitory_resident_path(@accommodation.resident) %></span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.current_room") %></span>
+        <span class="info-value"><%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %> (<%= @accommodation.room.building.name %>)</span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.start_date") %></span>
+        <span class="info-value"><%= l(@accommodation.start_date, format: :short) %></span>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_eviction") %></h5>
+
+      <div class="mb-3">
+        <%= f.label :eviction_reason, t("views.dormitory.accommodations.eviction_reason"), class: "form-label" %>
+        <%= f.select :eviction_reason,
+                     options_for_select([
+                       [ t("eviction_reasons.transfer"), "transfer" ],
+                       [ t("eviction_reasons.graduation"), "graduation" ],
+                       [ t("eviction_reasons.expulsion"), "expulsion" ],
+                       [ t("eviction_reasons.voluntary"), "voluntary" ],
+                       [ t("eviction_reasons.violation"), "violation" ],
+                       [ t("eviction_reasons.repair"), "repair" ],
+                       [ t("eviction_reasons.other"), "other" ]
+                     ], selected: params[:eviction_reason]),
+                     {}, class: "form-select",
+                     data: { eviction_reason_target: "select", action: "change->eviction-reason#changeReason" } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :comment, t("views.dormitory.accommodations.comment"), class: "form-label" %>
+        <%= f.text_area :comment, class: "form-control", rows: 3,
+                        data: { eviction_reason_target: "comment" } %>
+        <div data-eviction-reason-target="hint" class="form-text text-danger d-none">
+          <%= t("views.dormitory.accommodations.comment_required_hint") %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.dormitory.accommodations.evict_button"), class: "btn btn-danger" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_accommodation_path(@accommodation), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

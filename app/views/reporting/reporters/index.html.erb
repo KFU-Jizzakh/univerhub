@@ -1,0 +1,36 @@
+<% content_for :title, t("views.reporters.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.reporters") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.reporters.page_title") %></h2>
+</div>
+
+<% if @reporters.any? %>
+<div class="table-responsive">
+  <table class="table table-hover align-middle" data-controller="table-row-link">
+    <thead class="table-light">
+      <tr>
+        <th scope="col"></th>
+        <th scope="col"><%= t("views.shared.labels.name") %></th>
+        <th scope="col"><%= t("views.shared.labels.email") %></th>
+        <th scope="col"><%= t("views.shared.labels.about") %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @reporters.each do |reporter| %>
+        <tr class="table-row-link" data-url="<%= reporting_reporter_path(reporter) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+          <td><%= user_avatar(reporter, size: :index) %></td>
+          <td><%= link_to user_display(reporter), reporting_reporter_path(reporter) %></td>
+          <td><%= reporter.email_address %></td>
+          <td><%= reporter.profile&.summary %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-people", message: t("views.shared.empty_state.no_reporters") %>
+<% end %>

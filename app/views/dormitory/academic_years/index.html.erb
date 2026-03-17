@@ -1,0 +1,46 @@
+<% content_for :title, t("views.dormitory.academic_years.title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_academic_years") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.academic_years.title") %></h1>
+  <% if policy(Dormitory::AcademicYear).new? %>
+    <%= link_to new_dormitory_academic_year_path, class: "btn btn-primary" do %>
+      <i class="bi bi-plus-circle"></i> <%= t("views.dormitory.academic_years.new_year") %>
+    <% end %>
+  <% end %>
+</div>
+
+<% if @academic_years.any? %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><%= t("activerecord.attributes.dormitory/academic_year.name") %></th>
+            <th><%= t("activerecord.attributes.dormitory/academic_year.start_date") %></th>
+            <th><%= t("activerecord.attributes.dormitory/academic_year.end_date") %></th>
+            <th><%= t("activerecord.attributes.dormitory/academic_year.status") %></th>
+            <th><%= t("activerecord.attributes.dormitory/academic_year.closed_at") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @academic_years.each do |year| %>
+            <tr>
+              <td><%= link_to year.name, dormitory_academic_year_path(year) %></td>
+              <td><%= l(year.start_date, format: :short) %></td>
+              <td><%= l(year.end_date, format: :short) %></td>
+              <td><%= status_badge(year.status) %></td>
+              <td><%= year.closed_at ? l(year.closed_at, format: :short) : "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-calendar3", message: t("views.dormitory.academic_years.empty") %>
+<% end %>

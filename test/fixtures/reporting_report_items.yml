@@ -1,0 +1,12 @@
+_fixture:
+  model_class: Reporting::ReportItem
+
+draft_item:
+  name: Пункт черновика
+  report: draft_report
+
+graded_item:
+  name: Пункт с оценкой
+  report: in_review_report
+  grade: 5
+  max_grade: 10

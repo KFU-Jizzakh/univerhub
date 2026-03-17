@@ -1,0 +1,83 @@
+<% content_for :title, t("views.shared.page_titles.new_user") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.admin_users"), admin_users_path %>
+  <%= breadcrumb t("breadcrumbs.new") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.admin.users.new.title") %></h2>
+</div>
+
+<%= form_with(model: @user, url: admin_users_path, data: { controller: "commandant-buildings avatar-preview", action: "change->commandant-buildings#toggleBuildings" }) do |f| %>
+  <% if @user.errors.any? %>
+    <div class="alert alert-danger"><%= @user.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <%= f.label :last_name, t("views.shared.labels.last_name"), class: "form-label" %>
+      <%= f.text_field :last_name, placeholder: t("views.shared.placeholders.last_name"), class: "form-control" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :first_name, t("views.shared.labels.first_name"), class: "form-label" %>
+      <%= f.text_field :first_name, placeholder: t("views.shared.placeholders.first_name"), class: "form-control" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :middle_name, t("views.admin.users.new.middle_name"), class: "form-label" %>
+      <%= f.text_field :middle_name, placeholder: t("views.admin.users.new.middle_name"), class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :avatar, t("views.admin.users.new.avatar"), class: "form-label" %>
+    <%= f.file_field :avatar, accept: "image/jpeg,image/png,image/webp", class: "form-control", data: { avatar_preview_target: "input" } %>
+    <div class="form-text"><%= t("views.admin.users.new.avatar_hint") %></div>
+    <div class="mt-2 d-none" data-avatar-preview-target="previewContainer">
+      <%= tag.img(src: "", alt: t("views.admin.users.new.avatar_preview_alt"), class: "img-thumbnail rounded avatar-md", data: { avatar_preview_target: "preview" }) %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :email_address, t("views.shared.labels.email"), class: "form-label" %>
+    <%= f.email_field :email_address, required: true, autofocus: true, placeholder: t("views.shared.placeholders.email"), class: "form-control" %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= f.label :password, t("views.admin.users.new.password"), class: "form-label" %>
+      <%= f.password_field :password, required: true, autocomplete: "new-password", placeholder: t("views.admin.users.new.password_placeholder"), class: "form-control" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :password_confirmation, t("views.shared.labels.password_confirmation"), class: "form-label" %>
+      <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: t("views.admin.users.new.password_confirmation_placeholder"), class: "form-control" %>
+    </div>
+  </div>
+
+  <fieldset class="mb-3 p-3 border rounded">
+    <legend class="fs-6"><%= t("views.admin.users.new.roles_legend") %></legend>
+    <% @roles.each do |role| %>
+      <div class="form-check mb-2">
+        <%= f.check_box :role_ids, { multiple: true, class: "form-check-input", data: { role_name: role.name } }, role.id.to_s, "" %>
+        <%= f.label :role_ids, role.name, value: role.id, class: "form-check-label" %>
+      </div>
+    <% end %>
+  </fieldset>
+
+  <% if @buildings.present? %>
+    <fieldset class="mb-3 p-3 border rounded" data-commandant-buildings-target="fieldset">
+      <legend class="fs-6"><%= t("views.admin.users.new.buildings_legend") %></legend>
+      <% @buildings.each do |building| %>
+        <div class="form-check mb-2">
+          <%= f.check_box :building_ids, { multiple: true, class: "form-check-input" }, building.id.to_s, "" %>
+          <%= f.label :building_ids, building.name, value: building.id, class: "form-check-label" %>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end %>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.create"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), admin_users_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

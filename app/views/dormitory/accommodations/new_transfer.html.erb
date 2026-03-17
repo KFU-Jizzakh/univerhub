@@ -1,0 +1,96 @@
+<% content_for :title, t("views.dormitory.accommodations.transfer_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_accommodations"), dormitory_accommodations_path %>
+  <%= breadcrumb @accommodation.resident.full_name, dormitory_accommodation_path(@accommodation) %>
+  <%= breadcrumb t("views.dormitory.accommodations.transfer_title") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.accommodations.transfer_title") %> — <%= @resident.full_name %></h1>
+</div>
+
+<%= form_with(model: @new_accommodation, url: transfer_dormitory_accommodation_path(@accommodation), method: :patch,
+               multipart: true,
+               data: { controller: "room-select",
+                        room_select_resident_gender_value: @resident.gender,
+                        room_select_is_admin_value: false.to_s,
+                        room_select_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
+                        room_select_room_template_value: t("views.shared.room_select.room_template") }) do |f| %>
+  <%= render "shared/form_errors", object: @accommodation %>
+  <%= render "shared/form_errors", object: @new_accommodation %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <%= render "document_fields", f: f %>
+    </div>
+
+    <div class="col-md-6">
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_current") %></h5>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.residents.full_name") %></span>
+        <span class="info-value"><%= link_to @resident.full_name, dormitory_resident_path(@resident) %></span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.current_room") %></span>
+        <span class="info-value"><%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %> (<%= @accommodation.room.building.name %>)</span>
+      </div>
+
+      <hr class="my-3">
+
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_new_room") %></h5>
+
+      <div class="mb-3">
+        <%= f.label :eviction_reason, t("views.dormitory.accommodations.eviction_reason"), class: "form-label" %>
+        <%= f.select :eviction_reason,
+                      options_for_select([
+                        [ t("views.dormitory.accommodations.eviction_reason_transfer"), "transfer" ],
+                        [ t("views.dormitory.accommodations.eviction_reason_repair"), "repair" ]
+                      ], selected: "transfer"),
+                     {}, class: "form-select" %>
+      </div>
+
+      <div class="mb-3">
+        <%= label_tag :building_id, t("views.dormitory.accommodations.building"), class: "form-label" %>
+        <%= select_tag :building_id,
+                       options_from_collection_for_select(@buildings, :id, :name),
+                       { prompt: t("views.dormitory.accommodations.building_prompt"),
+                         class: "form-select",
+                         data: { room_select_target: "building", action: "change->room-select#changeBuilding" } } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :room_id, t("views.dormitory.accommodations.room"), class: "form-label" %>
+        <%= f.select :room_id, [],
+                     { prompt: t("views.dormitory.accommodations.room_prompt") },
+                     { class: "form-select", required: true,
+                       data: { room_select_target: "room", action: "change->room-select#changeRoom focus->room-select#checkBuilding" } } %>
+        <div data-room-select-target="loading" class="form-text d-none">
+          <%= t("views.dormitory.accommodations.loading_rooms") %>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :start_date, t("views.dormitory.accommodations.start_date"), class: "form-label" %>
+        <%= f.date_field :start_date, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :planned_end_date, t("views.dormitory.accommodations.planned_end_date"), class: "form-label" %>
+        <%= f.date_field :planned_end_date, required: true, value: Date.current + 1.year, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :comment, t("views.dormitory.accommodations.comment"), class: "form-label" %>
+        <%= f.text_area :comment, class: "form-control", rows: 3 %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.dormitory.accommodations.transfer_button"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_accommodation_path(@accommodation), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

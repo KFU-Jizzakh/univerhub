@@ -1,0 +1,12 @@
+_fixture:
+  model_class: Reporting::ReportTemplate
+
+draft_template:
+  name: Draft Template
+  status: 0
+  creator: manager_user
+
+published_template:
+  name: Published Template
+  status: 1
+  creator: manager_user

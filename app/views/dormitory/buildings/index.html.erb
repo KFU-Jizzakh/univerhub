@@ -1,0 +1,53 @@
+<% content_for :title, t("views.dormitory.buildings.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_buildings") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.buildings.page_title") %></h1>
+  <% if policy(Dormitory::Building).create? %>
+    <%= link_to t("views.shared.actions.create"), new_dormitory_building_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<% if @buildings.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.shared.labels.name") %></th>
+          <th scope="col"><%= t("views.dormitory.buildings.address") %></th>
+          <th scope="col"><%= t("views.dormitory.buildings.floors_count") %></th>
+          <th scope="col" class="text-center"><%= t("views.dormitory.buildings.rooms_count") %></th>
+          <th scope="col" class="text-center"><%= t("views.dormitory.buildings.occupancy_rate") %></th>
+          <th scope="col" class="text-end"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @buildings.each do |building| %>
+          <tr class="table-row-link" data-url="<%= dormitory_building_path(building) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td><%= link_to building.name, dormitory_building_path(building) %></td>
+            <td><%= building.address %></td>
+            <td><%= building.floors_count %></td>
+            <td class="text-center"><%= @building_stats[building.id][:rooms_count] %></td>
+            <td class="text-center"><%= @building_stats[building.id][:occupancy_rate] %>%</td>
+            <td class="text-end">
+              <% if policy(building).edit? %>
+                <%= link_to t("views.shared.actions.edit"), edit_dormitory_building_path(building), class: "btn btn-sm btn-outline-secondary" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "bi-building",
+      message: t("views.dormitory.buildings.no_buildings"),
+      cta_text: policy(Dormitory::Building).create? ? t("views.shared.actions.create") : nil,
+      cta_path: policy(Dormitory::Building).create? ? new_dormitory_building_path : nil %>
+<% end %>

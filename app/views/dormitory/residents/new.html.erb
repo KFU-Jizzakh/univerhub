@@ -1,0 +1,75 @@
+<% content_for :title, t("views.dormitory.residents.new_resident") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_residents"), dormitory_residents_path %>
+  <%= breadcrumb t("views.shared.actions.create") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.residents.new_resident") %></h1>
+</div>
+
+<%= form_with(model: @resident, url: dormitory_residents_path) do |f| %>
+  <%= render "shared/form_errors", object: @resident %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :last_name, t("views.dormitory.residents.last_name"), class: "form-label" %>
+        <%= f.text_field :last_name, required: true, autofocus: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :first_name, t("views.dormitory.residents.first_name"), class: "form-label" %>
+        <%= f.text_field :first_name, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :middle_name, t("views.dormitory.residents.middle_name"), class: "form-label" %>
+        <%= f.text_field :middle_name, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :gender, t("views.dormitory.residents.gender"), class: "form-label" %>
+        <%= f.select :gender,
+                     resident_gender_options,
+                     { prompt: true }, class: "form-select", required: true %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :date_of_birth, t("views.dormitory.residents.date_of_birth"), class: "form-label" %>
+        <%= f.date_field :date_of_birth, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :phone, t("views.dormitory.residents.phone"), class: "form-label" %>
+        <%= f.telephone_field :phone, placeholder: "+79001234567", class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :email, t("views.dormitory.residents.email"), class: "form-label" %>
+        <%= f.email_field :email, class: "form-control" %>
+      </div>
+
+      <div class="mb-3" data-controller="resident-ticket-checker"
+           data-resident-ticket-checker-warning-text="<%= t('views.shared.resident_ticket.duplicate_warning') %>">
+        <%= f.label :student_ticket_number, t("views.dormitory.residents.student_ticket"), class: "form-label" %>
+        <%= f.text_field :student_ticket_number, required: true, class: "form-control",
+                         data: { resident_ticket_checker_target: "input",
+                                 action: "input->resident-ticket-checker#check" } %>
+        <div data-resident-ticket-checker-target="warning" class="alert alert-warning mt-2 d-none"></div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :photo, t("views.dormitory.residents.photo"), class: "form-label" %>
+        <%= f.file_field :photo, accept: "image/jpeg,image/png,image/webp", class: "form-control" %>
+        <div class="form-text"><%= t("views.dormitory.residents.photo_hint") %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.create"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_residents_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

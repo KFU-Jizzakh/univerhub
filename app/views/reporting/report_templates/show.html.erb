@@ -1,0 +1,64 @@
+<% content_for :title, t("views.report_templates.show_title", name: @report_template.name) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.report_templates"), reporting_report_templates_path %>
+  <%= breadcrumb @report_template.name %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= @report_template.name %> <%= status_badge(@report_template.status) %></h2>
+  <% if @report_template.description.present? %>
+    <p><%= @report_template.description %></p>
+  <% end %>
+</div>
+
+<div class="d-flex gap-2 flex-wrap my-3">
+  <% if policy(@report_template).update? %>
+    <%= link_to t("views.shared.actions.edit"), edit_reporting_report_template_path(@report_template), class: "btn btn-outline-secondary" %>
+  <% end %>
+  <% if policy(@report_template).publish? %>
+    <%= button_to t("views.shared.buttons.publish"), publish_reporting_report_template_path(@report_template), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.publish_template") }, class: "btn btn-success" %>
+  <% end %>
+  <% if policy(@report_template).archive? %>
+    <%= button_to t("views.shared.buttons.archive"), archive_reporting_report_template_path(@report_template), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.archive_template") }, class: "btn btn-outline-secondary" %>
+  <% end %>
+  <% if policy(@report_template).destroy? %>
+    <%= button_to t("views.shared.actions.delete"), reporting_report_template_path(@report_template), method: :delete, data: { turbo_confirm: t("views.shared.confirm_dialogs.delete_template") }, class: "btn btn-outline-danger" %>
+  <% end %>
+</div>
+
+<hr class="my-4 border">
+
+<h3 class="mb-4"><%= t("views.shared.labels.template_items") %></h3>
+
+<% if @items.any? %>
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col"><%= t("views.shared.labels.name") %></th>
+        <th scope="col"><%= t("views.shared.labels.description") %></th>
+        <th scope="col"><%= t("views.shared.labels.max_grade") %></th>
+        <th scope="col"><%= t("views.shared.labels.attachments") %></th>
+        <% if policy(@report_template).update? %>
+          <th scope="col" class="text-end"></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody id="items">
+      <% @items.each do |item| %>
+        <%= render item %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-list-check", message: t("views.shared.empty_state.no_template_items") %>
+<% end %>
+
+<% if policy(@report_template).update? %>
+  <turbo-frame id="new_item" class="my-4">
+    <%= link_to t("views.shared.buttons.add_item"), new_reporting_report_template_report_template_item_path(@report_template), class: "btn btn-outline-primary", data: { turbo_frame: "new_item" } %>
+  </turbo-frame>
+<% end %>

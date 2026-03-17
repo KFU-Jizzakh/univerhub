@@ -1,0 +1,283 @@
+<% content_for :title, t("views.home.page_title") %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.home.page_title") %></h2>
+  <p class="text-muted"><%= t("views.home.welcome", user: user_display(current_user)) %></p>
+</div>
+
+<%# ── Stats cards ── %>
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+  <% if @unread_notifications > 0 %>
+    <div class="col">
+      <%= link_to notifications_path, class: "stat-card stat-card--highlight" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @unread_notifications %></div>
+          <div class="stat-card-icon stat-card-icon--notifications"><i class="bi bi-bell"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.unread_notifications") %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @total_reports_count %>
+    <div class="col">
+      <%= link_to reporting_reports_path, class: "stat-card" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @total_reports_count %></div>
+          <div class="stat-card-icon stat-card-icon--reports"><i class="bi bi-file-earmark-text"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.total_reports") %></div>
+      <% end %>
+    </div>
+    <div class="col">
+      <%= link_to reporting_report_templates_path, class: "stat-card" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @published_templates_count %></div>
+          <div class="stat-card-icon stat-card-icon--templates"><i class="bi bi-layout-text-window-reverse"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.published_templates") %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @assigned_reports %>
+    <div class="col">
+      <%= link_to reporting_reports_path(status: "in_progress"), class: "stat-card" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @assigned_reports&.size || 0 %></div>
+          <div class="stat-card-icon stat-card-icon--active"><i class="bi bi-lightning"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.active_reports") %></div>
+      <% end %>
+    </div>
+    <div class="col">
+      <%= link_to reporting_reports_path(status: "accepted"), class: "stat-card" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @completed_reports_count %></div>
+          <div class="stat-card-icon stat-card-icon--completed"><i class="bi bi-check-circle"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.completed") %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @review_reports %>
+    <div class="col">
+      <%= link_to reporting_reports_path(status: "in_review"), class: "stat-card" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @review_reports&.size || 0 %></div>
+          <div class="stat-card-icon stat-card-icon--review"><i class="bi bi-hourglass-split"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.pending_review") %></div>
+      <% end %>
+    </div>
+    <div class="col">
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @reviewed_count %></div>
+          <div class="stat-card-icon stat-card-icon--completed"><i class="bi bi-eye"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.reviewed") %></div>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @total_users_count %>
+    <div class="col">
+      <%= link_to admin_users_path, class: "stat-card" do %>
+        <div class="stat-card-header">
+          <div class="stat-card-value"><%= @total_users_count %></div>
+          <div class="stat-card-icon stat-card-icon--users"><i class="bi bi-people"></i></div>
+        </div>
+        <div class="stat-card-label"><%= t("views.shared.stats.total_users") %></div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%# ── Status chart ── %>
+<% if @status_counts&.any? %>
+  <section class="mb-4">
+    <h3><%= t("views.shared.sections.reports_by_status") %></h3>
+    <div class="status-chart">
+      <% total = @status_counts.values.sum.to_f %>
+      <% @status_counts.sort_by { |s, _| %w[draft new in_progress in_review rejected reopened accepted].index(s) || 99 }.each do |status, count| %>
+        <div class="status-chart-bar">
+          <div class="status-chart-label"><%= t("statuses.#{status}") %></div>
+          <div class="status-chart-track">
+            <div class="status-chart-fill status-chart-fill--<%= status %>" style="width: <%= (count / total * 100).round(1) %>%"></div>
+          </div>
+          <div class="status-chart-count"><%= count %></div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# ── Dashboard sections (accordion) ── %>
+<% has_sections = @overdue_reports&.any? || @draft_reports&.any? || @assigned_reports || @review_reports %>
+<% if has_sections %>
+  <section class="dashboard-sections accordion" id="dashboardSections">
+    <% if @overdue_reports&.any? %>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button overdue-header" type="button" data-bs-toggle="collapse" data-bs-target="#overdueSection" aria-expanded="true">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <%= t("views.shared.sections.overdue_reports") %>
+            <span class="badge bg-danger ms-auto"><%= @overdue_reports.size %></span>
+          </button>
+        </h3>
+        <div id="overdueSection" class="accordion-collapse collapse show" data-bs-parent="#dashboardSections">
+          <div class="accordion-body">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm mb-0">
+                <thead>
+                  <tr><th scope="col"><%= t("views.shared.labels.name") %></th><th scope="col"><%= t("views.shared.labels.status") %></th><th scope="col" class="text-end"><%= t("views.shared.labels.deadline") %></th></tr>
+                </thead>
+                <tbody>
+                  <% @overdue_reports.each do |r| %>
+                    <tr>
+                      <td><%= link_to r.name, reporting_report_path(r) %></td>
+                      <td><%= status_badge(r.status) %></td>
+                      <td class="text-danger fw-semibold text-end"><%= format_datetime(r.deadline) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @draft_reports&.any? %>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#draftsSection" aria-expanded="false">
+            <i class="bi bi-pencil me-2"></i>
+            <%= t("views.shared.sections.draft_reports") %>
+            <span class="badge bg-secondary ms-auto"><%= @draft_reports.size %></span>
+          </button>
+        </h3>
+        <div id="draftsSection" class="accordion-collapse collapse" data-bs-parent="#dashboardSections">
+          <div class="accordion-body">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm mb-0">
+                <thead>
+                  <tr><th scope="col"><%= t("views.shared.labels.name") %></th><th scope="col"><%= t("views.shared.labels.reporter") %></th><th scope="col" class="text-end"><%= t("views.shared.labels.deadline") %></th></tr>
+                </thead>
+                <tbody>
+                  <% @draft_reports.each do |r| %>
+                    <tr>
+                      <td><%= link_to r.name, reporting_report_path(r) %></td>
+                      <td><%= user_display(r.reporter) %></td>
+                      <td class="<%= 'text-danger fw-semibold' if r.overdue? %><%= 'text-warning fw-semibold' if r.deadline_soon? %> text-end"><%= format_datetime(r.deadline) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @assigned_reports %>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#assignedSection" aria-expanded="false">
+            <i class="bi bi-person-workspace me-2"></i>
+            <%= t("views.shared.sections.my_reports") %>
+            <span class="badge bg-primary ms-auto"><%= @assigned_reports.size %></span>
+          </button>
+        </h3>
+        <div id="assignedSection" class="accordion-collapse collapse" data-bs-parent="#dashboardSections">
+          <div class="accordion-body">
+            <% if @assigned_reports.any? %>
+              <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                  <thead>
+                    <tr><th scope="col"><%= t("views.shared.labels.name") %></th><th scope="col"><%= t("views.shared.labels.status") %></th><th scope="col" class="text-end"><%= t("views.shared.labels.deadline") %></th></tr>
+                  </thead>
+                  <tbody>
+                    <% @assigned_reports.each do |r| %>
+                      <tr>
+                        <td><%= link_to r.name, reporting_report_path(r) %></td>
+                        <td><%= status_badge(r.status) %> <%= deadline_badge(r) %></td>
+                        <td class="<%= r.overdue? ? 'text-danger' : r.deadline_soon? ? 'text-warning' : '' %> fw-semibold text-end"><%= format_datetime(r.deadline) %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <%= render "shared/empty_state", icon: "bi-lightning", message: t("views.shared.empty_state.no_active_reports") %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @review_reports %>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#reviewSection" aria-expanded="false">
+            <i class="bi bi-clipboard-check me-2"></i>
+            <%= t("views.shared.sections.pending_review") %>
+            <span class="badge bg-info ms-auto"><%= @review_reports.size %></span>
+          </button>
+        </h3>
+        <div id="reviewSection" class="accordion-collapse collapse" data-bs-parent="#dashboardSections">
+          <div class="accordion-body">
+            <% if @review_reports.any? %>
+              <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                  <thead>
+                    <tr><th scope="col"><%= t("views.shared.labels.name") %></th><th scope="col"><%= t("views.shared.labels.reporter") %></th><th scope="col" class="text-end"><%= t("views.shared.labels.submitted") %></th></tr>
+                  </thead>
+                  <tbody>
+                    <% @review_reports.each do |r| %>
+                      <tr>
+                        <td><%= link_to r.name, reporting_report_path(r) %></td>
+                        <td><%= user_display(r.reporter) %></td>
+                        <td class="text-end"><%= format_datetime(r.submitted_at) %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <%= render "shared/empty_state", icon: "bi-clipboard-check", message: t("views.shared.empty_state.no_review_reports") %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<%# ── Activity feed ── %>
+<% if @recent_events %>
+  <section>
+    <h3><%= t("views.shared.sections.recent_activity") %></h3>
+    <div class="activity-feed">
+      <% @recent_events.each do |event| %>
+        <div class="activity-item">
+          <div class="activity-icon">
+            <%= activity_icon(event.action) %>
+          </div>
+          <div class="activity-content">
+            <div class="activity-header">
+              <span class="activity-user"><%= user_display(event.actor) %></span>
+              <span class="activity-action"><%= t("activity.actions.#{event.action}", default: event.action.humanize) %></span>
+            </div>
+            <div class="activity-time">
+              <%= format_datetime(event.created_at) %>
+              <span class="time-ago">(<%= time_ago_in_words(event.created_at) %> <%= t("activity_feed.ago") %>)</span>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>

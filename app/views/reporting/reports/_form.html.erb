@@ -1,0 +1,44 @@
+<%= form_with(model: report) do |f| %>
+  <% if report.errors.any? %>
+    <div class="alert alert-danger"><%= report.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <% unless report.persisted? %>
+    <div class="mb-3">
+      <%= f.label :report_template_id, t("views.shared.labels.template"), class: "form-label" %>
+      <%= f.select :report_template_id, @templates.map { |t| [t.name, t.id] }, { include_blank: t("views.shared.placeholders.select_template") }, class: "form-select" %>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :name, t("views.shared.labels.name"), class: "form-label" %>
+    <%= f.text_field :name, required: true, placeholder: t("views.shared.placeholders.report_name"), class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, t("views.shared.labels.description"), class: "form-label" %>
+    <%= f.text_area :description, rows: 3, placeholder: t("views.shared.placeholders.report_description"), class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :deadline, t("views.shared.labels.deadline"), class: "form-label" %>
+    <%= f.datetime_local_field :deadline, class: "form-control" %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= f.label :reporter_id, t("views.shared.labels.reporter"), class: "form-label" %>
+      <%= f.select :reporter_id, @reporters.map { |u| [u.email_address, u.id] }, { include_blank: t("views.shared.placeholders.select_user") }, class: "form-select" %>
+    </div>
+
+    <div class="col-md-6">
+      <%= f.label :reviewer_id, t("views.shared.labels.reviewer"), class: "form-label" %>
+      <%= f.select :reviewer_id, @reviewers.map { |u| [u.email_address, u.id] }, { include_blank: t("views.shared.placeholders.select_user") }, class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit report.persisted? ? t("views.shared.actions.save") : t("views.shared.actions.create"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), reporting_reports_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

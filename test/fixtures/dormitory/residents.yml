@@ -1,0 +1,42 @@
+_fixture:
+  model_class: Dormitory::Resident
+
+resident_one_not_settled:
+  last_name: "Иванов"
+  first_name: "Иван"
+  middle_name: "Иванович"
+  gender: 0
+  date_of_birth: "2000-05-15"
+  phone: "+79001234567"
+  email: "ivanov@test.local"
+  student_ticket_number: "АБ123456"
+  status: 0
+
+resident_two_settled:
+  last_name: "Петрова"
+  first_name: "Мария"
+  middle_name: "Сергеевна"
+  gender: 1
+  date_of_birth: "2001-03-20"
+  phone: "+79009876543"
+  student_ticket_number: "ВГ789012"
+  status: 1
+  current_room: room_201
+
+resident_three_evicted:
+  last_name: "Сидоров"
+  first_name: "Алексей"
+  middle_name:
+  gender: 0
+  date_of_birth: "1999-11-10"
+  student_ticket_number: "ДЖ345678"
+  status: 3
+
+resident_four_other_building:
+  last_name: "Козлова"
+  first_name: "Анна"
+  middle_name: "Петровна"
+  gender: 1
+  date_of_birth: "2002-01-25"
+  student_ticket_number: "ЕИ901234"
+  status: 0

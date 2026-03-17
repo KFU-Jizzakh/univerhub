@@ -1,0 +1,13 @@
+_fixture:
+  model_class: Dormitory::Accommodation
+
+active_accommodation:
+  resident: resident_two_settled
+  room: room_201
+  application_number: "З-001"
+  contract_number: "Д-001"
+  start_date: <%= Date.current %>
+  planned_end_date: <%= Date.current + 1.year %>
+  academic_year: active_year_2025_2026
+  status: active
+  comment: "Заселение по приказу №123"

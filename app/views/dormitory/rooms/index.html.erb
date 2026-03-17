@@ -1,0 +1,73 @@
+<% content_for :title, t("views.dormitory.rooms.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_rooms") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.rooms.page_title") %></h1>
+  <% if policy(Dormitory::Room).create? %>
+    <%= link_to t("views.shared.actions.create"), new_dormitory_room_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<%= form_tag dormitory_rooms_path, method: :get, class: "row g-2 mb-4" do %>
+  <div class="col-md-4">
+    <%= select_tag :building_id,
+          options_from_collection_for_select(@buildings, :id, :name, params[:building_id]),
+          include_blank: t("views.dormitory.rooms.all_buildings"),
+          class: "form-select form-select-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= submit_tag t("views.shared.actions.filter"), class: "btn btn-outline-secondary btn-sm" %>
+  </div>
+<% end %>
+
+<% if @rooms.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.rooms.room_number") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.building") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.floor") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.capacity") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.gender_restriction") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col" class="text-end"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rooms.each do |room| %>
+          <tr class="table-row-link" data-url="<%= dormitory_room_path(room) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td><%= link_to room.number, dormitory_room_path(room) %></td>
+            <td><%= room.building.name %></td>
+            <td><%= room.floor %></td>
+            <td><%= room.current_occupancy %>/<%= room.capacity %></td>
+            <td>
+              <% if room.gender_restriction.present? %>
+                <%= t("views.dormitory.rooms.gender_#{room.gender_restriction}") %>
+              <% else %>
+                <%= t("views.dormitory.rooms.gender_none") %>
+              <% end %>
+            </td>
+            <td><%= status_badge(room.status) %></td>
+            <td class="text-end">
+              <% if policy(room).edit? %>
+                <%= link_to t("views.shared.actions.edit"), edit_dormitory_room_path(room), class: "btn btn-sm btn-outline-secondary" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "bi-door-open",
+      message: t("views.dormitory.rooms.no_rooms"),
+      cta_text: policy(Dormitory::Room).create? ? t("views.shared.actions.create") : nil,
+      cta_path: policy(Dormitory::Room).create? ? new_dormitory_room_path : nil %>
+<% end %>

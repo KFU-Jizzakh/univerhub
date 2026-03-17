@@ -1,0 +1,133 @@
+<% content_for :title, t("views.shared.page_titles.reports") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.reports") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.shared.page_titles.reports") %></h2>
+</div>
+
+<details class="search-filters card mb-3" <%= "open" if params[:q].present? || params[:reporter_id].present? || params[:deadline_from].present? %>>
+  <summary class="card-header cursor-pointer"><%= t("views.shared.labels.search_and_filters") %></summary>
+  <%= form_with url: reporting_reports_path, method: :get, class: "card-body" do |f| %>
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-3">
+        <%= label_tag :q, t("views.shared.labels.name"), class: "form-label" %>
+        <%= text_field_tag :q, params[:q], placeholder: t("views.shared.placeholders.search_by_name"), class: "form-control" %>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <%= label_tag :reporter_id, t("views.shared.labels.reporter"), class: "form-label" %>
+        <%= select_tag :reporter_id, options_for_select([["", ""]] + @filter_reporters.map { |u| [user_display(u), u.id] }, params[:reporter_id]), class: "form-select" %>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <%= label_tag :deadline_from, t("views.shared.labels.deadline_from"), class: "form-label" %>
+        <%= date_field_tag :deadline_from, params[:deadline_from], class: "form-control" %>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <%= label_tag :deadline_to, t("views.shared.labels.deadline_to"), class: "form-label" %>
+        <%= date_field_tag :deadline_to, params[:deadline_to], class: "form-control" %>
+      </div>
+    </div>
+    <%= hidden_field_tag :status, params[:status] %>
+    <div class="d-flex gap-2 mt-3">
+      <%= button_tag t("views.shared.actions.search"), type: :submit, class: "btn btn-primary" %>
+      <%= link_to t("views.shared.actions.reset"), reporting_reports_path, class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+</details>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+  <nav class="status-chips flex-grow-1">
+    <%= link_to reporting_reports_path(request.query_parameters.except("status", "page")), class: "status-chip #{'status-chip--active' if params[:status].blank?}" do %>
+      <%= t("views.shared.labels.all") %>
+    <% end %>
+    <% status_keys = %w[draft new in_progress in_review rejected accepted reopened] %>
+    <% status_keys.each do |key| %>
+      <%= link_to reporting_reports_path(request.query_parameters.except("page").merge(status: key)), class: "status-chip #{'status-chip--active' if params[:status] == key}" do %>
+        <%= t("statuses.#{key}") %>
+        <% if @status_counts && @status_counts[key.to_s].to_i > 0 %>
+          <span class="chip-count"><%= @status_counts[key.to_s] %></span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </nav>
+  <% if policy(Reporting::Report).create? %>
+    <%= link_to t("views.shared.actions.create"), new_reporting_report_path, class: "btn btn-primary btn-sm flex-shrink-0" %>
+  <% end %>
+</div>
+
+<% if @reports.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.shared.labels.name") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"><%= t("views.shared.labels.reporter") %></th>
+          <th scope="col"><%= t("views.shared.labels.reviewer") %></th>
+          <th scope="col"><%= t("views.shared.labels.deadline") %></th>
+          <th scope="col"><%= t("views.shared.labels.created") %></th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @reports.each do |report| %>
+          <tr class="table-row-link" data-url="<%= reporting_report_path(report) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td>
+              <%= link_to report.name, report %>
+              <% if report.created_at > 24.hours.ago %>
+                <span class="status-badge status-badge--new status-badge--xs"><%= t("statuses.new") %></span>
+              <% end %>
+            </td>
+            <td><%= status_badge(report.status) %> <%= deadline_badge(report) %></td>
+            <td><%= user_display(report.reporter) %></td>
+            <td><%= user_display(report.reviewer) %></td>
+            <td class="<%= 'text-danger fw-bold' if report.overdue? %><%= 'text-warning fw-bold' if report.deadline_soon? %>">
+              <% if report.deadline %>
+                <span title="<%= format_datetime(report.deadline) %>">
+                  <% if report.overdue? %>
+                    <%= t("views.shared.deadline.overdue_ago", time: time_ago_in_words(report.deadline)) %>
+                  <% elsif report.deadline_soon? %>
+                    <%= report.deadline.to_date == Date.today ? t("views.shared.deadline.today") : report.deadline.to_date == Date.tomorrow ? t("views.shared.deadline.tomorrow") : t("views.shared.deadline.in_days", time: time_ago_in_words(report.deadline).gsub(/\d+/, '').strip) %>
+                  <% else %>
+                    <%= format_datetime(report.deadline) %>
+                  <% end %>
+                </span>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td title="<%= format_datetime(report.created_at) %>">
+              <%= time_ago_in_words(report.created_at) %> <%= t("activity_feed.ago") %>
+            </td>
+            <td>
+              <div class="quick-actions">
+                <% if policy(report).take_in_progress? %>
+                  <%= button_to t("views.shared.buttons.take_in_progress"), take_in_progress_reporting_report_path(report), method: :patch, class: "btn btn-primary" %>
+                <% end %>
+                <% if policy(report).submit? %>
+                  <%= button_to t("views.shared.buttons.submit_for_review"), submit_reporting_report_path(report), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.submit_report") }, class: "btn btn-success" %>
+                <% end %>
+                <% if policy(report).accept? %>
+                  <%= button_to t("views.shared.buttons.accept"), accept_reporting_report_path(report), method: :patch, data: { turbo_confirm: t("views.shared.confirm_dialogs.accept_report") }, class: "btn btn-success" %>
+                <% end %>
+                <% if policy(report).reopen? %>
+                  <%= button_to t("views.shared.buttons.reopen"), reopen_reporting_report_path(report), method: :patch, class: "btn btn-warning", data: { turbo_confirm: t("views.shared.confirm_dialogs.reject_report") } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "bi-inbox",
+      message: t("views.shared.empty_state.no_reports"),
+      cta_text: policy(Reporting::Report).create? ? t("views.shared.buttons.create_first_report") : nil,
+      cta_path: policy(Reporting::Report).create? ? new_reporting_report_path : nil %>
+<% end %>
