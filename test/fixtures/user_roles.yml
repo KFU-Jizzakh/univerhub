@@ -1,0 +1,35 @@
+admin_role:
+  user: admin_user
+  role: admin
+
+manager_role:
+  user: manager_user
+  role: reporting_manager
+
+reporter_role:
+  user: reporter_user
+  role: reporting_reporter
+
+reviewer_role:
+  user: reviewer_user
+  role: reporting_reviewer
+
+supervisor_role:
+  user: supervisor_user
+  role: supervisor
+
+visitor_role:
+  user: visitor_user
+  role: reporting_visitor
+
+reporting_admin_role:
+  user: reporting_admin_user
+  role: reporting_admin
+
+dormitory_admin_role:
+  user: dormitory_admin_user
+  role: dormitory_admin
+
+dormitory_commandant_role:
+  user: dormitory_commandant_user
+  role: dormitory_commandant

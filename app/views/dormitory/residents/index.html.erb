@@ -1,0 +1,94 @@
+<% content_for :title, t("views.dormitory.residents.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_residents") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.residents.page_title") %></h1>
+</div>
+
+<%= form_with url: dormitory_residents_path, method: :get, class: "row g-2 mb-4", data: { controller: "filter-form" } do |f| %>
+  <div class="col-md-4">
+    <%= f.label :query, t("views.dormitory.residents.search_placeholder"), class: "visually-hidden" %>
+    <%= f.text_field :query, value: params[:query], placeholder: t("views.dormitory.residents.search_placeholder"), class: "form-control" %>
+  </div>
+  <div class="col-md-3">
+    <%= f.label :status, t("views.shared.labels.status"), class: "visually-hidden" %>
+    <%= f.select :status, options_for_select(
+                  Dormitory::Resident.statuses.map { |k, _v| [t("statuses.#{k}"), k] }, params[:status]),
+                  { include_blank: t("views.shared.labels.all_statuses") }, class: "form-select" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :gender, t("views.dormitory.residents.gender"), class: "visually-hidden" %>
+    <%= f.select :gender, options_for_select(
+                  Dormitory::Resident.genders.map { |k, _v| [t("views.dormitory.residents.gender_#{k}"), k] }, params[:gender]),
+                  { include_blank: t("views.dormitory.residents.all_genders") }, class: "form-select" %>
+  </div>
+  <div class="col-md-3">
+    <%= f.submit t("views.shared.actions.search"), class: "btn btn-outline-primary me-1" %>
+    <%= link_to t("views.shared.actions.reset"), dormitory_residents_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <% if policy(Dormitory::Resident).create? %>
+    <%= link_to t("views.shared.actions.create"), new_dormitory_resident_path, class: "btn btn-primary" %>
+  <% end %>
+  <% if policy(Dormitory::BatchOperation).new? && Dormitory::AcademicYear.active.exists? %>
+    <%= link_to t("views.dormitory.residents.batch_eviction"), new_dormitory_batch_eviction_path, class: "btn btn-outline-warning" %>
+  <% end %>
+</div>
+
+<% if @residents.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.residents.photo") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.current_room") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.gender") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.student_ticket") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.phone") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col" class="text-end"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @residents.each do |resident| %>
+          <tr class="table-row-link" data-url="<%= dormitory_resident_path(resident) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td>
+              <% if resident.photo.attached? %>
+                <%= link_to image_tag(resident.photo, class: "rounded avatar-sm", style: "object-fit: cover;"), dormitory_resident_path(resident) %>
+              <% else %>
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light avatar-sm">
+                  <i class="bi bi-person-circle text-secondary avatar-icon"></i>
+                </span>
+              <% end %>
+            </td>
+            <td><%= link_to resident.full_name, dormitory_resident_path(resident) %></td>
+            <td><% if resident.current_room.present? %><%= link_to resident.current_room.number, dormitory_room_path(resident.current_room) %><% else %>—<% end %></td>
+            <td><%= t("views.dormitory.residents.gender_#{resident.gender}") %></td>
+            <td><%= resident.student_ticket_number %></td>
+            <td><%= resident.phone.presence || "—" %></td>
+            <td><%= status_badge(resident.status) %></td>
+            <td class="text-end">
+              <% if policy(resident).edit? %>
+                <%= link_to t("views.shared.actions.edit"), edit_dormitory_resident_path(resident), class: "btn btn-sm btn-outline-secondary" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "bi-person-vcard",
+      message: t("views.dormitory.residents.no_residents"),
+      cta_text: policy(Dormitory::Resident).create? ? t("views.shared.actions.create") : nil,
+      cta_path: policy(Dormitory::Resident).create? ? new_dormitory_resident_path : nil %>
+<% end %>

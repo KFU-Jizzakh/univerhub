@@ -1,0 +1,20 @@
+<%= form_with(model: report_template) do |f| %>
+  <% if report_template.errors.any? %>
+    <div class="alert alert-danger"><%= report_template.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :name, t("views.shared.labels.name"), class: "form-label" %>
+    <%= f.text_field :name, required: true, placeholder: t("views.shared.placeholders.template_name"), class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, t("views.shared.labels.description"), class: "form-label" %>
+    <%= f.text_area :description, rows: 4, placeholder: t("views.shared.placeholders.template_description"), class: "form-control" %>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit report_template.persisted? ? t("views.shared.actions.save") : t("views.shared.actions.create"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), reporting_report_templates_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

@@ -1,0 +1,43 @@
+<% content_for :title, t("views.dormitory.buildings.new_building") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_buildings"), dormitory_buildings_path %>
+  <%= breadcrumb t("views.shared.actions.create") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.buildings.new_building") %></h1>
+</div>
+
+<%= form_with(model: @building, url: dormitory_buildings_path) do |f| %>
+  <%= render "shared/form_errors", object: @building %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :name, t("views.shared.labels.name"), class: "form-label" %>
+        <%= f.text_field :name, required: true, autofocus: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :address, t("views.dormitory.buildings.address"), class: "form-label" %>
+        <%= f.text_field :address, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :floors_count, t("views.dormitory.buildings.floors_count"), class: "form-label" %>
+        <%= f.number_field :floors_count, required: true, min: 1, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :description, t("views.shared.labels.description"), class: "form-label" %>
+        <%= f.text_area :description, rows: 3, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.create"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_buildings_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

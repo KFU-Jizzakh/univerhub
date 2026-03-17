@@ -1,0 +1,279 @@
+<% content_for :title, t('dormitory.dashboard.title') %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h3 mb-0"><%= t('dormitory.dashboard.title') %></h1>
+    <div class="btn-group">
+      <%= link_to new_dormitory_resident_path, class: "btn btn-outline-primary" do %>
+        <i class="bi bi-person-plus"></i> <%= t('dormitory.dashboard.actions.add_resident') %>
+      <% end %>
+      <%= link_to new_dormitory_room_path, class: "btn btn-outline-primary" do %>
+        <i class="bi bi-door-open"></i> <%= t('dormitory.dashboard.actions.add_room') %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @active_year %>
+    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+      <span>
+        <i class="bi bi-calendar3 me-2"></i>
+        <%= t('dormitory.dashboard.active_academic_year') %>: <strong><%= @active_year.name %></strong>
+        (<%= l(@active_year.start_date, format: :short) %> — <%= l(@active_year.end_date, format: :short) %>)
+      </span>
+      <span>
+
+        <%= link_to dormitory_academic_years_path, class: "btn btn-sm btn-outline-info" do %>
+          <%= t('dormitory.dashboard.all_years') %>
+        <% end %>
+      </span>
+    </div>
+  <% else %>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+      <span>
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <%= t('dormitory.dashboard.no_active_year') %>
+      </span>
+      <% if policy(Dormitory::AcademicYear).new? %>
+        <%= link_to new_dormitory_academic_year_path, class: "btn btn-sm btn-primary" do %>
+          <i class="bi bi-plus-circle"></i> <%= t('dormitory.dashboard.create_academic_year') %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t('dormitory.dashboard.metrics.buildings') %></div>
+        <div class="h2 mb-0"><%= @buildings_count %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t('dormitory.dashboard.metrics.rooms') %></div>
+        <div class="h2 mb-0"><%= @rooms_count %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t('dormitory.dashboard.metrics.residents') %></div>
+        <div class="h2 mb-0"><%= @residents_count %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm bg-light">
+        <div class="text-muted small"><%= t('dormitory.dashboard.metrics.occupancy_rate') %></div>
+        <div class="h2 mb-0"><%= @occupancy_rate %>%<%= " (#{@current_occupancy}/#{@total_capacity})" %></div>
+      </div>
+    </div>
+  </div>
+
+  <% if policy([:dormitory, :export]).index? %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <%= link_to dormitory_exports_settled_residents_path, class: "card text-center p-3 shadow-sm text-decoration-none" do %>
+          <div class="text-muted small"><%= t("views.dormitory.exports.settled_residents") %></div>
+          <i class="bi bi-download fs-4"></i> CSV
+        <% end %>
+      </div>
+      <div class="col-md-3">
+        <%= link_to dormitory_exports_free_slots_path, class: "card text-center p-3 shadow-sm text-decoration-none" do %>
+          <div class="text-muted small"><%= t("views.dormitory.exports.free_slots") %></div>
+          <i class="bi bi-download fs-4"></i> CSV
+        <% end %>
+      </div>
+      <div class="col-md-3">
+        <%= link_to dormitory_exports_history_path, class: "card text-center p-3 shadow-sm text-decoration-none" do %>
+          <div class="text-muted small"><%= t("views.dormitory.exports.history") %></div>
+          <i class="bi bi-download fs-4"></i> CSV
+        <% end %>
+      </div>
+      <div class="col-md-3">
+        <%= link_to dormitory_exports_occupancy_stats_path, class: "card text-center p-3 shadow-sm text-decoration-none" do %>
+          <div class="text-muted small"><%= t("views.dormitory.exports.occupancy_stats") %></div>
+          <i class="bi bi-download fs-4"></i> CSV
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-white fw-bold"><%= t('dormitory.dashboard.alerts.title') %></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-danger"><%= t('dormitory.dashboard.alerts.overcrowded') %></span>
+              <span class="fw-bold"><%= @overcrowded_rooms.size %></span>
+            </div>
+            <div class="list-group list-group-flush overflow-auto scrollable-list">
+              <% if @overcrowded_rooms.any? %>
+                <% @overcrowded_rooms.each do |room| %>
+                  <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span><%= link_to "#{room.building.name} #{room.number}", dormitory_room_path(room) %></span>
+                    <span class="text-danger fw-bold"><%= room.current_occupancy %> / <%= room.capacity %></span>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-muted small px-0"><%= t('dormitory.dashboard.alerts.no_overcrowded') %></div>
+              <% end %>
+            </div>
+          </div>
+            <hr>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-warning text-dark"><%= t('dormitory.dashboard.alerts.overdue') %></span>
+                <span class="fw-bold"><%= @overdue_accommodations.size %></span>
+              </div>
+              <div class="list-group list-group-flush overflow-auto scrollable-list">
+                <% if @overdue_accommodations.any? %>
+                  <% @overdue_accommodations.each do |acc| %>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                      <span>
+                        <%= link_to acc.resident.full_name, dormitory_resident_path(acc.resident) %>
+                        <small class="text-muted ms-1"><%= acc.room.building.name %> <%= acc.room.number %></small>
+                      </span>
+                      <span class="text-warning small"><%= l(acc.planned_end_date, format: :short) %></span>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <div class="text-muted small px-0"><%= t('dormitory.dashboard.alerts.no_overdue') %></div>
+                <% end %>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-white fw-bold"><%= t('dormitory.dashboard.stats.room_distribution') %></div>
+        <div class="card-body">
+          <div class="row g-2">
+            <% @room_status_counts.each do |status, count| %>
+              <div class="col-6">
+                <div class="p-2 border rounded bg-light text-center">
+                  <div class="text-muted small"><%= t("dormitory.room.status.#{status}") %></div>
+                  <div class="fw-bold"><%= count %></div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white fw-bold"><%= t('dormitory.dashboard.stats.building_breakdown') %></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col" class="ps-3"><%= t('dormitory.dashboard.table.building') %></th>
+                  <th scope="col" class="text-center"><%= t('dormitory.dashboard.table.occupancy') %></th>
+                  <th scope="col" class="text-center"><%= t('dormitory.dashboard.table.rate') %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @building_stats.each do |stat| %>
+                  <tr>
+                    <td class="ps-3"><%= stat[:building].name %></td>
+                    <td class="text-center"><%= stat[:occupancy] %> / <%= stat[:capacity] %></td>
+                    <td class="text-center">
+                      <div class="d-flex align-items-center justify-content-center">
+                        <span class="me-2"><%= stat[:occupancy_rate] %>%</span>
+                        <div class="progress w-50 progress--sm">
+                          <div class="progress-bar <%= stat[:occupancy_rate] > 90 ? 'bg-danger' : (stat[:occupancy_rate] > 70 ? 'bg-warning' : 'bg-success') %>" 
+                               style="width: <%= stat[:occupancy_rate] %>%"></div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white fw-bold"><%= t('dormitory.dashboard.stats.demographics') %></div>
+        <div class="card-body">
+          <div class="mb-4">
+            <div class="text-muted small mb-2"><%= t('dormitory.dashboard.demographics.gender') %></div>
+            <div class="d-flex justify-content-between">
+              <span><%= t('dormitory.resident.gender.male') %>: <strong><%= @resident_gender_counts['male'] || 0 %></strong></span>
+              <span><%= t('dormitory.resident.gender.female') %>: <strong><%= @resident_gender_counts['female'] || 0 %></strong></span>
+            </div>
+          </div>
+          <div>
+            <div class="text-muted small mb-2"><%= t('dormitory.dashboard.demographics.status') %></div>
+            <ul class="list-unstyled mb-0">
+              <% @resident_status_counts.each do |status, count| %>
+                <li class="d-flex justify-content-between mb-1">
+                  <span><%= t("dormitory.resident.status.#{status}") %></span>
+                  <span class="fw-bold"><%= count %></span>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white fw-bold"><%= t('dormitory.dashboard.events.title') %></div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        <% if @recent_events.any? %>
+          <% @recent_events.each do |event| %>
+            <div class="list-group-item py-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <span class="fw-bold"><%= event.actor&.full_name || t('dormitory.dashboard.events.system') %></span>
+                  <span class="text-muted small mx-2"><%= t('dormitory.dashboard.events.action_label') %></span>
+                  <span class="badge bg-secondary"><%= t("activity.actions.#{event.action}", default: event.action.humanize) %></span>
+                  <% if event.record_id.present? %>
+                    <span class="ms-2">
+                      <% case event.record_type
+                         when "Dormitory::Resident" %>
+                        <%= link_to t('dormitory.dashboard.events.resident_link', id: event.record_id), dormitory_resident_path(event.record_id), class: "small" %>
+                      <% when "Dormitory::Accommodation" %>
+                        <%= link_to t('dormitory.dashboard.events.accommodation_link', id: event.record_id), dormitory_accommodation_path(event.record_id), class: "small" %>
+                      <% when "Dormitory::Room" %>
+                        <%= link_to t('dormitory.dashboard.events.room_link', id: event.record_id), dormitory_room_path(event.record_id), class: "small" %>
+                      <% when "Dormitory::Building" %>
+                        <%= link_to t('dormitory.dashboard.events.building_link', id: event.record_id), dormitory_building_path(event.record_id), class: "small" %>
+                      <% end %>
+                    </span>
+                  <% end %>
+                </div>
+                <div class="text-muted small"><%= l(event.created_at, format: :short) %></div>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <%= render "shared/empty_state", icon: "bi-clock-history", message: t("dormitory.dashboard.events.empty") %>
+        <% end %>
+      </div>
+      <% if @recent_events.any? %>
+        <div class="card-footer bg-white text-center">
+          <%= link_to activity_feed_index_path, class: "btn btn-sm btn-outline-primary" do %>
+            <%= t("dormitory.dashboard.events.view_all") %>
+          <% end %>
+        </div>
+      <% end %>
+  </div>
+</div>
+

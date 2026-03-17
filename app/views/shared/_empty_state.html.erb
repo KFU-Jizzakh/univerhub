@@ -1,0 +1,9 @@
+<div class="empty-state">
+  <% if local_assigns[:icon] %>
+    <div class="empty-state-icon"><i class="bi <%= icon %>"></i></div>
+  <% end %>
+  <p><%= message %></p>
+  <% if local_assigns[:cta_text] && local_assigns[:cta_path] %>
+    <%= link_to cta_text, cta_path, class: "btn btn-primary btn-sm" %>
+  <% end %>
+</div>

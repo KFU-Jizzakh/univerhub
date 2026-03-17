@@ -1,0 +1,89 @@
+<% content_for :title, t("views.dormitory.buildings.show_title", name: @building.name) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_buildings"), dormitory_buildings_path %>
+  <%= breadcrumb @building.name %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= @building.name %></h1>
+</div>
+
+<div class="info-grid mb-4">
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.name") %></span>
+    <span class="info-value"><%= @building.name %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.buildings.address") %></span>
+    <span class="info-value"><%= @building.address %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.buildings.floors_count") %></span>
+    <span class="info-value"><%= @building.floors_count %></span>
+  </div>
+  <% if @building.description.present? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.shared.labels.description") %></span>
+      <span class="info-value"><%= @building.description %></span>
+    </div>
+  <% end %>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.created") %></span>
+    <span class="info-value"><%= format_datetime(@building.created_at) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.audit.created_by") %></span>
+    <span class="info-value"><%= created_by_info(@building) %></span>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 my-3">
+  <% if policy(@building).edit? %>
+    <%= link_to t("views.shared.actions.edit"), edit_dormitory_building_path(@building), class: "btn btn-outline-secondary" %>
+  <% end %>
+  <% if policy(Dormitory::BatchOperation).new? && Dormitory::AcademicYear.active.exists? %>
+    <%= link_to t("views.dormitory.buildings.batch_eviction"), new_dormitory_batch_eviction_path, class: "btn btn-outline-warning" %>
+  <% end %>
+  <% if policy(@building).destroy? %>
+    <%= button_to t("views.shared.actions.delete"), dormitory_building_path(@building), method: :delete, data: { turbo_confirm: t("views.dormitory.buildings.confirm_delete", name: @building.name) }, class: "btn btn-outline-danger" %>
+  <% end %>
+  <%= link_to t("views.shared.actions.back"), dormitory_buildings_path, class: "btn btn-outline-secondary" %>
+</div>
+
+<hr class="my-4">
+
+<h4 class="mb-3"><%= t("views.dormitory.buildings.rooms_in_building") %></h4>
+
+<% building_rooms = @building_rooms %>
+<% if building_rooms.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.rooms.room_number") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.floor") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.capacity") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.current_occupancy") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% building_rooms.each do |room| %>
+          <tr>
+            <td><%= link_to room.number, dormitory_room_path(room) %></td>
+            <td><%= room.floor %></td>
+            <td><%= room.capacity %></td>
+            <td><%= room.current_occupancy %></td>
+            <td><%= status_badge(room.status) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-door-open", message: t("views.dormitory.rooms.no_rooms") %>
+<% end %>
+  <%== pagy_nav_html(@pagy) %>
+
+<%= render_audit_trail(@audit_events) %>

@@ -1,0 +1,30 @@
+<%= form_with(model: [ @report, @report_item ], url: reporting_report_report_item_path(@report, @report_item)) do |f| %>
+  <% if @report_item.errors.any? %>
+    <div class="alert alert-danger"><%= @report_item.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :content, t("views.shared.labels.content"), class: "form-label" %>
+    <%= f.text_area :content, rows: 4, class: "form-control" %>
+  </div>
+
+  <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
+    <%= f.label :attachments, t("views.shared.labels.attachments"), class: "form-label" %>
+    <%= f.file_field :attachments, accept: ".pdf,.jpg,.jpeg,.png", class: "d-none", data: { drop_zone_target: "input" } %>
+    <div class="drop-zone" data-drop-zone-target="zone">
+      <div data-drop-zone-target="placeholder">
+        <i class="bi bi-cloud-arrow-up drop-zone-icon"></i>
+        <span><%= t("views.shared.drop_zone.hint") %></span>
+      </div>
+      <div data-drop-zone-target="list"></div>
+    </div>
+    <% if @report_item.attachments_required? %>
+      <small class="text-warning"><%= t("views.shared.hints.attachments_required") %></small>
+    <% end %>
+  </div>
+
+  <div class="d-flex gap-2 my-3">
+    <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), reporting_report_path(@report), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

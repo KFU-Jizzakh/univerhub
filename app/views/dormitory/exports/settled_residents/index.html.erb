@@ -1,0 +1,48 @@
+<% content_for :title, t("views.dormitory.exports.settled_residents") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_dashboard"), dormitory_dashboard_path %>
+  <%= breadcrumb t("views.dormitory.exports.settled_residents") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.exports.settled_residents") %></h1>
+  <%= link_to dormitory_exports_settled_residents_path(format: :csv, building_id: params[:building_id], academic_year_id: params[:academic_year_id]), class: "btn btn-success" do %>
+    <i class="bi bi-download"></i> <%= t("views.dormitory.exports.download_csv") %>
+  <% end %>
+</div>
+
+<%= render "shared/export_filters", url: dormitory_exports_settled_residents_path %>
+
+<% if @preview.any? %>
+  <div class="card shadow-sm">
+    <div class="card-header bg-white">
+      <span class="fw-bold"><%= t("views.dormitory.exports.preview", count: [ @preview.size, 50 ].min) %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><%= t("activerecord.attributes.dormitory/resident.full_name") %></th>
+            <th><%= t("activerecord.attributes.dormitory/resident.student_ticket_number") %></th>
+            <th><%= t("views.dormitory.exports.building") %></th>
+            <th><%= t("views.dormitory.exports.room") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @preview.each do |resident| %>
+            <tr>
+              <td><%= resident.full_name %></td>
+              <td><%= resident.student_ticket_number %></td>
+              <td><%= resident.current_room&.building&.name %></td>
+              <td><%= resident.current_room&.number %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-people", message: t("views.dormitory.exports.no_data") %>
+<% end %>

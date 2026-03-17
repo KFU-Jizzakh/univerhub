@@ -1,0 +1,21 @@
+<%= form_with(model: [ @report, @report_item ], url: grade_reporting_report_report_item_path(@report, @report_item), data: { controller: "form-validation", form_validation_grade_not_number_message: t("views.shared.validation.grade_not_number"), form_validation_grade_min_message: t("views.shared.validation.grade_min", min: 0), form_validation_grade_max_message: t("views.shared.validation.grade_max", max: @report_item.max_grade) }) do |f| %>
+  <% if @report_item.errors.any? %>
+    <div class="alert alert-danger"><%= @report_item.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :grade, t("views.shared.labels.grade"), class: "form-label" %>
+    <%= tag.span "(#{t("views.shared.labels.max_grade")}: #{@report_item.max_grade})" if @report_item.max_grade %>
+    <%= f.number_field :grade, min: 0, max: @report_item.max_grade, class: "form-control", data: { form_validation_target: "gradeInput" } %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :grade_comment, t("views.shared.labels.grade_comment"), class: "form-label" %>
+    <%= f.text_area :grade_comment, rows: 2, class: "form-control" %>
+  </div>
+
+  <div class="d-flex gap-2 my-3">
+    <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), reporting_report_path(@report), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

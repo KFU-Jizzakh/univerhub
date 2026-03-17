@@ -1,0 +1,63 @@
+<% content_for :title, t("views.dormitory.accommodations.edit_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_accommodations"), dormitory_accommodations_path %>
+  <%= breadcrumb @accommodation.resident.full_name, dormitory_accommodation_path(@accommodation) %>
+  <%= breadcrumb t("views.dormitory.accommodations.edit_title") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.dormitory.accommodations.edit_title") %> — <%= @accommodation.resident.full_name %></h2>
+</div>
+
+<%= form_with(model: @accommodation, url: dormitory_accommodation_path(@accommodation), method: :patch,
+               multipart: true) do |f| %>
+  <% if @accommodation.errors.any? %>
+    <div class="alert alert-danger"><%= @accommodation.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <%= render "document_fields", f: f %>
+    </div>
+
+    <div class="col-md-6">
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_details") %></h5>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.residents.full_name") %></span>
+        <span class="info-value"><%= link_to @accommodation.resident.full_name, dormitory_resident_path(@accommodation.resident) %></span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.building") %></span>
+        <span class="info-value"><%= link_to @accommodation.room.building.name, dormitory_building_path(@accommodation.room.building) %></span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.room") %></span>
+        <span class="info-value"><%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %></span>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :start_date, t("views.dormitory.accommodations.start_date"), class: "form-label" %>
+        <%= f.date_field :start_date, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :planned_end_date, t("views.dormitory.accommodations.planned_end_date"), class: "form-label" %>
+        <%= f.date_field :planned_end_date, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :comment, t("views.dormitory.accommodations.comment"), class: "form-label" %>
+        <%= f.text_area :comment, class: "form-control", rows: 3 %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_accommodation_path(@accommodation), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

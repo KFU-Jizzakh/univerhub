@@ -1,0 +1,14 @@
+_fixture:
+  model_class: Dormitory::AcademicYear
+
+active_year_2025_2026:
+  name: "2025/2026"
+  start_date: <%= Date.new(2025, 9, 1) %>
+  end_date: <%= Date.new(2026, 8, 31) %>
+  status: active
+
+pending_year_2026_2027:
+  name: "2026/2027"
+  start_date: <%= Date.new(2026, 9, 1) %>
+  end_date: <%= Date.new(2027, 8, 31) %>
+  status: pending

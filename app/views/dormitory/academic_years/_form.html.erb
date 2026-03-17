@@ -1,0 +1,39 @@
+<% content_for :title, action_name == "new" ? t("views.dormitory.academic_years.new_year") : t("views.dormitory.academic_years.edit_year") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_academic_years"), dormitory_academic_years_path %>
+  <%= breadcrumb action_name == "new" ? t("breadcrumbs.new") : t("breadcrumbs.edit") %>
+<% end %>
+
+<h1 class="h3 mb-4"><%= action_name == "new" ? t("views.dormitory.academic_years.new_year") : t("views.dormitory.academic_years.edit_year") %></h1>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <%= form_with model: academic_year,
+          url: academic_year.persisted? ? dormitory_academic_year_path(academic_year) : dormitory_academic_years_path,
+          local: true do |f| %>
+
+      <div class="mb-3">
+        <%= f.label :name, t("activerecord.attributes.dormitory/academic_year.name"), class: "form-label" %>
+        <%= f.text_field :name, class: "form-control", required: true %>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <%= f.label :start_date, t("activerecord.attributes.dormitory/academic_year.start_date"), class: "form-label" %>
+          <%= f.date_field :start_date, class: "form-control", required: true %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :end_date, t("activerecord.attributes.dormitory/academic_year.end_date"), class: "form-label" %>
+          <%= f.date_field :end_date, class: "form-control", required: true %>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+        <%= link_to t("views.shared.actions.cancel"), dormitory_academic_years_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

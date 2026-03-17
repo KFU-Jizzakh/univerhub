@@ -1,0 +1,70 @@
+<% content_for :title, @academic_year.name %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("navigation.dormitory") %>
+  <%= breadcrumb t("navigation.dormitory_academic_years"), dormitory_academic_years_path %>
+  <%= breadcrumb @academic_year.name %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= @academic_year.name %></h1>
+  <div class="btn-group">
+    <% if policy(@academic_year).edit? && !@academic_year.closed? %>
+      <%= link_to edit_dormitory_academic_year_path(@academic_year), class: "btn btn-outline-primary" do %>
+        <i class="bi bi-pencil"></i> <%= t("views.shared.actions.edit") %>
+      <% end %>
+    <% end %>
+    <% if policy(@academic_year).update? && @academic_year.pending? %>
+      <%= button_to dormitory_academic_year_path(@academic_year), method: :patch,
+            params: { dormitory_academic_year: { status_event: "activate" } },
+            class: "btn btn-success",
+            form: { data: { turbo_confirm: t("views.dormitory.academic_years.confirm_activate") } } do %>
+        <i class="bi bi-check-circle"></i> <%= t("views.dormitory.academic_years.activate") %>
+      <% end %>
+    <% end %>
+    <% if policy(@academic_year).update? && @academic_year.active? %>
+      <%= button_to dormitory_academic_year_path(@academic_year), method: :patch,
+            params: { dormitory_academic_year: { status_event: "close" } },
+            class: "btn btn-warning",
+            form: { data: { turbo_confirm: t("views.dormitory.academic_years.confirm_close") } } do %>
+        <i class="bi bi-x-circle"></i> <%= t("views.dormitory.academic_years.close") %>
+      <% end %>
+    <% end %>
+    <% if policy(@academic_year).destroy? && @academic_year.pending? %>
+      <%= button_to dormitory_academic_year_path(@academic_year), method: :delete,
+            class: "btn btn-outline-danger",
+            form: { data: { turbo_confirm: t("views.dormitory.academic_years.confirm_delete", name: @academic_year.name) } } do %>
+        <i class="bi bi-trash"></i> <%= t("views.shared.actions.delete") %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5"><%= t("activerecord.attributes.dormitory/academic_year.name") %></dt>
+          <dd class="col-sm-7"><%= @academic_year.name %></dd>
+          <dt class="col-sm-5"><%= t("activerecord.attributes.dormitory/academic_year.start_date") %></dt>
+          <dd class="col-sm-7"><%= l(@academic_year.start_date, format: :short) %></dd>
+          <dt class="col-sm-5"><%= t("activerecord.attributes.dormitory/academic_year.end_date") %></dt>
+          <dd class="col-sm-7"><%= l(@academic_year.end_date, format: :short) %></dd>
+          <dt class="col-sm-5"><%= t("activerecord.attributes.dormitory/academic_year.status") %></dt>
+          <dd class="col-sm-7"><%= status_badge(@academic_year.status) %></dd>
+          <% if @academic_year.closed_at %>
+            <dt class="col-sm-5"><%= t("activerecord.attributes.dormitory/academic_year.closed_at") %></dt>
+            <dd class="col-sm-7"><%= l(@academic_year.closed_at, format: :short) %></dd>
+          <% end %>
+          <dt class="col-sm-5"><%= t("views.dormitory.audit.created_by") %></dt>
+          <dd class="col-sm-7"><%= created_by_info(@academic_year) %></dd>
+          <dt class="col-sm-5"><%= t("views.dormitory.audit.last_modified") %></dt>
+          <dd class="col-sm-7"><%= last_modified_by(@academic_year) %></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= render_audit_trail(@audit_events) %>

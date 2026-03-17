@@ -1,0 +1,1116 @@
+ru:
+  accessibility:
+    skip_to_content: "Перейти к основному содержимому"
+    user_menu: "Меню пользователя"
+    more_actions: "Дополнительные действия"
+
+  date:
+    formats:
+      short: "%d.%m.%Y"
+  time:
+    formats:
+      short: "%d.%m.%Y %H:%M"
+
+  activerecord:
+    attributes:
+      dormitory/academic_year:
+        name: "Название"
+        start_date: "Дата начала"
+        end_date: "Дата окончания"
+        status: "Статус"
+        closed_at: "Дата закрытия"
+      dormitory/batch_operation:
+        building: "Корпус"
+        operation_type: "Тип операции"
+        status: "Статус"
+        total_count: "Всего"
+        created_at: "Дата"
+      dormitory/accommodation:
+        academic_year: "Учебный год"
+        start_date: "Дата начала"
+        status: "Статус"
+        eviction_reason: "Причина выселения"
+        comment: "Комментарий"
+      dormitory/room:
+        building: "Корпус"
+        floor: "Этаж"
+        number: "Номер"
+        capacity: "Вместимость"
+      dormitory/resident:
+        full_name: "ФИО"
+        student_ticket_number: "№ студ. билета"
+    errors:
+      models:
+        reporting/report:
+          attributes:
+            reviewer_id:
+              cannot_be_same_as_reporter: "не может совпадать с исполнителем"
+            report_template_id:
+              not_available: "шаблон недоступен"
+            base:
+              no_items: "Отчёт должен содержать хотя бы один пункт"
+              missing_attachments: "Необходимо прикрепить файлы к обязательным пунктам"
+        reporting/report_comment:
+          attributes:
+            body:
+              blank: "не может быть пустым"
+              too_long: "слишком длинный (максимум %{count} символов)"
+        user:
+          attributes:
+            email_address:
+              blank: "не может быть пустым"
+              taken: "уже занят"
+            password:
+              blank: "не может быть пустым"
+              too_short: "слишком короткий (минимум %{count} символов)"
+            password_confirmation:
+              confirmation: "не совпадает"
+        user_profile:
+          attributes:
+            avatar:
+              invalid_format: "неподдерживаемый формат (допустимы JPEG, PNG, WebP)"
+              too_large: "размер файла превышает %{max_size}"
+        dormitory/room:
+          attributes:
+            building:
+              required: "не может быть пустым"
+            floor:
+              greater_than_allowed: "не может быть больше %{count} (количество этажей в корпусе)"
+            capacity:
+              less_than_occupancy: "не может быть меньше текущего числа проживающих (%{count})"
+            number:
+              taken_in_building: "уже занят в этом корпусе"
+            status:
+              cannot_delete_not_free: "комната должна быть свободна"
+            base:
+              cannot_delete_occupied: "Сначала выселите всех проживающих"
+        dormitory/building:
+          attributes:
+            base:
+              cannot_delete_with_rooms: "Нельзя удалить корпус, в котором есть комнаты. Сначала удалите все комнаты."
+        dormitory/resident:
+          attributes:
+            last_name:
+              invalid_format: "допускаются только буквы, дефис и пробел"
+            first_name:
+              invalid_format: "допускаются только буквы, дефис и пробел"
+            middle_name:
+              invalid_format: "допускаются только буквы, дефис и пробел"
+            date_of_birth:
+              future_date: "не может быть в будущем"
+            phone:
+              invalid_phone: "неверный формат (ожидается +7XXXXXXXXXX)"
+            email:
+              invalid_email: "неверный формат email"
+            student_ticket_number:
+              taken: "уже существует"
+            gender:
+              immutable_when_settled: "нельзя изменить пол заселённого проживающего"
+            status:
+              cannot_delete_settled: "Сначала выселите проживающего"
+            photo:
+              invalid_format: "неподдерживаемый формат (допустимы JPEG, PNG, WebP)"
+              too_large: "размер файла превышает %{max_size}"
+        dormitory/accommodation:
+          attributes:
+            resident:
+              required: "не может быть пустым"
+              already_settled: "Проживающий уже заселён. Сначала выселите или переселите его."
+              not_settled: "Проживающий не заселён."
+            room:
+              required: "не может быть пустой"
+              full: "Комната полностью занята."
+              gender_conflict: "Гендерный конфликт: пол проживающего не совпадает с ограничением комнаты."
+              invalid_state: "Недопустимое состояние комнаты."
+              same_room: "Нельзя переселить в ту же комнату."
+            status:
+              not_active: "Размещение неактивно."
+            base:
+              files_required: "Необходимо прикрепить все документы."
+              no_active_academic_year: "Нет активного учебного года. Создайте и активируйте учебный год."
+            planned_end_date:
+              must_be_after_start_date: "должна быть позже даты начала"
+              shorter_transfer: "новое размещение не может быть короче текущего"
+            renewal_source_id:
+              must_be_completed: "исходное размещение должно быть завершено"
+            application_file:
+              invalid_file_format: "Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG)."
+              file_too_large: "Размер файла превышает 10 МБ."
+            contract_file:
+              invalid_file_format: "Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG)."
+              file_too_large: "Размер файла превышает 10 МБ."
+            payment_receipt:
+              invalid_file_format: "Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG)."
+              file_too_large: "Размер файла превышает 10 МБ."
+            eviction_reason:
+              invalid: "Недопустимая причина выселения."
+            comment:
+              required_for_other: "Укажите комментарий при выборе причины «Иная причина»."
+            actual_end_date:
+              before_start_date: "не может быть раньше даты начала"
+              future_date: "не может быть в будущем"
+              required_for_completed: "должна быть заполнена для завершённого размещения"
+              present_when_active: "не должна быть заполнена для активного размещения"
+        dormitory/academic_year:
+          attributes:
+            base:
+              already_active: "Уже есть активный учебный год. Сначала закройте его."
+              has_active_accommodations: "Нельзя закрыть учебный год: есть активные заселения. Сначала выселите всех проживающих."
+            status:
+              cannot_delete_not_pending: "можно удалить только учебный год в статусе «Ожидание»"
+            end_date:
+              must_be_after_start_date: "должна быть позже даты начала"
+        dormitory/commandant_building:
+           attributes:
+             user:
+               required: "не может быть пустым"
+             building:
+               required: "не может быть пустым"
+             building_id:
+               already_assigned: "уже назначен"
+      messages:
+        blank: "не может быть пустым"
+        required: "не может быть пустым"
+        confirmation: "не совпадает"
+        taken: "уже занят"
+        too_long: "слишком длинный (максимум %{count} символов)"
+        too_short: "слишком короткий (минимум %{count} символов)"
+        invalid: "имеет неверное значение"
+        record_invalid: "Ошибка валидации: %{errors}"
+        greater_than_or_equal_to: "должно быть больше или равно %{count}"
+        less_than_or_equal_to: "должно быть меньше или равно %{count}"
+        not_a_number: "должно быть числом"
+        not_an_integer: "должно быть целым числом"
+        inclusion: "имеет неверное значение"
+
+  reporting:
+    reports:
+      created: "Отчёт создан."
+      updated: "Отчёт обновлён."
+      destroyed: "Отчёт удалён."
+      published: "Отчёт опубликован."
+      taken_in_progress: "Отчёт взят в работу."
+      submitted: "Отчёт отправлен на проверку."
+      accepted: "Отчёт принят."
+      rejected: "Отчёт отклонён."
+      reopened: "Отчёт переоткрыт."
+      pdf_regenerated: "PDF перегенерирован."
+      errors:
+        missing_attachments: "Необходимо прикрепить файлы к пунктам: %{items}"
+        cannot_submit: "Невозможно отправить отчёт в текущем статусе."
+        cannot_accept: "Невозможно принять отчёт: не все пункты оценены."
+        cannot_reject: "Невозможно отклонить отчёт в текущем статусе."
+        cannot_take_in_progress: "Невозможно взять в работу в текущем статусе."
+        cannot_reopen: "Невозможно переоткрыть отчёт в текущем статусе."
+        cannot_publish: "Невозможно опубликовать отчёт в текущем статусе."
+        pdf_generation_failed: "Ошибка генерации PDF."
+
+    report_items:
+      updated: "Пункт обновлён."
+      graded: "Оценка выставлена."
+
+    report_template_items:
+      created: "Пункт добавлен."
+      updated: "Пункт обновлён."
+      destroyed: "Пункт удалён."
+
+    reporters:
+      not_a_reporter: "Пользователь не является исполнителем."
+
+    report_templates:
+      errors:
+        cannot_publish: "Невозможно опубликовать шаблон в текущем статусе."
+        cannot_archive: "Невозможно архивировать шаблон в текущем статусе."
+      created: "Шаблон создан."
+      updated: "Шаблон обновлён."
+      destroyed: "Шаблон удалён."
+      published: "Шаблон опубликован."
+      archived: "Шаблон архивирован."
+
+    comments:
+      created: "Комментарий добавлен."
+      destroyed: "Комментарий удалён."
+
+  dormitory:
+    dashboard:
+      title: "Дашборд общежития"
+      metrics:
+        buildings: "Всего корпусов"
+        rooms: "Всего комнат"
+        residents: "Всего проживающих"
+        occupancy_rate: "Заполняемость"
+      alerts:
+        title: "Операционные оповещения"
+        overcrowded: "Переполненные комнаты"
+        room_label: "Комната"
+        no_overcrowded: "Переполненных комнат нет"
+        overdue: "Просроченные заселения"
+        no_overdue: "Просроченных заселений нет"
+      stats:
+        room_distribution: "Распределение комнат по статусам"
+        building_breakdown: "Заполняемость по корпусам"
+        demographics: "Демография жителей"
+      table:
+        building: "Корпус"
+        occupancy: "Заполнение"
+        rate: "Процент"
+      demographics:
+        gender: "Пол"
+        status: "Статус"
+      events:
+        title: "Последние события"
+        action_label: "выполнил(а) действие"
+        system: "Система"
+        empty: "Событий пока нет"
+        resident_link: "Проживающий #%{id}"
+        accommodation_link: "Размещение #%{id}"
+        room_link: "Комната #%{id}"
+        building_link: "Корпус #%{id}"
+        view_all: "Все события"
+      actions:
+        add_resident: "Заселить жильца"
+        add_room: "Добавить комнату"
+      active_academic_year: "Активный учебный год"
+      no_active_year: "Нет активного учебного года. Заселение невозможно."
+      create_academic_year: "Создать учебный год"
+      all_years: "Все годы"
+    resident:
+      gender:
+        male: "Мужской"
+        female: "Женский"
+      status:
+        not_settled: "Не заселён"
+        settled: "Заселён"
+        temporarily_absent: "Временно отсутствует"
+        evicted: "Выселён"
+    room:
+      status:
+        free: "Свободна"
+        partially_occupied: "Занята частично"
+        fully_occupied: "Занята полностью"
+        overcrowded: "Переполнена"
+    buildings:
+      created: "Корпус создан."
+      updated: "Корпус обновлён."
+      destroyed: "Корпус удалён."
+    rooms:
+      created: "Комната создана."
+      updated: "Комната обновлена."
+      destroyed: "Комната удалена."
+    residents:
+      created: "Проживающий добавлен."
+      updated: "Данные проживающего обновлены."
+      destroyed: "Проживающий удалён."
+    accommodations:
+      settled: "Проживающий заселён в комнату %{room_number}."
+      updated: "Размещение обновлено."
+      transferred: "Проживающий переселён в комнату %{room_number}."
+      evicted: "Проживающий выселен из комнаты %{room_number}."
+      not_active: "Размещение неактивно."
+    academic_years:
+      created: "Учебный год создан."
+      updated: "Учебный год обновлён."
+      activated: "Учебный год активирован."
+      closed: "Учебный год закрыт."
+      destroyed: "Учебный год удалён."
+    batch_operations:
+      title: "Закрытие учебного года"
+      new_operation: "Массовое выселение"
+      step1_title: "Шаг 1: Выбор здания"
+      step2_title: "Шаг 2: Выбор проживающих"
+      step3_title: "Шаг 3: Причина и параметры"
+      next: "Далее"
+      back: "Назад"
+      execute: "Выполнить"
+      confirm_execute: "Выполнить массовое выселение?"
+      select_building_first: "Сначала выберите здание"
+      total: "Всего"
+      success: "Успешно"
+      errors_title: "Ошибки"
+      error_message: "Сообщение об ошибке"
+      back_to_dashboard: "На дашборд"
+      back_to_list: "К списку операций"
+      history_title: "Массовые операции"
+      no_operations: "Массовых операций пока не было"
+      operation_types:
+        mass_eviction: "Массовое выселение"
+      results_title: "Результаты выселения"
+      errors:
+        no_active_year: "Нет активного учебного года"
+        reason_required: "Укажите причину выселения"
+        invalid_reason: "Недопустимая причина выселения"
+        comment_required: "Укажите комментарий для причины «другое»"
+        no_academic_year: "Не указан учебный год"
+        no_building: "Не указано здание"
+        no_residents: "Выберите хотя бы одного проживающего"
+        unknown_residents: "Проживающие не найдены: %{ids}"
+        no_active_accommodation: "Нет активного размещения"
+        wrong_building: "Проживающий не в выбранном здании"
+
+  activity_feed:
+    report: "Отчёт"
+    template: "Шаблон"
+    resident: "Проживающий"
+    accommodation: "Размещение"
+    room: "Комната"
+    building: "Корпус"
+    ago: "назад"
+
+  passwords_mailer:
+    reset:
+      intro_html: "Вы можете сбросить пароль, перейдя по %{link}."
+      link_text: "этой ссылке"
+      expires: "Ссылка действительна в течение %{time}."
+      intro_text: "Вы можете сбросить пароль, перейдя по ссылке:"
+
+  activity:
+    actions:
+      reporting:
+        report:
+          created: "создал(а) отчёт"
+          updated: "обновил(а) отчёт"
+          published: "опубликовал(а) отчёт"
+          taken_in_progress: "взял(а) отчёт в работу"
+          submitted: "отправил(а) отчёт на проверку"
+          accepted: "принял(а) отчёт"
+          rejected: "отклонил(а) отчёт"
+          reopened: "переоткрыл(а) отчёт"
+          discarded: "удалил(а) отчёт"
+        report_template:
+          published: "опубликовал(а) шаблон"
+          archived: "архивировал(а) шаблон"
+        report_comment:
+          created: "добавил(а) комментарий к отчёту"
+          updated: "обновил(а) комментарий к отчёту"
+          destroyed: "удалил(а) комментарий к отчёту"
+        report_item:
+          updated: "обновил(а) пункт отчёта"
+          graded: "выставил(а) оценку за пункт"
+      dormitory:
+        resident:
+          created: "добавил(а) проживающего"
+          updated: "обновил(а) данные проживающего"
+          discarded: "удалил(а) проживающего"
+        accommodation:
+          created: "заселил(а) проживающего"
+          updated: "обновил(а) размещение"
+          transferred: "переселил(а) проживающего"
+          evicted: "выселил(а) проживающего"
+        room:
+          created: "создал(а) комнату"
+          updated: "обновил(а) комнату"
+          discarded: "удалил(а) комнату"
+        building:
+          created: "создал(а) корпус"
+          updated: "обновил(а) корпус"
+          discarded: "удалил(а) корпус"
+        commandant_building:
+          created: "назначил(а) коменданта корпуса"
+          updated: "обновил(а) коменданта корпуса"
+          deactivated: "отключил(а) коменданта корпуса"
+          destroyed: "удалил(а) коменданта корпуса"
+        academic_year:
+          created: "создал(а) учебный год"
+          updated: "обновил(а) учебный год"
+          activated: "активировал(а) учебный год"
+          closed: "закрыл(а) учебный год"
+    user_profile:
+      created: "создал(а) профиль пользователя"
+      updated: "обновил(а) профиль пользователя"
+    role:
+      created: "создал(а) роль"
+      updated: "обновил(а) роль"
+      destroyed: "удалил(а) роль"
+    user_role:
+      created: "назначил(а) роль пользователю"
+      updated: "обновил(а) роль пользователя"
+      destroyed: "снял(а) роль с пользователя"
+    payload_keys:
+      rejection_reason: "Причина отклонения"
+      total_grade: "Итоговая оценка"
+
+  notifications:
+    all_read: "Все уведомления прочитаны."
+    page_title: "Уведомления"
+    mark_all_as_read: "Прочитать все"
+    actions:
+      reporting:
+        report:
+          assigned: "назначен вам"
+          submitted: "отправлен на проверку"
+          accepted: "принят"
+          rejected: "отклонён"
+          reopened: "переоткрыт"
+    report_label: "Отчёт"
+    mark_as_read_title: "Отметить как прочитанное"
+
+  admin:
+    users:
+      created: "Пользователь создан."
+      updated: "Пользователь обновлён."
+      cannot_remove_own_admin: "Нельзя снять с себя роль администратора."
+      invalid_role_ids: "содержит некорректные роли"
+      invalid_building_ids: "содержит некорректные здания"
+      activated: "Пользователь разблокирован."
+      deactivated: "Пользователь заблокирован."
+      deleted: "Пользователь удалён."
+      cannot_activate_self: "Нельзя активировать самого себя."
+      cannot_deactivate_self: "Нельзя заблокировать самого себя."
+      cannot_delete_self: "Нельзя удалить самого себя."
+      cannot_deactivate_last_admin: "Нельзя заблокировать последнего активного администратора."
+      cannot_delete_last_admin: "Нельзя удалить последнего активного администратора."
+      cannot_manage_non_module_user: "Нельзя управлять пользователями вне вашего модуля."
+      password_reset: "Пароль сброшен. Временный пароль: %{password}"
+
+  sessions:
+    deactivated: "Ваш аккаунт заблокирован. Обратитесь к администратору."
+    account_deleted: "Аккаунт удалён. Обратитесь к администратору."
+
+  pundit:
+    not_authorized: "У вас нет прав для выполнения этого действия."
+
+  eviction_reasons:
+    transfer: "Переселение"
+    graduation: "Выпуск"
+    expulsion: "Отчисление"
+    voluntary: "По собственному желанию"
+    violation: "Нарушение правил проживания"
+    repair: "Ремонт комнаты"
+    other: "Иная причина"
+
+  breadcrumbs:
+    home: "Главная"
+    reports: "Отчёты"
+    report_templates: "Шаблоны"
+    notifications: "Уведомления"
+    activity_feed: "Активность"
+    reporters: "Исполнители"
+    admin_users: "Пользователи"
+    dormitory_buildings: "Корпуса"
+    dormitory_rooms: "Комнаты"
+    dormitory_residents: "Проживающие"
+    dormitory_accommodations: "Размещения"
+    new: "Создать"
+    edit: "Изменить"
+    back: "Назад"
+
+  views:
+    shared:
+      actions:
+        create: "Создать"
+        save: "Сохранить"
+        cancel: "Отмена"
+        delete: "Удалить"
+        edit: "Изменить"
+        back: "Назад"
+        search: "Найти"
+        reset: "Сбросить"
+        send: "Отправить"
+        confirm: "Подтвердить"
+        filter: "Фильтр"
+      empty_state:
+        no_reports: "Нет отчётов"
+        no_templates: "Нет шаблонов"
+        no_items: "Нет пунктов"
+        no_events: "Нет событий"
+        no_notifications: "Нет уведомлений"
+        no_active_reports: "Нет активных отчётов"
+        no_review_reports: "Нет отчётов на проверке"
+        no_reporters: "Нет исполнителей"
+        no_users: "Нет пользователей"
+        no_template_items: "Нет пунктов в шаблоне"
+        no_accommodations_in_room: "Нет размещений в этой комнате"
+      placeholders:
+        search_by_name: "Поиск по названию..."
+        select_template: "— Выберите шаблон —"
+        select_user: "— Выберите —"
+        report_name: "Название отчёта"
+        report_description: "Описание отчёта"
+        template_name: "Название шаблона"
+        template_description: "Опишите назначение шаблона"
+        item_name: "Название пункта"
+        item_description: "Описание пункта"
+        comment: "Напишите комментарий..."
+        rejection_reason: "Укажите причину отклонения"
+        email: "email@example.com"
+        password: "Введите пароль"
+        new_password: "Новый пароль"
+        repeat_password: "Повторите пароль"
+        password_leave_blank: "Оставьте пустым, чтобы не менять"
+        password_repeat_new: "Повторите новый пароль"
+        password_min_length: "Минимум 6 символов"
+        first_name: "Имя"
+        last_name: "Фамилия"
+        select_building: "— Выберите корпус —"
+        select_reason: "— Выберите причину —"
+      labels:
+        name: "Название"
+        description: "Описание"
+        deadline: "Дедлайн"
+        deadline_from: "Дедлайн от"
+        deadline_to: "Дедлайн до"
+        reporter: "Исполнитель"
+        reviewer: "Проверяющий"
+        creator: "Создатель"
+        status: "Статус"
+        created: "Создан"
+        submitted: "Отправлен"
+        reviewed: "Проверен"
+        total_grade: "Итоговый балл"
+        template: "Шаблон"
+        content: "Содержание"
+        attachments: "Вложения"
+        attachments_required: "Вложения обязательны"
+        pending: "Не сохранено"
+        grade: "Оценка"
+        grade_comment: "Комментарий к оценке"
+        max_grade: "Макс. балл"
+        position: "Позиция"
+        roles: "Роли"
+        email: "Email"
+        password: "Пароль"
+        password_confirmation: "Подтверждение пароля"
+        new_password: "Новый пароль"
+        first_name: "Имя"
+        last_name: "Фамилия"
+        about: "О себе"
+        user_status: "Статус"
+        registered: "Зарегистрирован"
+        items_count: "Пунктов"
+        reports: "Отчёты"
+        rejection_reason: "Причина отклонения"
+        add_comment: "Добавить комментарий"
+        pdf_created_at: "PDF создан %{time}"
+        pdf_file: "PDF"
+        all: "Все"
+        all_statuses: "Все статусы"
+        search_and_filters: "Поиск и фильтры"
+        history: "История изменений"
+        comments: "Комментарии"
+        report_items: "Пункты отчёта"
+        template_items: "Пункты шаблона"
+        new_item: "Новый пункт"
+        edit_item: "Редактирование пункта"
+      confirm_dialogs:
+        publish_report: "Опубликовать отчёт? Он станет доступен исполнителю."
+        submit_report: "Отправить отчёт на проверку?"
+        accept_report: "Принять отчёт? Это финальное действие."
+        reject_report: "Переоткрыть отчёт?"
+        delete_report: "Удалить отчёт? Это действие необратимо."
+        delete_comment: "Удалить комментарий?"
+        regenerate_pdf: "Перегенерировать PDF?"
+        publish_template: "Опубликовать шаблон?"
+        archive_template: "Архивировать шаблон? Он будет недоступен для новых отчётов."
+        delete_template: "Удалить шаблон? Это действие необратимо."
+        delete_item: "Удалить пункт?"
+        deactivate_user: "Деактивировать пользователя %{email}? Он не сможет войти в систему."
+        activate_user: "Активировать пользователя %{email}?"
+      hints:
+        missing_attachments: "Без вложений: %{items}"
+        all_items_graded: "Выставьте баллы за все пункты"
+        attachments_required: "Вложения обязательны"
+      buttons:
+        create_first_report: "Создать первый отчёт"
+        create_first_template: "Создать первый шаблон"
+        add_item: "Добавить пункт"
+        publish: "Опубликовать"
+        take_in_progress: "Взять в работу"
+        submit_for_review: "Отправить на проверку"
+        accept: "Принять"
+        reject: "Отклонить"
+        reopen: "Переоткрыть"
+        confirm_rejection: "Подтвердить отклонение"
+        mark_all_read: "Прочитать все"
+        mark_as_read: "Отметить как прочитанное"
+        download_pdf: "Скачать PDF"
+        regenerate_pdf: "Перегенерировать PDF"
+        archive: "Архивировать"
+        deactivate: "Деактивировать"
+        activate: "Активировать"
+        save_password: "Сохранить пароль"
+        send_instructions: "Отправить инструкции"
+        login: "Войти"
+        forgot_password: "Забыли пароль?"
+        back_to_login: "Назад к входу"
+      deadline:
+        today: "Сегодня"
+        tomorrow: "Завтра"
+        in_days: "Через %{time}"
+        overdue_ago: "Просрочен %{time} назад"
+      page_titles:
+        dashboard: "Дашборд"
+        welcome: "Добро пожаловать, %{user}"
+        reports: "Отчёты"
+        new_report: "Новый отчёт"
+        edit_report: "Редактирование отчёта"
+        report_subtitle: "Создание отчёта на основе шаблона"
+        templates: "Шаблоны отчётов"
+        new_template: "Новый шаблон"
+        edit_template: "Редактирование шаблона"
+        template_subtitle: "Создание шаблона отчёта"
+        notifications: "Уведомления"
+        activity_feed: "Лента активности"
+        reporters: "Исполнители"
+        users: "Пользователи"
+        new_user: "Новый пользователь"
+        edit_user: "Редактирование пользователя"
+        login: "UniverHub"
+        login_subtitle: "Войдите в систему"
+        password_recovery: "Восстановление пароля"
+        password_recovery_subtitle: "Введите email для получения инструкций"
+        new_password: "Новый пароль"
+        new_password_subtitle: "Установите новый пароль"
+      stats:
+        unread_notifications: "Непрочитанных уведомлений"
+        total_reports: "Отчётов создано"
+        published_templates: "Шаблонов опубликовано"
+        active_reports: "Активных отчётов"
+        completed: "Принято"
+        pending_review: "Ожидают проверки"
+        reviewed: "Проверено"
+        total_users: "Пользователей"
+      sections:
+        reports_by_status: "Отчёты по статусам"
+        overdue_reports: "Просроченные отчёты"
+        draft_reports: "Черновики отчётов"
+        my_reports: "Мои отчёты"
+        pending_review: "На проверке"
+        recent_activity: "Последняя активность"
+      report_item:
+        max_grade: "макс. %{grade} б."
+        attachment_ok: "вложение ✓"
+        attachment_required: "вложение обязательно"
+        grade_label: "Оценка:"
+        edit: "Редактировать"
+        grade_button: "Выставить оценку"
+      yes_no:
+        "yes": "Да"
+        "no": "Нет"
+      user_status:
+        active: "Активен"
+        deactivated: "Деактивирован"
+      statuses:
+        active: "Активен"
+        deactivated: "Деактивирован"
+      comments:
+        today: "Сегодня"
+        yesterday: "Вчера"
+      validation:
+        password_min:
+          one: "Минимум %{count} символ"
+          few: "Минимум %{count} символа"
+          many: "Минимум %{count} символов"
+          other: "Минимум %{count} символов"
+        password_mismatch: "Пароли не совпадают"
+        grade_not_number: "Введите число"
+        grade_min: "Минимальное значение: %{min}"
+        grade_max: "Максимальное значение: %{max}"
+      drop_zone:
+        hint: "Перетащите файлы сюда или нажмите для выбора"
+        format_error: "Неподдерживаемый формат файла"
+        size_error: "Размер файла превышает 10 МБ"
+        remove_file: "Удалить файл"
+        unit_bytes: "Б"
+        unit_kb: "КБ"
+        unit_mb: "МБ"
+      resident_ticket:
+        duplicate_warning: "Проживающий с таким номером студбилета уже существует"
+      room_select:
+        room_template: "(этаж {floor}, свободно {slots})"
+
+    admin:
+      users:
+        show:
+          title: "Пользователь"
+          full_name: "ФИО"
+          about: "О себе"
+          buildings: "Корпуса"
+          no_roles: "—"
+          deleted: "Удалён"
+          deactivated: "Заблокирован"
+          reset_password: "Сбросить пароль"
+          block: "Заблокировать"
+          unblock: "Разблокировать"
+          confirm_reset_password: "Сбросить пароль пользователя %{email}?"
+          confirm_deactivate: "Заблокировать пользователя %{email}? Он не сможет войти в систему."
+          confirm_activate: "Разблокировать пользователя %{email}?"
+          confirm_delete: "Удалить пользователя %{email}? Это действие можно отменить."
+        edit:
+          title: "Редактирование пользователя"
+          middle_name: "Отчество"
+          avatar: "Аватар"
+          avatar_hint: "JPEG, PNG, WebP. Максимум 5 МБ."
+          avatar_preview_alt: "Превью аватара"
+          remove_avatar: "Удалить фото"
+          new_password: "Новый пароль"
+          new_password_placeholder: "Оставьте пустым, чтобы не менять"
+          password_confirmation_placeholder: "Повторите новый пароль"
+          deleted_status: "Удалён"
+          deactivated_status: "Заблокирован"
+          roles_legend: "Роли"
+          buildings_legend: "Корпуса"
+        new:
+          title: "Новый пользователь"
+          middle_name: "Отчество"
+          avatar: "Аватар"
+          avatar_hint: "JPEG, PNG, WebP. Максимум 5 МБ."
+          avatar_preview_alt: "Превью аватара"
+          password: "Пароль"
+          password_placeholder: "Минимум 8 символов"
+          password_confirmation_placeholder: "Повторите пароль"
+          roles_legend: "Роли"
+          buildings_legend: "Корпуса"
+
+    report_templates:
+      page_title: "Шаблоны отчётов"
+      show_title: "Шаблон: %{name}"
+    reporters:
+      page_title: "Исполнители"
+      show_title: "Исполнитель: %{name}"
+    reports:
+      show_title: "Отчёт: %{name}"
+      alert_overdue: "Дедлайн истёк"
+      alert_overdue_detail: "Дедлайн: %{deadline}"
+    report_items:
+      edit_title: "Редактирование пункта"
+      grade_title: "Оценка пункта"
+    report_template_items:
+      new_title: "Новый пункт"
+      edit_title: "Редактирование пункта"
+    notifications:
+      page_title: "Уведомления"
+      mark_all_as_read: "Прочитать все"
+    home:
+      page_title: "Дашборд"
+      welcome: "Добро пожаловать, %{user}"
+    profiles:
+      show:
+        title: "Профиль"
+        email: "Email"
+        full_name: "ФИО"
+        roles: "Роли"
+        registered: "Зарегистрирован"
+    dormitory:
+      buildings:
+        page_title: "Корпуса"
+        show_title: "Корпус: %{name}"
+        new_building: "Новый корпус"
+        edit_building: "Редактирование корпуса"
+        address: "Адрес"
+        floors_count: "Количество этажей"
+        rooms_in_building: "Комнаты в корпусе"
+        no_buildings: "Нет корпусов"
+        confirm_delete: "Удалить корпус «%{name}»?"
+        batch_eviction: "Массовое выселение"
+        rooms_count: "Комнат"
+        occupancy_rate: "Заселённость"
+      rooms:
+        page_title: "Комнаты"
+        show_title: "Комната: %{number}"
+        new_room: "Новая комната"
+        edit_room: "Редактирование комнаты"
+        status_overcrowded: "Комната переполнена"
+        overcrowded_detail: "Проживающих: %{current} из %{capacity}"
+        room_number: "Номер комнаты"
+        building: "Корпус"
+        floor: "Этаж"
+        capacity: "Вместимость"
+        current_occupancy: "Проживающих"
+        gender_restriction: "Ограничение по полу"
+        gender_none: "Без ограничений"
+        gender_male: "Мужской"
+        gender_female: "Женский"
+        residents_section: "Проживающие"
+        no_rooms: "Нет комнат"
+        confirm_delete: "Удалить комнату %{number}?"
+        all_buildings: "Все корпуса"
+      residents:
+        page_title: "Проживающие"
+        show_title: "Проживающий: %{name}"
+        new_resident: "Новый проживающий"
+        edit_resident: "Редактирование проживающего"
+        search_placeholder: "Поиск по ФИО..."
+        last_name: "Фамилия"
+        first_name: "Имя"
+        middle_name: "Отчество"
+        date_of_birth: "Дата рождения"
+        email: "Email"
+        photo: "Фото"
+        photo_hint: "Допустимые форматы: JPEG, PNG, WebP"
+        full_name: "ФИО"
+        current_room: "Комната"
+        gender: "Пол"
+        gender_male: "Мужской"
+        gender_female: "Женский"
+        all_genders: "Все"
+        student_ticket: "Студбилет"
+        phone: "Телефон"
+        no_residents: "Нет проживающих"
+        confirm_delete: "Удалить проживающего «%{name}»?"
+        gender_immutable_hint: "Нельзя изменить пол заселённого проживающего"
+        batch_eviction: "Массовое выселение"
+      accommodations:
+        page_title: "Размещения"
+        show_title: "Размещение: %{name}"
+        history_title: "История размещений"
+        new_title: "Заселение"
+        edit_title: "Редактирование размещения"
+        transfer_title: "Переселение"
+        evict_title: "Выселение"
+        building: "Корпус"
+        room: "Комната"
+        start_date: "Дата заселения"
+        comment: "Комментарий"
+        application_number: "Номер заявления"
+        contract_number: "Номер договора"
+        document: "Документ"
+        document_number: "Номер"
+        document_file: "Файл"
+        application: "Заявление"
+        contract: "Договор"
+        receipt: "Квитанция об оплате"
+        no_file: "Нет файла"
+        download: "Скачать"
+        view_details: "Подробнее"
+        evict_button: "Выселить"
+        transfer_button: "Переселить"
+        settle_button: "Заселить"
+        section_documents: "Документы"
+        section_current: "Текущее размещение"
+        section_eviction: "Выселение"
+        section_new_room: "Новая комната"
+        section_room: "Комната"
+        section_details: "Детали"
+        eviction_reason: "Причина выселения"
+        building_prompt: "Выберите корпус"
+        room_prompt: "Выберите комнату"
+        loading_rooms: "Загрузка комнат..."
+        force_label: "Игнорировать ограничения (пол, заполненность)"
+        file_hint: "Допустимые форматы: PDF, JPEG, PNG"
+        confirm_eviction: "Выселить «%{name}»?"
+        comment_required_hint: "Комментарий обязателен при выборе причины «Иная причина»"
+        all_statuses: "Все статусы"
+        all_buildings: "Все корпуса"
+        all_academic_years: "Все учебные года"
+        active: "Активно"
+        completed: "Завершено"
+        cancelled: "Отменено"
+        application_file: "Файл заявления"
+        contract_file: "Файл договора"
+        payment_receipt: "Квитанция об оплате"
+        documents_required: "Документы обязательны"
+        current_room: "Текущая комната"
+        no_accommodations: "Нет размещений"
+        eviction_reason_transfer: "Переселение"
+        eviction_reason_repair: "Ремонт комнаты"
+        planned_end_date: "Плановая дата окончания"
+        overdue_icon_title: "Просрочено"
+        planned_duration: "Плановая продолжительность"
+        actual_duration: "Фактическая продолжительность"
+        days_column: "Дней"
+        days: "%{count} дн."
+      academic_years:
+        page_title: "Учебные года"
+        show_title: "Учебный год: %{name}"
+        new_year: "Новый учебный год"
+        edit_year: "Редактирование учебного года"
+        title: "Учебные года"
+        activate: "Активировать"
+        close: "Закрыть год"
+        empty: "Нет учебных годов"
+        confirm_activate: "Активировать учебный год?"
+        confirm_close: "Закрыть учебный год?"
+        confirm_delete: "Удалить учебный год «%{name}»?"
+      batch_operations:
+        title: "Закрытие учебного года"
+        new_operation: "Массовое выселение"
+        step1_title: "Шаг 1: Выбор здания"
+        step2_title: "Шаг 2: Выбор проживающих"
+        step3_title: "Шаг 3: Причина и параметры"
+        step4_title: "Шаг 4: Итоги"
+        next: "Далее"
+        back: "Назад"
+        execute: "Выполнить"
+        confirm_execute: "Выполнить массовое выселение?"
+        select_building_first: "Сначала выберите здание"
+        total: "Всего"
+        success: "Успешно"
+        errors_title: "Ошибки"
+        error_message: "Сообщение об ошибке"
+        back_to_dashboard: "На дашборд"
+        back_to_list: "К списку операций"
+        history_title: "Массовые операции"
+        no_operations: "Массовых операций пока не было"
+        operation_types:
+          mass_eviction: "Массовое выселение"
+        results_title: "Результаты выселения"
+        errors:
+          no_active_year: "Нет активного учебного года"
+          reason_required: "Укажите причину выселения"
+          invalid_reason: "Недопустимая причина выселения"
+          comment_required: "Укажите комментарий для причины «другое»"
+          no_academic_year: "Не указан учебный год"
+          no_building: "Не указано здание"
+          no_residents: "Выберите хотя бы одного проживающего"
+          unknown_residents: "Проживающие не найдены: %{ids}"
+          no_active_accommodation: "Нет активного размещения"
+          wrong_building: "Проживающий не в выбранном здании"
+      exports:
+        title: "Экспорт данных"
+        settled_residents: "Список заселённых"
+        free_slots: "Список свободных мест"
+        history: "История заселений"
+        occupancy_stats: "Статистика заселённости"
+        occupancy_stats_description: "Агрегированная статистика по корпусам и этажам"
+        download_csv: "Скачать CSV"
+        preview: "Превью (показано %{count} записей)"
+        no_data: "Нет данных для отображения"
+        building: "Корпус"
+        room: "Комната"
+        free: "Свободно"
+        date_from: "Дата с"
+        date_to: "Дата по"
+      audit:
+        action: "Действие"
+        actor: "Пользователь"
+        datetime: "Дата и время"
+        created_by: "Добавлен"
+        last_modified: "Последнее изменение"
+        who_settled: "Кто заселил"
+        who_evicted: "Кто выселил"
+    admin_users:
+      page_title: "Пользователи"
+      create_user: "Создать пользователя"
+  statuses:
+    draft: "Черновик"
+    new: "Новый"
+    in_progress: "В работе"
+    in_review: "На проверке"
+    accepted: "Принят"
+    rejected: "Отклонён"
+    reopened: "Переоткрыт"
+    published: "Опубликован"
+    archived: "Архив"
+    free: "Свободна"
+    partially_occupied: "Занята частично"
+    fully_occupied: "Занята полностью"
+    overcrowded: "Переполнена"
+    not_settled: "Не заселён"
+    settled: "Заселён"
+    temporarily_absent: "Временно отсутствует"
+    evicted: "Выселен"
+    active: "Активно"
+    completed: "Завершено"
+    cancelled: "Отменено"
+
+  deadline:
+    overdue: "Просрочен"
+    soon: "Скоро дедлайн"
+
+  helpers:
+    submit:
+      create: "Создать"
+      update: "Сохранить"
+
+  pagy:
+    info:
+      no_items: "Записей не найдено"
+      single_page: "Показано %{count} записей"
+      multiple_pages: "Показано %{from}–%{to} из %{count} записей"
+    nav:
+      prev: "&laquo; Назад"
+      next: "Вперёд &raquo;"
+      gap: "&hellip;"
+
+  datetime:
+    distance_in_words:
+      half_a_minute: "полминуты"
+      less_than_x_seconds:
+        one: "меньше секунды"
+        other: "меньше %{count} секунд"
+      x_seconds:
+        one: "1 секунду"
+        few: "%{count} секунды"
+        many: "%{count} секунд"
+        other: "%{count} секунд"
+      less_than_x_minutes:
+        one: "меньше минуты"
+        other: "меньше %{count} минут"
+      x_minutes:
+        one: "1 минуту"
+        few: "%{count} минуты"
+        many: "%{count} минут"
+        other: "%{count} минут"
+      about_x_hours:
+        one: "около часа"
+        few: "около %{count} часов"
+        many: "около %{count} часов"
+        other: "около %{count} часов"
+      x_hours:
+        one: "1 час"
+        few: "%{count} часа"
+        many: "%{count} часов"
+        other: "%{count} часов"
+      x_days:
+        one: "1 день"
+        few: "%{count} дня"
+        many: "%{count} дней"
+        other: "%{count} дней"
+      about_x_months:
+        one: "около месяца"
+        few: "около %{count} месяцев"
+        many: "около %{count} месяцев"
+        other: "около %{count} месяцев"
+      x_months:
+        one: "1 месяц"
+        few: "%{count} месяца"
+        many: "%{count} месяцев"
+        other: "%{count} месяцев"
+      about_x_years:
+        one: "около года"
+        few: "около %{count} лет"
+        many: "около %{count} лет"
+        other: "около %{count} лет"
+      over_x_years:
+        one: "более года"
+        few: "более %{count} лет"
+        many: "более %{count} лет"
+        other: "более %{count} лет"
+      almost_x_years:
+        one: "почти год"
+        few: "почти %{count} года"
+        many: "почти %{count} лет"
+        other: "почти %{count} лет"
+
+  home:
+    page_title: "Дашборд"
+    welcome: "Добро пожаловать, %{user}"
+
+  report_templates:
+    page_title: "Шаблоны отчётов"
+
+  navigation:
+    notifications: "Уведомления"
+    logout: "Выйти"
+    home: "Главная"
+    reports_section: "Отчёты"
+    all_reports: "Все отчёты"
+    templates: "Шаблоны"
+    create_report: "Создать отчёт"
+    reporters: "Исполнители"
+    monitoring: "Мониторинг"
+    activity: "Активность"
+    administration: "Администрирование"
+    users: "Пользователи"
+    dormitory: "Общежитие"
+    dormitory_dashboard: "Дашборд"
+    buildings: "Корпуса"
+    rooms: "Комнаты"
+    residents: "Проживающие"
+    accommodations: "Размещения"
+    dormitory_academic_years: "Учебные года"
+    dormitory_batch_operations: "Массовые операции"
+    profile: "Профиль"
+    toggle_sidebar: "Меню"
+    yes: "Да"
+    no: "Нет"

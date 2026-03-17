@@ -1,0 +1,109 @@
+<% content_for :title, t("views.dormitory.rooms.show_title", number: @room.number) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_rooms"), dormitory_rooms_path %>
+  <%= breadcrumb @room.number %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.rooms.room_number") %> <%= @room.number %></h1>
+</div>
+
+<div class="info-grid mb-4">
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.building") %></span>
+    <span class="info-value"><%= link_to @room.building.name, dormitory_building_path(@room.building) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.floor") %></span>
+    <span class="info-value"><%= @room.floor %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.capacity") %></span>
+    <span class="info-value"><%= @room.capacity %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.current_occupancy") %></span>
+    <span class="info-value"><%= @room.current_occupancy %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.gender_restriction") %></span>
+    <span class="info-value">
+      <% if @room.gender_restriction.present? %>
+        <%= t("views.dormitory.rooms.gender_#{@room.gender_restriction}") %>
+      <% else %>
+        <%= t("views.dormitory.rooms.gender_none") %>
+      <% end %>
+    </span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.status") %></span>
+    <span class="info-value"><%= status_badge(@room.status) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.created") %></span>
+    <span class="info-value"><%= format_datetime(@room.created_at) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.audit.created_by") %></span>
+    <span class="info-value"><%= created_by_info(@room) %></span>
+  </div>
+</div>
+
+<% if @room.overcrowded? %>
+  <div class="alert alert-danger mb-4">
+    <i class="bi bi-exclamation-octagon me-2"></i>
+    <strong><%= t("views.dormitory.rooms.status_overcrowded") %></strong>
+    <%= t("views.dormitory.rooms.overcrowded_detail", current: @room.current_occupancy, capacity: @room.capacity) %>
+  </div>
+<% end %>
+
+<% if @active_accommodations.any? %>
+  <h5 class="mb-3"><%= t("views.dormitory.rooms.residents_section") %></h5>
+  <div class="table-responsive mb-4">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
+          <th scope="col"><%= t("views.dormitory.audit.who_settled") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.application") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.contract") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.receipt") %></th>
+          <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>
+          <% @active_accommodations.each do |acc| %>
+            <tr>
+              <td><%= link_to acc.resident.full_name, dormitory_resident_path(acc.resident) %></td>
+              <td><%= status_badge(acc.status) %></td>
+              <td><%= l(acc.start_date, format: :short) %></td>
+              <td><%= user_display(who_settled(acc)) %></td>
+              <td><%= render "shared/file_attachment", attachment: acc.application_file %></td>
+              <td><%= render "shared/file_attachment", attachment: acc.contract_file %></td>
+              <td><%= render "shared/file_attachment", attachment: acc.payment_receipt %></td>
+              <td><%= link_to t("views.dormitory.accommodations.view_details"), dormitory_accommodation_path(acc), class: "btn btn-sm btn-outline-primary" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-person-vcard", message: t("views.shared.empty_state.no_accommodations_in_room") %>
+<% end %>
+
+<%= render_audit_trail(@audit_events) %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3">
+  <div class="d-flex gap-2">
+    <% if policy(@room).edit? %>
+      <%= link_to t("views.shared.actions.edit"), edit_dormitory_room_path(@room), class: "btn btn-outline-secondary" %>
+    <% end %>
+    <%= link_to t("views.shared.actions.back"), dormitory_rooms_path, class: "btn btn-outline-secondary" %>
+  </div>
+  <% if policy(@room).destroy? %>
+    <%= button_to t("views.shared.actions.delete"), dormitory_room_path(@room), method: :delete, data: { turbo_confirm: t("views.dormitory.rooms.confirm_delete", number: @room.number) }, class: "btn btn-outline-danger" %>
+  <% end %>
+</div>

@@ -1,0 +1,14 @@
+<% content_for :title, t("views.shared.page_titles.edit_template") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.report_templates"), reporting_report_templates_path %>
+  <%= breadcrumb @report_template.name, reporting_report_template_path(@report_template) %>
+  <%= breadcrumb t("breadcrumbs.edit") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.shared.page_titles.edit_template") %></h2>
+  <p><%= @report_template.name %></p>
+</div>
+
+<%= render "form", report_template: @report_template %>

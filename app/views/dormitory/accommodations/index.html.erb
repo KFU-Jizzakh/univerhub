@@ -1,0 +1,86 @@
+<% content_for :title, t("views.dormitory.accommodations.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_accommodations") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.accommodations.page_title") %></h1>
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-8">
+    <%= form_tag dormitory_accommodations_path, method: :get, data: { controller: "filter-form", turbo_action: "replace" }, class: "d-flex flex-wrap gap-2" do %>
+      <%= label_tag :building_id, t("views.dormitory.accommodations.building"), class: "visually-hidden" %>
+      <%= select_tag :building_id,
+                     options_from_collection_for_select(@buildings, :id, :name, params[:building_id]),
+                     { prompt: t("views.dormitory.accommodations.all_buildings"), class: "form-select form-select-sm" } %>
+      <%= label_tag :academic_year_id, t("activerecord.attributes.dormitory/accommodation.academic_year"), class: "visually-hidden" %>
+      <%= select_tag :academic_year_id,
+                     options_from_collection_for_select(@academic_years, :id, :name, params[:academic_year_id]),
+                     { prompt: t("views.dormitory.accommodations.all_academic_years"), class: "form-select form-select-sm" } %>
+      <%= label_tag :status, t("views.shared.labels.status"), class: "visually-hidden" %>
+      <%= select_tag :status,
+                     options_for_select([ [ t("views.dormitory.accommodations.all_statuses"), "" ],
+                                          [ t("views.dormitory.accommodations.active"), "active" ],
+                                          [ t("views.dormitory.accommodations.completed"), "completed" ],
+                                          [ t("views.dormitory.accommodations.cancelled"), "cancelled" ] ], params[:status]),
+                     { class: "form-select form-select-sm" } %>
+      <%= submit_tag t("views.shared.actions.filter"), class: "btn btn-outline-secondary btn-sm" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @accommodations.any? %>
+  <div class="table-responsive mb-4">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.residents.photo") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.building") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.room") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.application_number") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.contract_number") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.planned_end_date") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.days_column") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @accommodations.each do |acc| %>
+          <tr class="table-row-link<%= " bg-warning-subtle" if acc.overdue? %>" data-url="<%= dormitory_accommodation_path(acc) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td>
+              <% if acc.resident.photo.attached? %>
+                <%= link_to image_tag(acc.resident.photo, class: "rounded avatar-sm", style: "object-fit: cover;"), dormitory_resident_path(acc.resident) %>
+              <% else %>
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light avatar-sm">
+                  <i class="bi bi-person-circle text-secondary avatar-icon"></i>
+                </span>
+              <% end %>
+            </td>
+            <td><%= link_to acc.resident.full_name, dormitory_resident_path(acc.resident) %></td>
+            <td><%= acc.room.building.name %></td>
+            <td><%= acc.room.number %></td>
+            <td><%= acc.application_number %></td>
+            <td><%= acc.contract_number %></td>
+            <td><%= status_badge(acc.status) %></td>
+            <td><%= l(acc.start_date, format: :short) %></td>
+            <td>
+              <%= l(acc.planned_end_date, format: :short) %>
+              <% if acc.overdue? %>
+                <span class="text-warning" title="<%= t('views.dormitory.accommodations.overdue_icon_title') %>"><i class="bi bi-exclamation-triangle"></i></span>
+              <% end %>
+            </td>
+            <td><%= acc.planned_duration_days ? t("views.dormitory.accommodations.days", count: acc.planned_duration_days) : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-key", message: t("views.dormitory.accommodations.no_accommodations") %>
+<% end %>

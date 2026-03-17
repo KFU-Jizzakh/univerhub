@@ -1,0 +1,93 @@
+<% content_for :title, t("views.admin.users.show.title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.admin_users"), admin_users_path %>
+  <%= breadcrumb user_display(@user) %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom d-flex align-items-center gap-3">
+  <%= user_avatar(@user, size: :show) %>
+  <div>
+    <h2><%= user_display(@user) %></h2>
+    <p class="text-muted mb-0"><%= @user.email_address %></p>
+  </div>
+</div>
+
+<div class="info-grid mb-4">
+  <% if @user.profile&.full_name.present? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.admin.users.show.full_name") %></span>
+      <span class="info-value"><%= @user.profile.full_name %></span>
+    </div>
+  <% end %>
+  <% if @user.profile&.summary.present? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.admin.users.show.about") %></span>
+      <span class="info-value"><%= @user.profile.summary %></span>
+    </div>
+  <% end %>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.email") %></span>
+    <span class="info-value"><%= @user.email_address %></span>
+  </div>
+  <% if @user.assigned_buildings.any? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.admin.users.show.buildings") %></span>
+      <span class="info-value">
+        <% @user.assigned_buildings.each do |building| %>
+          <span class="status-badge status-badge--published status-badge--sm"><%= building.name %></span>
+        <% end %>
+      </span>
+    </div>
+  <% end %>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.roles") %></span>
+    <span class="info-value">
+      <% @user.roles.each do |role| %>
+        <span class="status-badge status-badge--published status-badge--sm"><%= role.name %></span>
+      <% end %>
+      <% if @user.roles.empty? %><%= t("views.admin.users.show.no_roles") %><% end %>
+    </span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.status") %></span>
+    <span class="info-value">
+      <% if @user.discarded? %>
+        <span class="status-badge status-badge--rejected"><%= t("views.admin.users.show.deleted") %></span>
+        <% if @user.discarded_at %>
+          <br><small class="text-muted"><%= l(@user.discarded_at, format: :short) %></small>
+        <% end %>
+      <% elsif @user.active? %>
+        <span class="status-badge status-badge--published"><%= t("views.shared.user_status.active") %></span>
+      <% else %>
+        <span class="status-badge status-badge--rejected"><%= t("views.admin.users.show.deactivated") %></span>
+        <% if @user.deactivated_at %>
+          <br><small class="text-muted"><%= l(@user.deactivated_at, format: :short) %></small>
+        <% end %>
+      <% end %>
+    </span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.registered") %></span>
+    <span class="info-value"><%= format_datetime(@user.created_at) %></span>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 my-3">
+  <% unless @user.discarded? %>
+    <%= link_to t("views.shared.actions.edit"), edit_admin_user_path(@user), class: "btn btn-outline-secondary" %>
+    <% if policy([:admin, @user]).reset_password? %>
+      <%= button_to t("views.admin.users.show.reset_password"), reset_password_admin_user_path(@user), method: :patch, data: { turbo_confirm: t("views.admin.users.show.confirm_reset_password", email: @user.email_address) }, class: "btn btn-outline-info" %>
+    <% end %>
+    <% if policy([:admin, @user]).deactivate? && @user.active? %>
+      <%= button_to t("views.admin.users.show.block"), deactivate_admin_user_path(@user), method: :patch, data: { turbo_confirm: t("views.admin.users.show.confirm_deactivate", email: @user.email_address) }, class: "btn btn-outline-warning" %>
+    <% end %>
+    <% if policy([:admin, @user]).activate? && @user.deactivated? %>
+      <%= button_to t("views.admin.users.show.unblock"), activate_admin_user_path(@user), method: :patch, data: { turbo_confirm: t("views.admin.users.show.confirm_activate", email: @user.email_address) }, class: "btn btn-success" %>
+    <% end %>
+    <% if policy([:admin, @user]).destroy? %>
+      <%= button_to t("views.shared.actions.delete"), admin_user_path(@user), method: :delete, data: { turbo_confirm: t("views.admin.users.show.confirm_delete", email: @user.email_address) }, class: "btn btn-outline-danger" %>
+    <% end %>
+  <% end %>
+  <%= link_to t("views.shared.actions.back"), admin_users_path, class: "btn btn-outline-secondary" %>
+</div>

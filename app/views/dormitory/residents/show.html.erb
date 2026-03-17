@@ -1,0 +1,138 @@
+<% content_for :title, t("views.dormitory.residents.show_title", name: @resident.full_name) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_residents"), dormitory_residents_path %>
+  <%= breadcrumb @resident.full_name %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= @resident.full_name %></h1>
+</div>
+
+<div class="row mb-4">
+  <% if @resident.photo.attached? %>
+    <div class="col-md-2 mb-3">
+      <%= image_tag @resident.photo, class: "img-thumbnail rounded avatar-lg" %>
+    </div>
+  <% end %>
+  <div class="<%= @resident.photo.attached? ? 'col-md-10' : 'col-12' %>">
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.last_name") %></span>
+        <span class="info-value"><%= @resident.last_name %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.first_name") %></span>
+        <span class="info-value"><%= @resident.first_name %></span>
+      </div>
+      <% if @resident.middle_name.present? %>
+        <div class="info-item">
+          <span class="info-label"><%= t("views.dormitory.residents.middle_name") %></span>
+          <span class="info-value"><%= @resident.middle_name %></span>
+        </div>
+      <% end %>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.gender") %></span>
+        <span class="info-value"><%= t("views.dormitory.residents.gender_#{@resident.gender}") %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.date_of_birth") %></span>
+        <span class="info-value"><%= l(@resident.date_of_birth, format: :short) %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.phone") %></span>
+        <span class="info-value"><%= @resident.phone.presence || "—" %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.email") %></span>
+        <span class="info-value"><%= @resident.email.presence || "—" %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.student_ticket") %></span>
+        <span class="info-value"><%= @resident.student_ticket_number %></span>
+      </div>
+      <% if @resident.current_room.present? %>
+        <div class="info-item">
+          <span class="info-label"><%= t("views.dormitory.residents.current_room") %></span>
+          <span class="info-value"><%= link_to @resident.current_room.number, dormitory_room_path(@resident.current_room) %></span>
+        </div>
+      <% end %>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.shared.labels.status") %></span>
+        <span class="info-value"><%= status_badge(@resident.status) %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.shared.labels.created") %></span>
+        <span class="info-value"><%= format_datetime(@resident.created_at) %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.audit.created_by") %></span>
+        <span class="info-value"><%= created_by_info(@resident) %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.audit.last_modified") %></span>
+        <span class="info-value"><%= last_modified_by(@resident) %></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @accommodations.any? %>
+  <hr class="my-4">
+  <h5 class="mb-3"><%= t("views.dormitory.accommodations.history_title") %></h5>
+  <div class="table-responsive mb-4">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.room") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
+          <th scope="col"><%= t("views.dormitory.audit.who_settled") %></th>
+          <th scope="col"><%= t("views.dormitory.audit.who_evicted") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.application") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.contract") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.receipt") %></th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @accommodations.each do |acc| %>
+          <tr>
+            <td><%= status_badge(acc.status) %></td>
+            <td><%= link_to acc.room.number, dormitory_room_path(acc.room) %></td>
+            <td><%= l(acc.start_date, format: :short) %></td>
+            <td><%= user_display(who_settled(acc)) %></td>
+            <td><%= user_display(who_evicted(acc)) %></td>
+            <td><%= render "shared/file_attachment", attachment: acc.application_file %></td>
+            <td><%= render "shared/file_attachment", attachment: acc.contract_file %></td>
+            <td><%= render "shared/file_attachment", attachment: acc.payment_receipt %></td>
+            <td><%= link_to t("views.dormitory.accommodations.view_details"), dormitory_accommodation_path(acc), class: "btn btn-sm btn-outline-primary" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= render_audit_trail(@audit_events) %>
+
+<div class="d-flex flex-wrap gap-2 my-3">
+  <% if @resident.not_settled? && policy(Dormitory::Accommodation).new? %>
+    <%= link_to t("views.dormitory.accommodations.settle_button"), new_dormitory_accommodation_path(resident_id: @resident.id), class: "btn btn-success" %>
+  <% end %>
+  <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_transfer? %>
+    <%= link_to t("views.dormitory.accommodations.transfer_button"), new_transfer_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-warning" %>
+  <% end %>
+  <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_eviction? %>
+    <%= link_to t("views.dormitory.accommodations.evict_button"), new_eviction_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-danger" %>
+  <% end %>
+  <% if policy(@resident).edit? %>
+    <%= link_to t("views.shared.actions.edit"), edit_dormitory_resident_path(@resident), class: "btn btn-outline-secondary" %>
+  <% end %>
+  <% if policy(@resident).destroy? %>
+    <%= button_to t("views.shared.actions.delete"), dormitory_resident_path(@resident), method: :delete,
+                  data: { turbo_confirm: t("views.dormitory.residents.confirm_delete", name: @resident.full_name) },
+                  class: "btn btn-outline-danger" %>
+  <% end %>
+  <%= link_to t("views.shared.actions.back"), dormitory_residents_path, class: "btn btn-outline-secondary" %>
+</div>

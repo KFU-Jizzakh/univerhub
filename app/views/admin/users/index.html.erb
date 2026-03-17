@@ -1,0 +1,54 @@
+<% content_for :title, t("views.admin_users.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.admin_users") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.admin_users.page_title") %></h2>
+</div>
+
+<p class="mb-4"><%= link_to t("views.admin_users.create_user"), new_admin_user_path, class: "btn btn-primary" %></p>
+
+<% if @users.any? %>
+<div class="table-responsive">
+  <table class="table table-hover align-middle" data-controller="table-row-link">
+    <thead class="table-light">
+      <tr>
+        <th scope="col"></th>
+        <th scope="col"><%= t("views.shared.labels.first_name") %></th>
+        <th scope="col"><%= t("views.shared.labels.email") %></th>
+        <th scope="col"><%= t("views.shared.labels.roles") %></th>
+        <th scope="col"><%= t("views.shared.labels.user_status") %></th>
+        <th scope="col" class="text-end"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr class="table-row-link" data-url="<%= admin_user_path(user) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+          <td><%= user_avatar(user, size: :index) %></td>
+          <td><%= link_to user_display(user), admin_user_path(user) %></td>
+          <td><%= user.email_address %></td>
+          <td>
+            <% user.roles.each do |role| %>
+              <span class="status-badge status-badge--published status-badge--sm"><%= role.name %></span>
+            <% end %>
+          </td>
+          <td>
+            <% if user.active? %>
+              <span class="status-badge status-badge--published status-badge--sm"><%= t("views.shared.statuses.active") %></span>
+            <% else %>
+              <span class="status-badge status-badge--rejected status-badge--sm"><%= t("views.shared.statuses.deactivated") %></span>
+            <% end %>
+          </td>
+          <td class="text-end"><%= link_to t("views.shared.actions.edit"), edit_admin_user_path(user), class: "btn btn-sm btn-outline-secondary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-people", message: t("views.shared.empty_state.no_users") %>
+<% end %>

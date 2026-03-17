@@ -1,0 +1,11 @@
+<turbo-frame id="<%= dom_id(@report_item) %>">
+  <div class="report-item-card">
+    <header>
+      <span class="item-name"><%= @report_item.name %></span>
+      <% if @report_item.max_grade %>
+        <span class="item-grade-badge"><%= t("views.shared.report_item.max_grade", grade: @report_item.max_grade) %></span>
+      <% end %>
+    </header>
+    <%= render "grade_form" %>
+  </div>
+</turbo-frame>

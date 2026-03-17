@@ -1,0 +1,24 @@
+<% content_for :title, t("views.shared.page_titles.new_password") %>
+
+<div class="auth-container">
+  <h2 class="mb-3"><%= t("views.shared.page_titles.new_password") %></h2>
+  <p class="auth-subtitle text-muted"><%= t("views.shared.page_titles.new_password_subtitle") %></p>
+
+  <% if flash[:alert] %>
+    <div class="alert alert-danger"><%= flash[:alert] %></div>
+  <% end %>
+
+  <%= form_with url: password_path(params[:token]), method: :put, data: { controller: "form-validation", form_validation_mismatch_message: t("views.shared.validation.password_mismatch") } do |form| %>
+    <div class="mb-3">
+      <%= form.label :password, t("views.shared.labels.new_password"), class: "form-label" %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", placeholder: t("views.shared.placeholders.new_password"), maxlength: 72, class: "form-control", data: { form_validation_target: "password", min_length: "6", min_message: t("views.shared.validation.password_min", count: 6) } %>
+    </div>
+
+    <div class="mb-3">
+      <%= form.label :password_confirmation, t("views.shared.labels.password_confirmation"), class: "form-label" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: t("views.shared.placeholders.repeat_password"), maxlength: 72, class: "form-control", data: { form_validation_target: "passwordConfirmation" } %>
+    </div>
+
+    <%= form.submit t("views.shared.buttons.save_password"), class: "btn btn-primary w-100" %>
+  <% end %>
+</div>

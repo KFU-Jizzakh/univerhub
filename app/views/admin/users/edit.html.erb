@@ -1,0 +1,109 @@
+<% content_for :title, t("views.shared.page_titles.edit_user") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.admin_users"), admin_users_path %>
+  <%= breadcrumb user_display(@user), admin_user_path(@user) %>
+  <%= breadcrumb t("breadcrumbs.edit") %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom">
+  <h2><%= t("views.admin.users.edit.title") %></h2>
+  <p class="text-muted"><%= @user.email_address %></p>
+</div>
+
+<%= form_with(model: @user, url: admin_user_path(@user), method: :patch, data: { controller: "commandant-buildings avatar-preview", action: "change->commandant-buildings#toggleBuildings" }) do |f| %>
+  <% if @user.errors.any? %>
+    <div class="alert alert-danger"><%= @user.errors.full_messages.join(", ") %></div>
+  <% end %>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <%= f.label :last_name, t("views.shared.labels.last_name"), class: "form-label" %>
+      <%= f.text_field :last_name, placeholder: t("views.shared.placeholders.last_name"), class: "form-control" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :first_name, t("views.shared.labels.first_name"), class: "form-label" %>
+      <%= f.text_field :first_name, placeholder: t("views.shared.placeholders.first_name"), class: "form-control" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :middle_name, t("views.admin.users.edit.middle_name"), class: "form-label" %>
+      <%= f.text_field :middle_name, placeholder: t("views.admin.users.edit.middle_name"), class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :avatar, t("views.admin.users.edit.avatar"), class: "form-label" %>
+    <%= f.file_field :avatar, accept: "image/jpeg,image/png,image/webp", class: "form-control", data: { avatar_preview_target: "input" } %>
+    <div class="form-text"><%= t("views.admin.users.edit.avatar_hint") %></div>
+    <div class="mt-2" data-avatar-preview-target="previewContainer">
+      <% if @user.profile&.avatar&.attached? %>
+        <%= image_tag @user.profile.avatar.variant(resize_to_fill: [80, 80]), class: "img-thumbnail rounded avatar-md", data: { avatar_preview_target: "preview", original_src: url_for(@user.profile.avatar.variant(resize_to_fill: [80, 80])) } %>
+        <div class="form-check mt-2">
+          <%= f.check_box :remove_avatar, class: "form-check-input", data: { avatar_preview_target: "removeCheckbox", action: "change->avatar-preview#remove" } %>
+          <%= f.label :remove_avatar, t("views.admin.users.edit.remove_avatar"), class: "form-check-label" %>
+        </div>
+      <% else %>
+        <%= tag.img(src: "", alt: t("views.admin.users.edit.avatar_preview_alt"), class: "img-thumbnail rounded d-none avatar-md", data: { avatar_preview_target: "preview" }) %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :email_address, t("views.shared.labels.email"), class: "form-label" %>
+    <%= f.email_field :email_address, required: true, placeholder: t("views.shared.placeholders.email"), class: "form-control" %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= f.label :password, t("views.admin.users.edit.new_password"), class: "form-label" %>
+      <%= f.password_field :password, autocomplete: "new-password", placeholder: t("views.admin.users.edit.new_password_placeholder"), class: "form-control" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :password_confirmation, t("views.shared.labels.password_confirmation"), class: "form-label" %>
+      <%= f.password_field :password_confirmation, autocomplete: "new-password", placeholder: t("views.admin.users.edit.password_confirmation_placeholder"), class: "form-control" %>
+    </div>
+  </div>
+
+  <% if @user.discarded? %>
+    <div class="alert alert-secondary mb-3">
+      <strong><%= t("views.admin.users.edit.deleted_status") %></strong>
+      <% if @user.discarded_at %>
+        — <%= l(@user.discarded_at, format: :short) %>
+      <% end %>
+    </div>
+  <% elsif @user.deactivated? %>
+    <div class="alert alert-warning mb-3">
+      <strong><%= t("views.admin.users.edit.deactivated_status") %></strong>
+      <% if @user.deactivated_at %>
+        — <%= l(@user.deactivated_at, format: :short) %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <fieldset class="mb-3 p-3 border rounded">
+    <legend class="fs-6"><%= t("views.admin.users.edit.roles_legend") %></legend>
+    <% @roles.each do |role| %>
+      <div class="form-check mb-2">
+        <%= f.check_box :role_ids, { multiple: true, checked: @user.roles.include?(role), class: "form-check-input", data: { role_name: role.name } }, role.id.to_s, "" %>
+        <%= f.label :role_ids, role.name, value: role.id, class: "form-check-label" %>
+      </div>
+    <% end %>
+  </fieldset>
+
+  <% if @buildings.present? %>
+    <fieldset class="mb-3 p-3 border rounded" data-commandant-buildings-target="fieldset">
+      <legend class="fs-6"><%= t("views.admin.users.edit.buildings_legend") %></legend>
+      <% @buildings.each do |building| %>
+        <div class="form-check mb-2">
+          <%= f.check_box :building_ids, { multiple: true, checked: @user.assigned_buildings.include?(building), class: "form-check-input" }, building.id.to_s, "" %>
+          <%= f.label :building_ids, building.name, value: building.id, class: "form-check-label" %>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end %>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), admin_user_path(@user), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

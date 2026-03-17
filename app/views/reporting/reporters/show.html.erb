@@ -1,0 +1,52 @@
+<% content_for :title, t("views.reporters.show_title", name: user_display(@reporter)) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.reporters"), reporting_reporters_path %>
+  <%= breadcrumb user_display(@reporter) %>
+<% end %>
+
+<div class="page-header mb-4 pb-3 border-bottom d-flex align-items-center gap-3">
+  <%= user_avatar(@reporter, size: :show) %>
+  <div>
+    <h2><%= user_display(@reporter) %></h2>
+    <p class="mb-0"><%= @reporter.email_address %></p>
+  </div>
+</div>
+
+<% if @reporter.profile&.summary.present? %>
+  <div class="info-grid mb-4">
+    <div class="info-item">
+      <span class="info-label"><%= t("views.shared.labels.about") %></span>
+      <span class="info-value"><%= @reporter.profile.summary %></span>
+    </div>
+  </div>
+<% end %>
+
+<hr class="my-4 border">
+
+<h3 class="mb-4"><%= t("views.shared.labels.reports") %></h3>
+
+<% if @reports.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.shared.labels.name") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"><%= t("views.shared.labels.deadline") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @reports.each do |report| %>
+          <tr>
+            <td><%= link_to report.name, reporting_report_path(report) %></td>
+            <td><%= status_badge(report.status) %></td>
+            <td><%= format_datetime(report.deadline) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <%= render "shared/empty_state", icon: "bi-file-earmark-text", message: t("views.shared.empty_state.no_reports") %>
+<% end %>

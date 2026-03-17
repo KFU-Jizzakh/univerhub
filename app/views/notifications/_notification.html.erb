@@ -1,0 +1,36 @@
+<div id="<%= dom_id(notification) %>">
+  <div class="notification-item <%= 'unread' unless notification.read? %>">
+    <div class="notification-icon">
+      <% case notification.action %>
+      <% when 'reporting.report.assigned' %>
+        📋
+      <% when 'reporting.report.submitted' %>
+        📤
+      <% when 'reporting.report.accepted' %>
+        ✅
+      <% when 'reporting.report.rejected' %>
+        ❌
+      <% when 'reporting.report.reopened' %>
+        🔄
+      <% else %>
+        📢
+      <% end %>
+    </div>
+    <div class="notification-content">
+      <div class="notification-text">
+        <% if notification.notifiable.is_a?(Reporting::Report) %>
+          <%= t("notifications.report_label") %> «<%= link_to notification.notifiable.name, reporting_report_path(notification.notifiable) %>»
+          <%= t("notifications.actions.#{notification.action}", default: notification.action.humanize) %>
+        <% elsif notification.notifiable %>
+          <%= notification.action.humanize %>
+        <% else %>
+          <%= notification.action.humanize %>
+        <% end %>
+      </div>
+      <span class="notification-time"><%= time_ago_in_words(notification.created_at) %> <%= t("activity_feed.ago") %></span>
+    </div>
+    <% unless notification.read? %>
+      <%= button_to "✓", mark_as_read_notification_path(notification), method: :patch, class: "btn-mark-read", title: t("notifications.mark_as_read_title") %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,34 @@
+_fixture:
+  model_class: Dormitory::Room
+
+room_101:
+  number: "101"
+  building: building_one
+  floor: 1
+  capacity: 3
+  current_occupancy: 0
+  status: free
+
+room_102:
+  number: "102"
+  building: building_one
+  floor: 1
+  capacity: 2
+  current_occupancy: 0
+  status: free
+
+room_201:
+  number: "201"
+  building: building_one
+  floor: 2
+  capacity: 4
+  current_occupancy: 2
+  status: partially_occupied
+
+room_101_building_two:
+  number: "101"
+  building: building_two
+  floor: 1
+  capacity: 2
+  current_occupancy: 0
+  status: free
