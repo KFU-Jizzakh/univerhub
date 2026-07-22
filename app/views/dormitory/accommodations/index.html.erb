@@ -46,6 +46,7 @@
           <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.planned_end_date") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.days_column") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.balance") %></th>
         </tr>
       </thead>
       <tbody>
@@ -74,6 +75,9 @@
               <% end %>
             </td>
             <td><%= acc.planned_duration_days ? t("views.dormitory.accommodations.days", count: acc.planned_duration_days) : "—" %></td>
+            <td class="<%= acc.balance >= 0 ? 'text-success' : 'text-danger' %> fw-bold">
+              <%= number_to_currency(acc.balance, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+            </td>
           </tr>
         <% end %>
       </tbody>

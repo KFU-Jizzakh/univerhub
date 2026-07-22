@@ -71,6 +71,17 @@
     </div>
   </div>
 
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm <%= @total_debt > 0 ? 'border-danger' : '' %>">
+        <div class="text-muted small"><%= t('dormitory.dashboard.metrics.total_debt') %></div>
+        <div class="h2 mb-0 <%= @total_debt > 0 ? 'text-danger' : 'text-success' %>">
+          <%= number_to_currency(@total_debt, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <% if policy([:dormitory, :export]).index? %>
     <div class="row g-3 mb-4">
       <div class="col-md-3">
@@ -230,6 +241,28 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <% if @debt_by_building.any? %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white fw-bold"><%= t('dormitory.dashboard.stats.debt_by_building') %></div>
+          <div class="card-body">
+            <ul class="list-unstyled mb-0">
+              <% @debt_by_building.each do |name, debt| %>
+                <li class="d-flex justify-content-between mb-2">
+                  <span><%= name %></span>
+                  <span class="<%= debt > 0 ? 'text-danger' : 'text-success' %> fw-bold">
+                    <%= number_to_currency(debt, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+                  </span>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </div>
 
   <div class="card shadow-sm">

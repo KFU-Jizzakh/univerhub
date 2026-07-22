@@ -1,7 +1,7 @@
 module Dormitory
   class Accommodation < ApplicationRecord
-    # PURPOSE: Core settlement operations: settling residents into rooms, transferring between rooms, and evicting with document management and date tracking
-    # SPECIFICATION: SPEC-DORM-04
+    # PURPOSE: Core settlement operations: settling residents into rooms, transferring between rooms, and evicting with document management, payment tracking, and date tracking
+    # SPECIFICATION: SPEC-DORM-04, SPEC-DORM-09
     include AASM
     include Discard::Model
     include Trackable
@@ -14,6 +14,8 @@ module Dormitory
     has_one_attached :application_file
     has_one_attached :contract_file
     has_one_attached :payment_receipt
+    has_many :receipts, -> { kept }, dependent: :destroy, class_name: "Dormitory::Receipt"
+    accepts_nested_attributes_for :receipts, allow_destroy: true
 
     EVICTION_REASONS = %w[transfer graduation expulsion voluntary violation repair other].freeze
     ACCEPTED_FILE_TYPES = %w[application/pdf image/jpeg image/png].freeze
@@ -22,6 +24,7 @@ module Dormitory
     validates :resident, :room, :application_number, :contract_number, :start_date, :planned_end_date, presence: true
     validates :comment, length: { maximum: 2000 }
     validates :eviction_reason, inclusion: { in: EVICTION_REASONS }, allow_nil: true
+    validates :required_amount, numericality: { greater_than_or_equal_to: 0 }
     validate :application_file_format_and_size
     validate :contract_file_format_and_size
     validate :payment_receipt_format_and_size
@@ -66,6 +69,22 @@ module Dormitory
 
     def overdue?
       active? && planned_end_date && planned_end_date < Date.current
+    end
+
+    def total_paid
+      receipts.sum(:amount)
+    end
+
+    def balance
+      total_paid - required_amount
+    end
+
+    def payment_overdue?
+      active? && balance.negative?
+    end
+
+    def has_payment_file?
+      receipts.any? { |r| r.attachment.attached? } || payment_receipt.attached?
     end
 
     def do_update!(attrs)
@@ -201,7 +220,7 @@ module Dormitory
         raise ActiveRecord::RecordInvalid.new(self)
       end
 
-      unless application_file.attached? && contract_file.attached? && payment_receipt.attached?
+      unless application_file.attached? && contract_file.attached? && has_payment_file?
         errors.add(:base, :files_required)
         raise ActiveRecord::RecordInvalid.new(self)
       end
@@ -275,7 +294,7 @@ module Dormitory
     end
 
     def validate_transfer_files!(new_acc)
-      unless new_acc.application_file.attached? && new_acc.contract_file.attached? && new_acc.payment_receipt.attached?
+      unless new_acc.application_file.attached? && new_acc.contract_file.attached? && new_acc.has_payment_file?
         new_acc.errors.add(:base, :files_required)
         raise ActiveRecord::RecordInvalid.new(new_acc)
       end

@@ -734,5 +734,202 @@ module Dormitory
       assert_equal "free", new_room_event.payload["from"]
       assert_equal target_room.reload.status, new_room_event.payload["to"]
     end
+
+    # --- SPEC-DORM-09: Payment receipts & amount tracking ---
+
+    def attach_receipt_to(receipt)
+      receipt.attachment.attach(
+        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+      )
+    end
+
+    def create_receipt_for(accommodation, amount:, paid_at: Date.current)
+      receipt = accommodation.receipts.build(amount: amount, paid_at: paid_at)
+      attach_receipt_to(receipt)
+      receipt.save!
+      receipt
+    end
+
+    test "required_amount defaults to zero" do
+      acc = build_accommodation
+      assert_equal 0, acc.required_amount
+    end
+
+    test "required_amount must be non-negative" do
+      acc = build_accommodation(required_amount: -100)
+      assert_not acc.valid?
+      assert acc.errors[:required_amount].any?
+    end
+
+    test "total_paid sums receipt amounts" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_settle!
+
+      r1 = acc.receipts.build(amount: 3000, paid_at: Date.current)
+      attach_receipt_to(r1)
+      r1.save!
+      r2 = acc.receipts.build(amount: 2000, paid_at: Date.current - 1)
+      attach_receipt_to(r2)
+      r2.save!
+
+      assert_equal 5000, acc.total_paid
+    end
+
+    test "total_paid is zero when no receipts" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_settle!
+
+      assert_equal 0, acc.total_paid
+    end
+
+    test "total_paid excludes discarded receipts" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_settle!
+
+      r1 = create_receipt_for(acc, amount: 3000)
+      r2 = create_receipt_for(acc, amount: 2000, paid_at: Date.current - 1)
+      r2.discard!
+
+      assert_equal 3000, acc.total_paid
+    end
+
+    test "balance is negative when underpaid" do
+      acc = build_accommodation(required_amount: 10000)
+      attach_files(acc)
+      acc.do_settle!
+
+      r = create_receipt_for(acc, amount: 6000)
+
+      assert_equal (-4000), acc.balance
+    end
+
+    test "balance is positive when overpaid" do
+      acc = build_accommodation(required_amount: 10000)
+      attach_files(acc)
+      acc.do_settle!
+
+      r = create_receipt_for(acc, amount: 12000)
+
+      assert_equal 2000, acc.balance
+    end
+
+    test "balance is zero when exactly paid" do
+      acc = build_accommodation(required_amount: 10000)
+      attach_files(acc)
+      acc.do_settle!
+
+      r = create_receipt_for(acc, amount: 10000)
+
+      assert_equal 0, acc.balance
+    end
+
+    test "has_payment_file? true with receipt attachment" do
+      acc = build_accommodation
+      acc.application_file.attach(
+        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      acc.contract_file.attach(
+        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      receipt = acc.receipts.build(amount: 5000, paid_at: Date.current)
+      attach_receipt_to(receipt)
+
+      assert acc.has_payment_file?
+    end
+
+    test "has_payment_file? true with legacy payment_receipt" do
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert acc.has_payment_file?
+    end
+
+    test "has_payment_file? false without any payment document" do
+      acc = build_accommodation
+      acc.application_file.attach(
+        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      acc.contract_file.attach(
+        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      assert_not acc.has_payment_file?
+    end
+
+    test "do_settle! succeeds with nested receipt" do
+      acc = build_accommodation(required_amount: 12000)
+      acc.application_file.attach(
+        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      acc.contract_file.attach(
+        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      receipt = acc.receipts.build(amount: 12000, paid_at: Date.current)
+      attach_receipt_to(receipt)
+
+      assert_difference -> { OutboxEvent.count }, 2 do
+        acc.do_settle!
+      end
+      assert acc.persisted?
+      assert_equal "active", acc.status
+      assert_equal 12000, acc.total_paid
+      assert_equal 0, acc.balance
+    end
+
+    test "do_settle! blocks without payment file" do
+      acc = build_accommodation
+      acc.application_file.attach(
+        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      acc.contract_file.attach(
+        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_settle! }
+      assert_includes acc.errors[:base],
+        I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.base.files_required")
+    end
+
+    test "do_settle! with legacy payment_receipt still works" do
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert acc.do_settle!
+      assert acc.persisted?
+    end
+
+    test "payment_overdue? true when balance negative and active" do
+      acc = build_accommodation(required_amount: 10000)
+      attach_files(acc)
+      acc.do_settle!
+
+      r = create_receipt_for(acc, amount: 6000)
+
+      assert acc.payment_overdue?
+    end
+
+    test "payment_overdue? false when balance non-negative" do
+      acc = build_accommodation(required_amount: 10000)
+      attach_files(acc)
+      acc.do_settle!
+
+      r = create_receipt_for(acc, amount: 10000)
+
+      assert_not acc.payment_overdue?
+    end
+
+    test "payment_overdue? false when accommodation completed" do
+      acc = build_accommodation(required_amount: 10000)
+      attach_files(acc)
+      acc.do_settle!
+      acc.update_columns(actual_end_date: Date.current, status: "completed")
+
+      assert_not acc.payment_overdue?
+    end
   end
 end

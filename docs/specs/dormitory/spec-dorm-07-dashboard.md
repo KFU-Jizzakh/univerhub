@@ -2,7 +2,7 @@
 
 Dormitory dashboard providing aggregated statistics: occupancy rates, room status distribution, resident demographics, overdue accommodations, overcrowded rooms, and recent activity — all scoped by user role (commandants see only their buildings).
 
-Depends on: SPEC-CORE-02, SPEC-DORM-01, SPEC-DORM-02, SPEC-DORM-03, SPEC-DORM-04
+Depends on: SPEC-CORE-02, SPEC-DORM-01, SPEC-DORM-02, SPEC-DORM-03, SPEC-DORM-04, SPEC-DORM-09
 
 Status: IMPLEMENTED
 
@@ -10,7 +10,7 @@ Status: IMPLEMENTED
 
 - AC-1: Admin, dormitory administrator, and commandant can view the dormitory dashboard
 - AC-2: Dashboard shows the current active academic year (or a "No active year" message)
-- AC-3: Dashboard shows key metrics: buildings count, rooms count, residents count, total capacity, current occupancy, occupancy rate (percentage)
+- AC-3: Dashboard shows key metrics: buildings count, rooms count, residents count, total capacity, current occupancy, occupancy rate (percentage), total debt (absolute sum of negative balances across active accommodations)
 - AC-4: Per-building stats: occupancy rate, capacity, current occupancy
 - AC-5: Room status distribution: count per state (free, partially occupied, fully occupied, overcrowded)
 - AC-6: Resident gender distribution: male count, female count
@@ -20,6 +20,8 @@ Status: IMPLEMENTED
 - AC-10: Recent events (last 10 audit log entries from dormitory records)
 - AC-11: Commandant sees only data from their assigned buildings
 - AC-12: Occupancy rate is calculated as (total occupancy / total capacity × 100), rounded to 1 decimal place
+- AC-13: Dashboard shows debt breakdown by building — building name and total debt sum (SPEC-DORM-09 AC-24)
+- AC-14: Payment metrics are scoped to commandant's assigned buildings, matching the existing data scoping
 
 ## UI/UX Notes
 
@@ -48,6 +50,8 @@ Status: IMPLEMENTED
 - BR-10: Recent events are audit log entries for dormitory records, filtered by the commandant's accessible buildings, rooms, residents, and accommodations
 - BR-11: Events are limited to the 10 most recent
 - BR-12: A commandant's event scope includes events related to any record type within their accessible buildings
+- BR-13: Total debt = sum(abs(balance)) for all active accommodations within the user's accessible buildings, where balance < 0
+- BR-14: Debt by building is grouped by building name, summing negative balances of active accommodations in each building
 
 ## Behavior
 
@@ -67,7 +71,7 @@ And rooms count = 2
 And residents count = 2
 And total capacity = 5
 And current occupancy = 5 (2 + 3)
-And occupancy rate = 100.0%
+And total debt = 0 (all accommodations paid or no payment data)
 
 #### Scenario: Commandant sees only assigned buildings
 Given commandant "Dave" is assigned to Building A only
@@ -111,3 +115,16 @@ Then all 5 events are displayed with actor and action
 Given 10 events total: 5 from Building A (assigned), 5 from Building B (not assigned)
 When commandant Dave visits the dashboard
 Then only events related to Building A's rooms, residents, and accommodations are shown
+
+### Rule: Payment Metrics (BR-13, BR-14)
+
+#### Scenario: Total debt metric
+Given building A has 3 active accommodations: balance = -3000, -5000, +2000
+When admin visits the dashboard
+Then total debt metric = 8000 (sum of negative balances as absolute)
+And "+2000" is excluded (not a debt)
+
+#### Scenario: Debt by building
+Given building A has debts 3000 and 2000; building B has debt 4000
+When admin visits the dashboard
+Then "Debt by building" table shows: Building A = 5000, Building B = 4000

@@ -1,0 +1,53 @@
+<% content_for :title, t("views.dormitory.receipts.new_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_accommodations"), dormitory_accommodations_path %>
+  <%= breadcrumb @accommodation.resident.full_name, dormitory_accommodation_path(@accommodation) %>
+  <%= breadcrumb t("views.dormitory.receipts.new_title") %>
+<% end %>
+
+<h1 class="h3 mb-4"><%= t("views.dormitory.receipts.new_title") %> — <%= @accommodation.resident.full_name %></h1>
+
+<%= form_with(model: @receipt, url: dormitory_accommodation_receipts_path(@accommodation),
+              multipart: true) do |f| %>
+  <%= render "shared/form_errors", object: @receipt %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :amount, t("views.dormitory.receipts.amount"), class: "form-label" %>
+        <%= f.number_field :amount, step: 0.01, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :paid_at, t("views.dormitory.receipts.paid_at"), class: "form-label" %>
+        <%= f.date_field :paid_at, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :comment, t("views.dormitory.accommodations.comment"), class: "form-label" %>
+        <%= f.text_area :comment, class: "form-control", rows: 3 %>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
+        <%= f.label :attachment, t("views.dormitory.receipts.attachment"), class: "form-label" %>
+        <%= f.file_field :attachment, accept: "application/pdf,image/jpeg,image/png", required: true, class: "d-none", data: { drop_zone_target: "input" } %>
+        <div class="drop-zone" data-drop-zone-target="zone">
+          <div data-drop-zone-target="placeholder">
+            <i class="bi bi-cloud-arrow-up drop-zone-icon"></i>
+            <span><%= t("views.shared.drop_zone.hint") %></span>
+          </div>
+          <div data-drop-zone-target="list"></div>
+        </div>
+        <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_accommodation_path(@accommodation), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

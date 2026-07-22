@@ -27,7 +27,7 @@ module Dormitory
 
     def show
       authorize @resident
-      @accommodations = @resident.accommodations.kept.ordered.includes(:room)
+      @accommodations = @resident.accommodations.kept.ordered.includes(:room, :receipts)
       @audit_events = OutboxEvent.where(record: @resident).order(:created_at).includes(:actor)
       @acc_events_by = OutboxEvent.where(record: @accommodations).includes(:actor)
         .group_by { |e| [ e.record_id, e.action ] }

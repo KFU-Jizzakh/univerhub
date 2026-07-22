@@ -168,6 +168,17 @@ ru:
                required: "не может быть пустым"
              building_id:
                already_assigned: "уже назначен"
+        dormitory/receipt:
+          attributes:
+            amount:
+              greater_than: "должна быть больше 0"
+              not_a_number: "должна быть числом"
+            paid_at:
+              blank: "не может быть пустой"
+            attachment:
+              blank: "не может быть пустым"
+              invalid_file_format: "Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG)."
+              file_too_large: "Размер файла превышает 10 МБ."
       messages:
         blank: "не может быть пустым"
         required: "не может быть пустым"
@@ -179,6 +190,7 @@ ru:
         record_invalid: "Ошибка валидации: %{errors}"
         greater_than_or_equal_to: "должно быть больше или равно %{count}"
         less_than_or_equal_to: "должно быть меньше или равно %{count}"
+        greater_than: "должно быть больше %{count}"
         not_a_number: "должно быть числом"
         not_an_integer: "должно быть целым числом"
         inclusion: "имеет неверное значение"
@@ -239,6 +251,7 @@ ru:
         rooms: "Всего комнат"
         residents: "Всего проживающих"
         occupancy_rate: "Заполняемость"
+        total_debt: "Общий долг"
       alerts:
         title: "Операционные оповещения"
         overcrowded: "Переполненные комнаты"
@@ -249,6 +262,7 @@ ru:
       stats:
         room_distribution: "Распределение комнат по статусам"
         building_breakdown: "Заполняемость по корпусам"
+        debt_by_building: "Долг по корпусам"
         demographics: "Демография жителей"
       table:
         building: "Корпус"
@@ -307,6 +321,10 @@ ru:
       transferred: "Проживающий переселён в комнату %{room_number}."
       evicted: "Проживающий выселен из комнаты %{room_number}."
       not_active: "Размещение неактивно."
+    receipts:
+      created: "Квитанция добавлена."
+      updated: "Квитанция обновлена."
+      destroyed: "Квитанция удалена."
     academic_years:
       created: "Учебный год создан."
       updated: "Учебный год обновлён."
@@ -909,6 +927,20 @@ ru:
         actual_duration: "Фактическая продолжительность"
         days_column: "Дней"
         days: "%{count} дн."
+        required_amount: "Сумма к оплате"
+        total_paid: "Уплачено"
+        balance: "Остаток"
+        section_payments: "Оплата"
+        add_receipt: "Добавить квитанцию"
+        pay_remaining: "Оплатить остаток"
+        no_receipts: "Нет квитанций"
+      receipts:
+        new_title: "Добавление квитанции"
+        edit_title: "Редактирование квитанции"
+        amount: "Сумма"
+        paid_at: "Дата оплаты"
+        attachment: "Файл квитанции"
+        confirm_delete: "Удалить квитанцию?"
       academic_years:
         page_title: "Учебные года"
         show_title: "Учебный год: %{name}"

@@ -665,5 +665,73 @@ module Dormitory
 
       assert_equal "free", original_room.reload.status
     end
+
+    # --- SPEC-DORM-09: Payment fields in settlement ---
+
+    def settle_params_with_receipt(overrides = {})
+      {
+        dormitory_accommodation: {
+          resident_id: @resident.id,
+          room_id: @room.id,
+          application_number: "З-001",
+          contract_number: "Д-001",
+          start_date: Date.current,
+          planned_end_date: Date.current + 1.year,
+          application_file: file_upload,
+          contract_file: file_upload,
+          required_amount: 12000,
+          receipts_attributes: {
+            "0" => {
+              amount: 12000,
+              paid_at: Date.current,
+              attachment: file_upload
+            }
+          }
+        }.deep_merge(overrides)
+      }
+    end
+
+    test "create settles with required_amount and nested receipt" do
+      sign_in @admin
+
+      assert_difference -> { Accommodation.count }, 1 do
+        assert_difference -> { Dormitory::Receipt.kept.count }, 1 do
+          post dormitory_accommodations_path, params: settle_params_with_receipt
+        end
+      end
+
+      acc = Accommodation.kept.last
+      assert_equal 12000, acc.required_amount
+      assert_equal 12000, acc.total_paid
+      assert_redirected_to dormitory_resident_path(@resident)
+    end
+
+    test "create fails when receipt without file" do
+      sign_in @admin
+
+      params = settle_params_with_receipt
+      params[:dormitory_accommodation][:receipts_attributes]["0"].delete(:attachment)
+
+      assert_no_difference -> { Accommodation.count } do
+        post dormitory_accommodations_path, params: params
+      end
+      assert_response :unprocessable_entity
+    end
+
+    test "edit honors required_amount" do
+      acc = create_accommodation
+      sign_in @admin
+
+      patch dormitory_accommodation_path(acc), params: {
+        dormitory_accommodation: {
+          required_amount: 15000,
+          start_date: acc.start_date,
+          planned_end_date: acc.planned_end_date
+        }
+      }
+
+      assert_equal 15000, acc.reload.required_amount
+      assert_redirected_to dormitory_accommodation_path(acc)
+    end
   end
 end

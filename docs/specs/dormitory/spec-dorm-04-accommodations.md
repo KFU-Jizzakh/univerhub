@@ -2,7 +2,7 @@
 
 Core settlement operations: settling a resident into a room, transferring between rooms, and evicting. An accommodation record links a resident to a room for a time period with supporting documents and planned end dates.
 
-Depends on: SPEC-CORE-02, SPEC-DORM-01, SPEC-DORM-02, SPEC-DORM-03
+Depends on: SPEC-CORE-02, SPEC-DORM-01, SPEC-DORM-02, SPEC-DORM-03, SPEC-DORM-09
 
 Status: IMPLEMENTED
 
@@ -11,13 +11,13 @@ Status: IMPLEMENTED
 - AC-1: Admin, dormitory administrator, and commandant can settle a resident into a room
 - AC-2: Settlement validates: resident is not already active, room has capacity, gender restriction matches, room is not under repair
 - AC-3: Settlement requires: application number, contract number, start date, planned end date
-- AC-4: Settlement requires at least one supporting document (application file, contract file, or payment receipt)
+- AC-4: Settlement requires at least one receipt with an attached payment file (SPEC-DORM-09 AC-9), OR a legacy payment_receipt attached directly (SPEC-DORM-09 AC-10)
 - AC-5: File attachments must be PDF, JPEG, or PNG and under 10 MB each
 - AC-6: Admin and dormitory administrator can force-settle even when the room is at full capacity (overcrowding)
 - AC-7: An active accommodation can be transferred to another room
 - AC-8: Transfer completes the old accommodation with reason "transfer" and creates a new one
 - AC-9: Transfer validates: new room is available, gender matches, not under repair — same checks as settlement
-- AC-10: Transfer protects against race conditions (two users cannot transfer the same resident simultaneously)
+- AC-10: Transfer requires a receipt with a file for the new accommodation (SPEC-DORM-09 AC-11), and protects against race conditions
 - AC-11: An active accommodation can be evicted
 - AC-12: Eviction records the actual end date, eviction reason, completes the accommodation, and updates the resident to evicted status
 - AC-13: Eviction reason must be from the predefined list
@@ -47,7 +47,7 @@ Status: IMPLEMENTED
 - BR-1: Eviction reasons: transfer, graduation, expulsion, voluntary, violation, repair, other
 - BR-2: Settlement: validates preconditions, updates room occupancy, adjusts room status
 - BR-3: Force settlement allows bypassing capacity validation, available only to admin and dormitory administrator
-- BR-4: Settlement preconditions: resident must not already be active, room must be kept and active
+- BR-4: Settlement preconditions: resident must not already be active, room must be kept and active, at least one receipt with file OR legacy payment_receipt must be present (SPEC-DORM-09 BR-7)
 - BR-5: Capacity check: room must have available slots unless forced
 - BR-6: Transfer: completes the old accommodation, saves the new one, protects against race conditions for both rooms
 - BR-7: Transfer documents: the new accommodation must have supporting documents attached

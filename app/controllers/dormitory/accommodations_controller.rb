@@ -8,7 +8,7 @@ module Dormitory
       authorize Dormitory::Accommodation
       @buildings = policy_scope(Dormitory::Building)
       @academic_years = Dormitory::AcademicYear.kept.order(:start_date)
-      @accommodations = policy_scope(Dormitory::Accommodation).ordered.includes(:resident, room: :building)
+      @accommodations = policy_scope(Dormitory::Accommodation).ordered.includes(:resident, :receipts, room: :building)
       @accommodations = @accommodations.where(dormitory_rooms: { building_id: params[:building_id] }) if params[:building_id].present?
       @accommodations = @accommodations.where(academic_year_id: params[:academic_year_id]) if params[:academic_year_id].present?
       @accommodations = @accommodations.where(status: params[:status]) if params[:status].present?
@@ -97,7 +97,7 @@ module Dormitory
     private
 
     def set_accommodation
-      @accommodation = Dormitory::Accommodation.with_discarded.find(params[:id])
+      @accommodation = Dormitory::Accommodation.with_discarded.includes(:receipts).find(params[:id])
     end
 
     def set_resident
@@ -114,7 +114,9 @@ module Dormitory
         :resident_id, :room_id,
         :application_number, :contract_number,
         :start_date, :planned_end_date, :comment,
-        :application_file, :contract_file, :payment_receipt
+        :application_file, :contract_file, :payment_receipt,
+        :required_amount,
+        receipts_attributes: [ :id, :amount, :paid_at, :comment, :attachment, :_destroy ]
       )
     end
 
@@ -122,7 +124,8 @@ module Dormitory
       params.require(:dormitory_accommodation).permit(
         :application_number, :contract_number,
         :start_date, :planned_end_date, :comment,
-        :application_file, :contract_file, :payment_receipt
+        :application_file, :contract_file, :payment_receipt,
+        :required_amount
       )
     end
 
@@ -132,7 +135,9 @@ module Dormitory
         :application_number, :contract_number,
         :start_date, :planned_end_date, :comment,
         :application_file, :contract_file, :payment_receipt,
-        :eviction_reason
+        :eviction_reason,
+        :required_amount,
+        receipts_attributes: [ :id, :amount, :paid_at, :comment, :attachment, :_destroy ]
       )
     end
 

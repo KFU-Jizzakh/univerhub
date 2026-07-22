@@ -10,7 +10,7 @@ module Dormitory
       residents = scope.kept
         .where(status: [ :settled, :temporarily_absent ])
         .joins(current_room: :building)
-        .includes(current_room: :building, active_accommodation: :academic_year)
+        .includes(current_room: :building, active_accommodation: [ :academic_year, :receipts ])
         .order("dormitory_buildings.name", "dormitory_rooms.floor", "dormitory_rooms.number",
                "dormitory_residents.last_name", "dormitory_residents.first_name")
 
@@ -20,7 +20,8 @@ module Dormitory
       residents = apply_academic_year_filter_accommodations(residents, filters[:academic_year_id])
 
       generate_csv([ "ФИО", "Пол", "Дата рождения", "№ студ. билета", "Телефон", "Email",
-                     "Корпус", "Этаж", "Комната", "Дата заселения", "№ заявки", "№ договора" ]) do |csv|
+                     "Корпус", "Этаж", "Комната", "Дата заселения", "№ заявки", "№ договора",
+                     "Сумма к оплате", "Уплачено", "Остаток" ]) do |csv|
         residents.find_each do |resident|
           acc = resident.active_accommodation
           next unless acc
@@ -37,7 +38,10 @@ module Dormitory
             resident.current_room&.number,
             acc.start_date,
             acc.application_number,
-            acc.contract_number
+            acc.contract_number,
+            format_amount(acc.required_amount),
+            format_amount(acc.total_paid),
+            format_amount(acc.balance)
           ]
         end
       end
@@ -69,7 +73,7 @@ module Dormitory
 
     def self.history_csv(scope, filters = {})
       accommodations = scope.kept
-        .includes(:resident, room: :building)
+        .includes(:resident, :receipts, room: :building)
         .order("dormitory_buildings.name", "dormitory_rooms.floor", "dormitory_rooms.number",
                "dormitory_accommodations.start_date")
 
@@ -81,7 +85,7 @@ module Dormitory
 
       generate_csv([ "ФИО резидента", "№ студ. билета", "Корпус", "Этаж", "Комната",
                      "№ заявки", "№ договора", "Дата начала", "Дата окончания", "Дней", "Статус",
-                     "Причина выселения", "Комментарий" ]) do |csv|
+                     "Причина выселения", "Комментарий", "Сумма к оплате", "Уплачено", "Остаток" ]) do |csv|
         accommodations.find_each do |acc|
           csv << [
             acc.resident.full_name,
@@ -96,7 +100,10 @@ module Dormitory
             acc.actual_duration_days || acc.planned_duration_days,
             I18n.t("statuses.#{acc.status}"),
             acc.eviction_reason ? I18n.t("eviction_reasons.#{acc.eviction_reason}") : "—",
-            acc.comment
+            acc.comment,
+            format_amount(acc.required_amount),
+            format_amount(acc.total_paid),
+            format_amount(acc.balance)
           ]
         end
       end
@@ -204,5 +211,10 @@ module Dormitory
       accommodations.where(academic_year_id: academic_year_id)
     end
     private_class_method :apply_academic_year_filter_direct
+
+    def self.format_amount(value)
+      "%.2f" % (value || 0)
+    end
+    private_class_method :format_amount
   end
 end

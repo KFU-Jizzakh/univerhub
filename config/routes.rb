@@ -58,6 +58,7 @@ Rails.application.routes.draw do
         get :new_eviction
         patch :evict
       end
+      resources :receipts, only: [ :new, :create, :edit, :update, :destroy ]
     end
     resources :academic_years
     resources :batch_evictions, only: [ :index, :new, :create, :show ]

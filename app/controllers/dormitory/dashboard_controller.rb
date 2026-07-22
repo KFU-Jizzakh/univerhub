@@ -44,6 +44,9 @@ module Dormitory
         .includes(:resident, room: :building)
         .order("dormitory_rooms.building_id, dormitory_rooms.number")
 
+      @debt_by_building = compute_debt_by_building
+      @total_debt = @debt_by_building.values.sum
+
       dormitory_record_types = %w[
         Dormitory::Building
         Dormitory::Room
@@ -71,6 +74,24 @@ module Dormitory
       end
 
       @recent_events = recent.limit(10)
+    end
+
+    private
+
+    def compute_debt_by_building
+      result = {}
+      active_accommodations = Dormitory::Accommodation.active
+        .where(room: @rooms)
+        .includes(:receipts, room: :building)
+
+      active_accommodations.find_each do |acc|
+        bal = acc.balance
+        next unless bal.negative?
+
+        building_name = acc.room.building.name
+        result[building_name] = (result[building_name] || 0) + bal.abs
+      end
+      result.sort.to_h
     end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_26_042942) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_124956) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -67,6 +67,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_042942) do
     t.string "eviction_reason"
     t.date "planned_end_date", null: false
     t.bigint "renewal_source_id"
+    t.decimal "required_amount", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "resident_id", null: false
     t.bigint "room_id", null: false
     t.date "start_date", null: false
@@ -136,6 +137,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_042942) do
     t.index ["building_id"], name: "index_dormitory_commandant_buildings_on_building_id"
     t.index ["user_id", "building_id"], name: "index_active_commandant_buildings", unique: true, where: "(deactivated_at IS NULL)"
     t.index ["user_id"], name: "index_dormitory_commandant_buildings_on_user_id"
+  end
+
+  create_table "dormitory_receipts", force: :cascade do |t|
+    t.bigint "accommodation_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.date "paid_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["accommodation_id"], name: "index_dormitory_receipts_on_accommodation_id"
+    t.index ["discarded_at"], name: "index_dormitory_receipts_on_discarded_at"
   end
 
   create_table "dormitory_residents", force: :cascade do |t|
@@ -335,6 +348,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_042942) do
   add_foreign_key "dormitory_batch_operations", "users", column: "performed_by_id"
   add_foreign_key "dormitory_commandant_buildings", "dormitory_buildings", column: "building_id"
   add_foreign_key "dormitory_commandant_buildings", "users"
+  add_foreign_key "dormitory_receipts", "dormitory_accommodations", column: "accommodation_id"
   add_foreign_key "dormitory_residents", "dormitory_rooms", column: "current_room_id"
   add_foreign_key "dormitory_rooms", "dormitory_buildings", column: "building_id"
   add_foreign_key "notifications", "users", column: "recipient_id"

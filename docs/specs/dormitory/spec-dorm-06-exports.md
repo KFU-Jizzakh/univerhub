@@ -2,7 +2,7 @@
 
 Four types of CSV data exports with filters and role-based access control: settled residents list, free slots, accommodation history, and occupancy statistics. Exports use UTF-8 encoding with a BOM prefix and semicolon delimiter for Excel compatibility (Russian locale requirement).
 
-Depends on: SPEC-CORE-02, SPEC-DORM-02, SPEC-DORM-03, SPEC-DORM-04
+Depends on: SPEC-CORE-02, SPEC-DORM-02, SPEC-DORM-03, SPEC-DORM-04, SPEC-DORM-09
 
 Status: IMPLEMENTED
 
@@ -16,7 +16,7 @@ Status: IMPLEMENTED
 ### Settled Residents Export
 - AC-5: Lists all settled and temporarily absent residents with their current room
 - AC-6: Filters: building, floor, room, academic year
-- AC-7: Columns: full name, gender, date of birth, student ticket, phone, email, building, floor, room, settlement date, application number, contract number
+- AC-7: Columns: full name, gender, date of birth, student ticket, phone, email, building, floor, room, settlement date, application number, contract number, required amount, total paid, balance (SPEC-DORM-09 AC-25)
 - AC-8: Ordered by: building name → floor → room number → last name → first name
 - AC-9: Residents without an active accommodation are skipped
 
@@ -29,7 +29,7 @@ Status: IMPLEMENTED
 ### Accommodation History Export
 - AC-14: Lists all accommodations with optional filters
 - AC-15: Filters: building, status, date range (start date from/to), academic year
-- AC-16: Columns: resident name, student ticket, building, floor, room, application number, contract number, start date, end date (or "—" if ongoing), duration in days, status, eviction reason, comment
+- AC-16: Columns: resident name, student ticket, building, floor, room, application number, contract number, start date, end date (or "—" if ongoing), duration in days, status, eviction reason, comment, required amount, total paid, balance (SPEC-DORM-09 AC-26)
 - AC-17: Ordered by: building name → floor → room number → start date
 
 ### Occupancy Statistics Export
@@ -59,6 +59,7 @@ Status: IMPLEMENTED
 - BR-9: Occupancy percentage = (occupied / capacity) × 100
 - BR-10: Data is processed in batches to avoid memory issues with large datasets
 - BR-11: Each filter (building, floor, room, academic year, date range) is applied independently
+- BR-12: Payment amount columns (required amount, total paid, balance) are formatted with 2 decimal places and use period as decimal separator
 
 ## Behavior
 
@@ -119,3 +120,13 @@ And the occupancy percentage is correct (e.g., 40.0 for a building with 2 of 5 o
 Given only 1 building exists
 When admin exports occupancy stats
 Then the grand total row is not included
+
+#### Scenario: Settled residents with payment columns
+Given Ivan's accommodation has required_amount = 12000 and one receipt of 5000
+When admin downloads the settled residents CSV
+Then Ivan's row contains: "12000.00", "5000.00", "-7000.00"
+
+#### Scenario: History with payment columns
+Given Ivan's completed accommodation had required_amount = 12000 and total paid = 12000
+When admin downloads the history CSV
+Then Ivan's row contains: "12000.00", "12000.00", "0.00"

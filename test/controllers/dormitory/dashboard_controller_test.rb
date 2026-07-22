@@ -30,10 +30,26 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
     get dormitory_dashboard_path
     assert_response :success
 
-    # We can't easily check instance variables in integration tests,
-    # but we can check if the response body contains expected strings.
-    # Using ru.yml translations.
     assert_select "h1", text: "Дашборд общежития"
-    assert_select ".card", minimum: 4 # Top metrics
+    assert_select ".card", minimum: 5 # Top metrics including total debt
+  end
+
+  test "dashboard shows total debt metric" do
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card .text-muted", text: "Общий долг"
+  end
+
+  test "dashboard shows debt by building when debt exists" do
+    acc = dormitory_accommodations(:active_accommodation)
+    acc.update!(status: :active, required_amount: 10000)
+
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card-header", text: "Долг по корпусам"
   end
 end
