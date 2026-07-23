@@ -303,6 +303,7 @@ ru:
         partially_occupied: "Занята частично"
         fully_occupied: "Занята полностью"
         overcrowded: "Переполнена"
+        under_repair: "На ремонте"
     buildings:
       created: "Корпус создан."
       updated: "Корпус обновлён."
