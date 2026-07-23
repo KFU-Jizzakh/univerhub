@@ -1,0 +1,113 @@
+<% content_for :title, t("views.dormitory.batch_rooms.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_rooms"), dormitory_rooms_path %>
+  <%= breadcrumb t("views.dormitory.batch_rooms.page_title") %>
+<% end %>
+
+<h1 class="h3 mb-4"><%= t("views.dormitory.batch_rooms.page_title") %></h1>
+
+<% if flash.now[:alert].present? %>
+  <div class="alert alert-danger"><%= flash.now[:alert] %></div>
+<% end %>
+
+<div data-controller="batch-rooms"
+     data-batch-rooms-url-value="<%= suggest_number_dormitory_rooms_path %>"
+     data-batch-rooms-gender-none-label="<%= t("views.dormitory.rooms.gender_none") %>"
+     data-batch-rooms-gender-male-label="<%= t("views.dormitory.rooms.gender_male") %>"
+     data-batch-rooms-gender-female-label="<%= t("views.dormitory.rooms.gender_female") %>"
+     data-batch-rooms-too-many-label="<%= t("views.dormitory.batch_rooms.errors.too_many") %>"
+     data-batch-rooms-submit-label="<%= t("views.dormitory.batch_rooms.create_rooms") %>"
+     <% if @rooms_data.present? %>data-batch-rooms-rooms-data="<%= @rooms_data.to_json %>"
+     data-batch-rooms-building="<%= @building_id %>"
+     data-batch-rooms-floor="<%= @floor %>"<% end %>>
+
+  <%# Step 1: Range configuration %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><%= t("views.dormitory.batch_rooms.step1_title") %></h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label"><%= t("views.dormitory.rooms.building") %></label>
+          <%= select_tag :building_id,
+                options_from_collection_for_select(@buildings, :id, :name, @building_id),
+                prompt: t("views.shared.placeholders.select_building"),
+                class: "form-select",
+                required: true,
+                data: { batch_rooms_target: "building", action: "change->batch-rooms#updateSuggestedNumber" } %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.rooms.floor") %></label>
+          <input type="number" class="form-control" required min="1"
+                 data-batch-rooms-target="floor" data-action="input->batch-rooms#updateSuggestedNumber"
+                 value="<%= @floor %>">
+        </div>
+        <div class="col-md-3"></div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.batch_rooms.start_number") %></label>
+          <input type="text" class="form-control" required data-batch-rooms-target="startNumber"
+                 pattern="\d+" inputmode="numeric"
+                 title="<%= t("views.dormitory.batch_rooms.numbers_only") %>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.batch_rooms.end_number") %></label>
+          <input type="text" class="form-control" required data-batch-rooms-target="endNumber"
+                 pattern="\d+" inputmode="numeric"
+                 title="<%= t("views.dormitory.batch_rooms.numbers_only") %>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.rooms.capacity") %></label>
+          <input type="number" class="form-control" min="1" data-batch-rooms-target="defaultCapacity" value="1">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.rooms.gender_restriction") %></label>
+          <select class="form-select" data-batch-rooms-target="defaultGender">
+            <option value=""><%= t("views.dormitory.rooms.gender_none") %></option>
+            <option value="male"><%= t("views.dormitory.rooms.gender_male") %></option>
+            <option value="female"><%= t("views.dormitory.rooms.gender_female") %></option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button type="button" class="btn btn-primary" data-action="batch-rooms#generate">
+          <%= t("views.dormitory.batch_rooms.generate") %>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# Step 2: Editable table %>
+  <div class="card shadow-sm d-none" data-batch-rooms-target="tableCard">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><%= t("views.dormitory.batch_rooms.step2_title") %></h5>
+      <span class="badge bg-primary" data-batch-rooms-target="countBadge">0</span>
+    </div>
+    <div class="card-body">
+      <%= form_with(url: dormitory_batch_rooms_path, method: :post) do |f| %>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light">
+              <tr>
+                <th scope="col"><%= t("views.dormitory.rooms.room_number") %></th>
+                <th scope="col"><%= t("views.dormitory.rooms.capacity") %></th>
+                <th scope="col"><%= t("views.dormitory.rooms.gender_restriction") %></th>
+                <th scope="col" style="width:60px"></th>
+              </tr>
+            </thead>
+            <tbody data-batch-rooms-target="tableBody">
+            </tbody>
+          </table>
+        </div>
+        <div data-batch-rooms-target="hiddenFields"></div>
+        <div class="d-flex gap-2 mt-3">
+          <%= f.submit "",
+                class: "btn btn-primary",
+                data: { batch_rooms_target: "submitBtn" } %>
+          <%= link_to t("views.shared.actions.cancel"), dormitory_rooms_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

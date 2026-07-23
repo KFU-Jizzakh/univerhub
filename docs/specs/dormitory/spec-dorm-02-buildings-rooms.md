@@ -1,6 +1,6 @@
 # SPEC-DORM-02: Buildings & Rooms
 
-CRUD management for dormitory buildings and rooms. Rooms have a status lifecycle for occupancy tracking and support gender restrictions for settlement rules.
+CRUD management for dormitory buildings and rooms. Rooms have a status lifecycle for occupancy tracking and support gender restrictions for settlement rules. Rooms can be created individually or in bulk via a batch creation form with editable preview.
 
 Depends on: SPEC-CORE-02
 
@@ -24,6 +24,7 @@ Status: IMPLEMENTED
 - AC-14: An available rooms list can be filtered by gender and building
 - AC-15: The system can suggest the next available room number for a given floor in a building
 - AC-16: A commandant sees only the rooms in their assigned buildings
+- AC-17: Admin or dormitory administrator can create multiple rooms at once via a batch creation form with editable preview table
 
 ## UI/UX Notes
 
@@ -34,6 +35,7 @@ Status: IMPLEMENTED
 - Room form: building selector, number, floor, capacity, gender restriction selector
 - Room number auto-suggest: based on floor and building, suggests the next available number
 - Available rooms: provides a list of rooms with free or partial capacity for settlement and transfer forms
+- Batch room creation: two-step form — (1) set building, floor, number range, default capacity, and default gender restriction, (2) editable preview table where each row (number, capacity, gender) can be modified or removed before submission
 
 ## Business Rules
 
@@ -51,6 +53,10 @@ Status: IMPLEMENTED
 - BR-12: The suggested room number is the highest existing number on the floor plus one
 - BR-13: Deletion is blocked unless the room is free and has no current residents
 - BR-14: A gender restriction of "none" means any gender is allowed
+- BR-15: Batch room creation is atomic — all rooms are created in a single database transaction; if any room fails validation, the entire batch is rolled back
+- BR-16: Invalid gender_restriction values submitted from the client are silently sanitized to nil
+- BR-17: A non-existent building_id fails with a dedicated error message before the transaction begins
+- BR-18: Building can be pre-selected in the batch form via query parameter when navigating from the building page
 
 ## Behavior
 
@@ -151,3 +157,43 @@ Then both room 101 and room 102 are returned
 Given room 101 has gender restriction "female"
 When querying available rooms for gender "male"
 Then room 101 is excluded
+
+### Rule: Batch Room Creation (AC-17, BR-15–BR-18)
+
+#### Scenario: Create multiple rooms via batch form
+When admin sets building "Building A", floor 3, numbers 301-305, capacity 2, no gender restriction
+And admin submits the batch
+Then 5 rooms are created on floor 3 with numbers 301 through 305
+And all have capacity 2 and no gender restriction
+And admin is redirected to the rooms list filtered by the building
+
+#### Scenario: Edit and remove rooms in preview
+When admin generates a range of rooms in the preview table
+And admin changes the capacity of one row and deletes another row
+Then only the remaining rows are created with the modified values
+
+#### Scenario: Duplicate number in batch fails atomically
+Given room 101 exists in Building A
+When admin submits a batch that includes number 101
+Then no rooms are created
+And a validation error is shown
+
+#### Scenario: Floor exceeds building range in batch
+Given Building A has 5 floors
+When admin submits a batch with floor 6
+Then no rooms are created
+And a validation error is shown
+
+#### Scenario: Non-existent building in batch
+When admin submits a batch with a non-existent building_id
+Then no rooms are created
+And a dedicated building-not-found error message is shown
+
+#### Scenario: Invalid gender_restriction value is sanitized
+When admin submits a batch with an invalid gender_restriction value
+Then the room is created with gender_restriction set to nil
+
+#### Scenario: Building pre-selection from building page
+Given building "Building A" exists
+When admin navigates to batch creation from Building A's detail page
+Then the building selector is pre-filled with Building A

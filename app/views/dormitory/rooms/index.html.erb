@@ -7,7 +7,10 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <h1 class="h3 mb-0"><%= t("views.dormitory.rooms.page_title") %></h1>
   <% if policy(Dormitory::Room).create? %>
-    <%= link_to t("views.shared.actions.create"), new_dormitory_room_path, class: "btn btn-primary" %>
+    <div class="d-flex gap-2">
+      <%= link_to t("views.shared.actions.create"), new_dormitory_room_path, class: "btn btn-primary" %>
+      <%= link_to t("views.dormitory.batch_rooms.add_rooms"), new_dormitory_batch_room_path, class: "btn btn-outline-primary" %>
+    </div>
   <% end %>
 </div>
 

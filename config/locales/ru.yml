@@ -840,6 +840,25 @@ ru:
         no_rooms: "Нет комнат"
         confirm_delete: "Удалить комнату %{number}?"
         all_buildings: "Все корпуса"
+      batch_rooms:
+        page_title: "Массовое добавление комнат"
+        step1_title: "Шаг 1: Параметры комнат"
+        step2_title: "Шаг 2: Предпросмотр и правка"
+        start_number: "Начальный номер"
+        end_number: "Конечный номер"
+        numbers_only: "Только цифры"
+        generate: "Сгенерировать"
+        create_rooms: "Создать %{count} комнат"
+        add_rooms: "Добавить комнаты"
+        created:
+          one: "Создана %{count} комната."
+          few: "Созданы %{count} комнаты."
+          many: "Создано %{count} комнат."
+          other: "Создано %{count} комнат."
+        errors:
+          no_rooms: "Нет комнат для создания."
+          building_not_found: "Выбранный корпус не найден."
+          too_many: "Будет создано %{count} комнат. Продолжить?"
       residents:
         page_title: "Проживающие"
         show_title: "Проживающий: %{name}"
