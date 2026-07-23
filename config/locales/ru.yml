@@ -1160,5 +1160,5 @@ ru:
     dormitory_batch_operations: "Массовые операции"
     profile: "Профиль"
     toggle_sidebar: "Меню"
-    yes: "Да"
-    no: "Нет"
+    "yes": "Да"
+    "no": "Нет"
