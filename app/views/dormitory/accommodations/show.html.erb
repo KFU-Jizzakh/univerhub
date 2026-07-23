@@ -140,7 +140,7 @@
 </div>
 
 <% if @accommodation.receipts.any? %>
-  <div class="table-responsive mb-3">
+  <div class="mb-3">
     <table class="table table-hover align-middle">
       <thead class="table-light">
         <tr>
@@ -167,13 +167,33 @@
             </td>
             <td><%= receipt.comment.presence || "—" %></td>
             <td>
-              <% if @accommodation.active? && policy(receipt).edit? %>
-                <%= link_to t("views.shared.actions.edit"), edit_dormitory_accommodation_receipt_path(@accommodation, receipt), class: "btn btn-sm btn-outline-secondary" %>
-              <% end %>
-              <% if @accommodation.active? && policy(receipt).destroy? %>
-                <%= button_to t("views.shared.actions.delete"), dormitory_accommodation_receipt_path(@accommodation, receipt),
-                      method: :delete, class: "btn btn-sm btn-outline-danger",
-                      form: { data: { turbo_confirm: t("views.dormitory.receipts.confirm_delete") } } %>
+              <% if @accommodation.active? && (policy(receipt).edit? || policy(receipt).destroy?) %>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <% if policy(receipt).edit? %>
+                      <li>
+                        <%= link_to edit_dormitory_accommodation_receipt_path(@accommodation, receipt), class: "dropdown-item" do %>
+                          <i class="bi bi-pencil me-1"></i> <%= t("views.shared.actions.edit") %>
+                        <% end %>
+                      </li>
+                    <% end %>
+                    <% if policy(receipt).destroy? %>
+                      <% if policy(receipt).edit? %>
+                        <li><hr class="dropdown-divider"></li>
+                      <% end %>
+                      <li>
+                        <%= button_to dormitory_accommodation_receipt_path(@accommodation, receipt),
+                              method: :delete, class: "dropdown-item text-danger",
+                              form: { data: { turbo_confirm: t("views.dormitory.receipts.confirm_delete") } } do %>
+                          <i class="bi bi-trash me-1"></i> <%= t("views.shared.actions.delete") %>
+                        <% end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
               <% end %>
             </td>
           </tr>
@@ -200,15 +220,35 @@
 
 <%= render_audit_trail(@audit_events) %>
 
-<div class="d-flex flex-wrap gap-2 my-3">
-  <% if @accommodation.active? && policy(@accommodation).new_eviction? %>
-    <%= link_to t("views.dormitory.accommodations.evict_button"), new_eviction_dormitory_accommodation_path(@accommodation), class: "btn btn-danger" %>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3">
+  <%= link_to dormitory_resident_path(@accommodation.resident), class: "btn btn-outline-secondary" do %>
+    <i class="bi bi-arrow-left me-1"></i> <%= t("views.shared.actions.back") %>
   <% end %>
-  <% if @accommodation.active? && policy(@accommodation).new_transfer? %>
-    <%= link_to t("views.dormitory.accommodations.transfer_button"), new_transfer_dormitory_accommodation_path(@accommodation), class: "btn btn-warning" %>
-  <% end %>
-  <% if policy(@accommodation).edit? %>
-    <%= link_to t("views.shared.actions.edit"), edit_dormitory_accommodation_path(@accommodation), class: "btn btn-outline-secondary" %>
-  <% end %>
-  <%= link_to t("views.shared.actions.back"), dormitory_resident_path(@accommodation.resident), class: "btn btn-outline-secondary" %>
+
+  <div class="d-flex gap-2">
+    <% if @accommodation.active? && policy(@accommodation).new_transfer? %>
+      <%= link_to new_transfer_dormitory_accommodation_path(@accommodation), class: "btn btn-warning" do %>
+        <i class="bi bi-arrow-left-right me-1"></i> <%= t("views.dormitory.accommodations.transfer_button") %>
+      <% end %>
+    <% end %>
+    <% if @accommodation.active? && policy(@accommodation).new_eviction? %>
+      <%= link_to new_eviction_dormitory_accommodation_path(@accommodation), class: "btn btn-danger" do %>
+        <i class="bi bi-door-open me-1"></i> <%= t("views.dormitory.accommodations.evict_button") %>
+      <% end %>
+    <% end %>
+    <% if policy(@accommodation).edit? %>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <%= link_to edit_dormitory_accommodation_path(@accommodation), class: "dropdown-item" do %>
+              <i class="bi bi-pencil me-1"></i> <%= t("views.shared.actions.edit") %>
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    <% end %>
+  </div>
 </div>
