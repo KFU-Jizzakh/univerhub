@@ -114,7 +114,7 @@ module Dormitory
         :resident_id, :room_id,
         :application_number, :contract_number,
         :start_date, :planned_end_date, :comment,
-        :application_file, :contract_file, :payment_receipt,
+        :application_file, :contract_file,
         :required_amount,
         receipts_attributes: [ :id, :amount, :paid_at, :comment, :attachment, :_destroy ]
       )
@@ -124,7 +124,7 @@ module Dormitory
       params.require(:dormitory_accommodation).permit(
         :application_number, :contract_number,
         :start_date, :planned_end_date, :comment,
-        :application_file, :contract_file, :payment_receipt,
+        :application_file, :contract_file,
         :required_amount
       )
     end
@@ -134,7 +134,7 @@ module Dormitory
         :room_id,
         :application_number, :contract_number,
         :start_date, :planned_end_date, :comment,
-        :application_file, :contract_file, :payment_receipt,
+        :application_file, :contract_file,
         :eviction_reason,
         :required_amount,
         receipts_attributes: [ :id, :amount, :paid_at, :comment, :attachment, :_destroy ]

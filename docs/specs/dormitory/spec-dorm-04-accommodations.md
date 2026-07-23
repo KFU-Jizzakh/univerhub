@@ -11,7 +11,7 @@ Status: IMPLEMENTED
 - AC-1: Admin, dormitory administrator, and commandant can settle a resident into a room
 - AC-2: Settlement validates: resident is not already active, room has capacity, gender restriction matches, room is not under repair
 - AC-3: Settlement requires: application number, contract number, start date, planned end date
-- AC-4: Settlement requires at least one receipt with an attached payment file (SPEC-DORM-09 AC-9), OR a legacy payment_receipt attached directly (SPEC-DORM-09 AC-10)
+- AC-4: Settlement requires at least one receipt with an attached payment file (SPEC-DORM-09 AC-9)
 - AC-5: File attachments must be PDF, JPEG, or PNG and under 10 MB each
 - AC-6: Admin and dormitory administrator can force-settle even when the room is at full capacity (overcrowding)
 - AC-7: An active accommodation can be transferred to another room
@@ -47,7 +47,7 @@ Status: IMPLEMENTED
 - BR-1: Eviction reasons: transfer, graduation, expulsion, voluntary, violation, repair, other
 - BR-2: Settlement: validates preconditions, updates room occupancy, adjusts room status
 - BR-3: Force settlement allows bypassing capacity validation, available only to admin and dormitory administrator
-- BR-4: Settlement preconditions: resident must not already be active, room must be kept and active, at least one receipt with file OR legacy payment_receipt must be present (SPEC-DORM-09 BR-7)
+- BR-4: Settlement preconditions: resident must not already be active, room must be kept and active, at least one receipt with an attached file must be present (SPEC-DORM-09 BR-7)
 - BR-5: Capacity check: room must have available slots unless forced
 - BR-6: Transfer: completes the old accommodation, saves the new one, protects against race conditions for both rooms
 - BR-7: Transfer documents: the new accommodation must have supporting documents attached
@@ -69,7 +69,7 @@ And room 101 exists (Building A, floor 1, capacity 3, free, no gender restrictio
 ### Rule: Settle (BR-2, BR-3, BR-4, BR-5)
 
 #### Scenario: Successful settlement
-When a user settles Ivan into room 101 with start date today, planned end date one year from today, application number "APP-001", contract number "CNT-001", and uploads payment_receipt.pdf
+When a user settles Ivan into room 101 with start date today, planned end date one year from today, application number "APP-001", contract number "CNT-001", and creates a receipt with payment confirmation
 Then the accommodation is created with status "active"
 And the resident status changes to "settled", current room becomes 101
 And room 101 occupancy increases to 1, status becomes "partially occupied"

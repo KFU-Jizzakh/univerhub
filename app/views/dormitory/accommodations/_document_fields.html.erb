@@ -68,31 +68,6 @@
   <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
 </div>
 
-<div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
-  <%= f.label :payment_receipt, t("views.dormitory.accommodations.payment_receipt"), class: "form-label" %>
-  <% if f.object.payment_receipt.attached? %>
-    <div class="mb-2">
-      <i class="bi <%= file_icon_class(f.object.payment_receipt) %>"></i>
-      <% if f.object.persisted? %>
-        <%= link_to f.object.payment_receipt.filename, url_for(f.object.payment_receipt), target: "_blank", class: "me-2" %>
-      <% else %>
-        <span class="me-2"><%= f.object.payment_receipt.filename %></span>
-        <span class="badge bg-secondary"><%= t("views.shared.labels.pending") %></span>
-      <% end %>
-      <span class="text-muted small">(<%= number_to_human_size(f.object.payment_receipt.byte_size) %>)</span>
-    </div>
-  <% end %>
-  <%= f.file_field :payment_receipt, accept: "application/pdf,image/jpeg,image/png", class: "d-none", data: { drop_zone_target: "input" } %>
-  <div class="drop-zone" data-drop-zone-target="zone">
-    <div data-drop-zone-target="placeholder">
-      <i class="bi bi-cloud-arrow-up drop-zone-icon"></i>
-      <span><%= t("views.shared.drop_zone.hint") %></span>
-    </div>
-    <div data-drop-zone-target="list"></div>
-  </div>
-  <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
-</div>
-
 <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_payments") %></h5>
 
 <div class="mb-3">

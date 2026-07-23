@@ -70,7 +70,6 @@
           <th scope="col"><%= t("views.dormitory.audit.who_settled") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.application") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.contract") %></th>
-          <th scope="col"><%= t("views.dormitory.accommodations.receipt") %></th>
           <th scope="col"></th>
         </tr>
         </thead>
@@ -83,7 +82,6 @@
               <td><%= user_display(who_settled(acc)) %></td>
               <td><%= render "shared/file_attachment", attachment: acc.application_file %></td>
               <td><%= render "shared/file_attachment", attachment: acc.contract_file %></td>
-              <td><%= render "shared/file_attachment", attachment: acc.payment_receipt %></td>
               <td><%= link_to t("views.dormitory.accommodations.view_details"), dormitory_accommodation_path(acc), class: "btn btn-sm btn-outline-primary" %></td>
             </tr>
           <% end %>

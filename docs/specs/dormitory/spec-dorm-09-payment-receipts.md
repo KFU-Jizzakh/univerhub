@@ -42,8 +42,7 @@ Status: PLANNED
 
 ### Settlement with receipt
 - AC-10: Settlement requires at least one receipt with an attached payment file — the receipt is created via `accepts_nested_attributes_for` on the same form
-- AC-11: For backward compatibility, settlement also accepts a legacy `payment_receipt` attached directly to the accommodation (if no receipts are present)
-- AC-12: Transfer to a new room also requires at least one receipt with a file for the new accommodation
+- AC-11: Transfer to a new room also requires at least one receipt with a file for the new accommodation
 
 ### Payment summary
 - AC-13: Accommodation show page displays a payment summary block: required amount, total paid, balance
@@ -93,7 +92,7 @@ Status: PLANNED
 - BR-4: `total_paid` = sum(amount) of all kept receipts for the accommodation, computed at read time (no cached column)
 - BR-5: `balance` = `total_paid` − `required_amount`. Positive = overpayment, negative = debt, zero = settled
 - BR-6: Receipts use Discard::Model for soft-deletion — discarded receipts are excluded from `total_paid`, not displayed in lists, and cannot be restored via the UI
-- BR-7: Settlement preconditions (BR-4 from SPEC-DORM-04) are updated: at least one receipt with an attached file must be present, OR the legacy `payment_receipt` attachment on the accommodation must be present
+- BR-7: Settlement preconditions (BR-4 from SPEC-DORM-04) are updated: at least one receipt with an attached file must be present
 - BR-8: Receipt file format: PDF, JPEG, or PNG. Maximum size: 10 MB (same as accommodation document files)
 - BR-9: Receipt create/update/delete are recorded via Trackable (OutboxEvent event types: `dormitory.receipt.created`, `dormitory.receipt.updated`, `dormitory.receipt.destroyed`)
 - BR-10: Dashboard payment metrics (total debt, debt by building) are scoped by the user's accessible buildings, matching the existing dashboard scoping rules (BR-2 through BR-12 from SPEC-DORM-07)
@@ -205,24 +204,6 @@ And "Оплатить остаток" button is NOT shown
 Given Ivan's accommodation: required_amount = 12000, total_paid = 15000
 When admin views the accommodation show page
 Then balance = +3 000,00 (colored green)
-
-### Rule: Legacy payment_receipt backward compatibility (BR-7)
-
-#### Scenario: Old accommodation with legacy payment_receipt — no financial tracking
-Given Ivan's accommodation was settled before SPEC-DORM-09 with payment_receipt.pdf attached directly
-And the accommodation has no receipts and required_amount = 0 (default)
-When admin views the accommodation show page
-Then the "Documents" table shows payment_receipt.pdf in the "Квитанция" row
-And the "Payment" section shows: required_amount = 0, total_paid = 0, balance = 0 (green)
-And the receipts table is empty
-And "Add receipt" button is available (if active)
-
-#### Scenario: Both old and new sources coexist
-Given Ivan's accommodation has legacy payment_receipt.pdf AND 2 Receipt records
-When admin views the accommodation show page
-Then the "Documents" table shows payment_receipt.pdf in the "Квитанция" row
-And the "Payment" section shows total_paid = sum of 2 receipt amounts
-And the receipts table lists both receipts
 
 ### Rule: Receipt Policy access control (AC-23)
 

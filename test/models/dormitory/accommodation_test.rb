@@ -29,8 +29,9 @@ module Dormitory
       accommodation.contract_file.attach(
         io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
       )
-      accommodation.payment_receipt.attach(
-        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+      accommodation.receipts.build(
+        amount: 10000, paid_at: Date.current,
+        attachment: { io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf" }
       )
     end
 
@@ -258,9 +259,6 @@ module Dormitory
       acc.contract_file.attach(
         io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
       )
-      acc.payment_receipt.attach(
-        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
-      )
 
       assert_not acc.valid?
       assert_includes acc.errors[:application_file], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.application_file.invalid_file_format")
@@ -273,9 +271,6 @@ module Dormitory
       )
       acc.contract_file.attach(
         io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
-      )
-      acc.payment_receipt.attach(
-        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
       )
 
       assert_not acc.valid?
@@ -773,13 +768,24 @@ module Dormitory
       attach_receipt_to(r2)
       r2.save!
 
-      assert_equal 5000, acc.total_paid
+      assert_equal 15000, acc.total_paid
     end
 
-    test "total_paid is zero when no receipts" do
+    test "total_paid is zero when no effective receipts" do
       acc = build_accommodation
-      attach_files(acc)
+      acc.application_file.attach(
+        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      acc.contract_file.attach(
+        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+      acc.receipts.build(
+        amount: 1, paid_at: Date.current,
+        attachment: { io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf" }
+      )
       acc.do_settle!
+
+      acc.receipts.first.discard!
 
       assert_equal 0, acc.total_paid
     end
@@ -793,11 +799,11 @@ module Dormitory
       r2 = create_receipt_for(acc, amount: 2000, paid_at: Date.current - 1)
       r2.discard!
 
-      assert_equal 3000, acc.total_paid
+      assert_equal 13000, acc.total_paid
     end
 
     test "balance is negative when underpaid" do
-      acc = build_accommodation(required_amount: 10000)
+      acc = build_accommodation(required_amount: 20000)
       attach_files(acc)
       acc.do_settle!
 
@@ -813,15 +819,13 @@ module Dormitory
 
       r = create_receipt_for(acc, amount: 12000)
 
-      assert_equal 2000, acc.balance
+      assert_equal 12000, acc.balance
     end
 
     test "balance is zero when exactly paid" do
       acc = build_accommodation(required_amount: 10000)
       attach_files(acc)
       acc.do_settle!
-
-      r = create_receipt_for(acc, amount: 10000)
 
       assert_equal 0, acc.balance
     end
@@ -837,13 +841,6 @@ module Dormitory
 
       receipt = acc.receipts.build(amount: 5000, paid_at: Date.current)
       attach_receipt_to(receipt)
-
-      assert acc.has_payment_file?
-    end
-
-    test "has_payment_file? true with legacy payment_receipt" do
-      acc = build_accommodation
-      attach_files(acc)
 
       assert acc.has_payment_file?
     end
@@ -895,16 +892,8 @@ module Dormitory
         I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.base.files_required")
     end
 
-    test "do_settle! with legacy payment_receipt still works" do
-      acc = build_accommodation
-      attach_files(acc)
-
-      assert acc.do_settle!
-      assert acc.persisted?
-    end
-
     test "payment_overdue? true when balance negative and active" do
-      acc = build_accommodation(required_amount: 10000)
+      acc = build_accommodation(required_amount: 20000)
       attach_files(acc)
       acc.do_settle!
 

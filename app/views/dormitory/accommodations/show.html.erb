@@ -110,19 +110,7 @@
           <% end %>
         </td>
       </tr>
-      <tr>
-        <td><i class="bi bi-receipt me-1"></i> <%= t("views.dormitory.accommodations.receipt") %></td>
-        <td>—</td>
-        <td>
-          <% if @accommodation.payment_receipt.attached? %>
-            <i class="bi <%= file_icon_class(@accommodation.payment_receipt) %> me-1"></i>
-            <%= link_to @accommodation.payment_receipt.filename, url_for(@accommodation.payment_receipt), target: "_blank" %>
-            <span class="text-muted small">(<%= number_to_human_size(@accommodation.payment_receipt.byte_size) %>)</span>
-          <% else %>
-            <span class="text-muted"><%= t("views.dormitory.accommodations.no_file") %></span>
-          <% end %>
-        </td>
-      </tr>
+
     </tbody>
   </table>
 </div>

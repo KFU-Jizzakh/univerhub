@@ -424,7 +424,10 @@ else
       )
       acc.application_file.attach(seed_file(filename: "application_#{attrs[:app_num]}.pdf"))
       acc.contract_file.attach(seed_file(filename: "contract_#{attrs[:contract_num]}.pdf"))
-      acc.payment_receipt.attach(seed_file(filename: "receipt_#{attrs[:app_num]}.pdf"))
+      acc.receipts.build(
+        amount: 1, paid_at: Date.current,
+        attachment: seed_file(filename: "receipt_#{attrs[:app_num]}.pdf")
+      )
 
       acc.do_settle!
       accommodations[attrs[:key]] = acc
@@ -448,7 +451,10 @@ else
     )
     acc_ivanov.application_file.attach(seed_file(filename: "application_З-006.pdf"))
     acc_ivanov.contract_file.attach(seed_file(filename: "contract_Д-006.pdf"))
-    acc_ivanov.payment_receipt.attach(seed_file(filename: "receipt_З-006.pdf"))
+    acc_ivanov.receipts.build(
+      amount: 1, paid_at: Date.current,
+      attachment: seed_file(filename: "receipt_З-006.pdf")
+    )
     acc_ivanov.do_settle!
     puts "  Settled #{residents[:ivanov].full_name} in room #{rooms[:room_101].number}"
   end
@@ -469,7 +475,10 @@ else
       )
       new_acc.application_file.attach(seed_file(filename: "application_З-007.pdf"))
       new_acc.contract_file.attach(seed_file(filename: "contract_Д-007.pdf"))
-      new_acc.payment_receipt.attach(seed_file(filename: "receipt_З-007.pdf"))
+      new_acc.receipts.build(
+        amount: 1, paid_at: Date.current,
+        attachment: seed_file(filename: "receipt_З-007.pdf")
+      )
       acc_ivanov.do_transfer!(new_acc, eviction_reason: "transfer")
       puts "  Transferred #{residents[:ivanov].full_name}: #{rooms[:room_101].number} → #{rooms[:room_b1_102].number}"
     rescue ActiveRecord::RecordInvalid => e

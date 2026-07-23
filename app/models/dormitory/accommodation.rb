@@ -13,7 +13,6 @@ module Dormitory
 
     has_one_attached :application_file
     has_one_attached :contract_file
-    has_one_attached :payment_receipt
     has_many :receipts, -> { kept }, dependent: :destroy, class_name: "Dormitory::Receipt"
     accepts_nested_attributes_for :receipts, allow_destroy: true
 
@@ -27,7 +26,6 @@ module Dormitory
     validates :required_amount, numericality: { greater_than_or_equal_to: 0 }
     validate :application_file_format_and_size
     validate :contract_file_format_and_size
-    validate :payment_receipt_format_and_size
     validate :comment_required_for_other_reason, if: -> { eviction_reason == "other" }
     validate :planned_end_date_after_start_date
     validate :renewal_source_must_be_completed
@@ -84,7 +82,7 @@ module Dormitory
     end
 
     def has_payment_file?
-      receipts.any? { |r| r.attachment.attached? } || payment_receipt.attached?
+      receipts.any? { |r| r.attachment.attached? }
     end
 
     def do_update!(attrs)
@@ -363,10 +361,6 @@ module Dormitory
 
     def contract_file_format_and_size
       validate_file(contract_file, :contract_file)
-    end
-
-    def payment_receipt_format_and_size
-      validate_file(payment_receipt, :payment_receipt)
     end
 
     def planned_end_date_after_start_date

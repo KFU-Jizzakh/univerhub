@@ -32,8 +32,9 @@ class Dormitory::BatchEvictionsControllerTest < ActionDispatch::IntegrationTest
     acc.contract_file.attach(
       io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
     )
-    acc.payment_receipt.attach(
-      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    acc.receipts.build(
+      amount: 10000, paid_at: Date.current,
+      attachment: { io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf" }
     )
     Current.session = @admin.sessions.create!(ip_address: "127.0.0.1", user_agent: "test")
     acc.do_settle!

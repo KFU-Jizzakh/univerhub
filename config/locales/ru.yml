@@ -139,9 +139,6 @@ ru:
             contract_file:
               invalid_file_format: "Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG)."
               file_too_large: "Размер файла превышает 10 МБ."
-            payment_receipt:
-              invalid_file_format: "Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG)."
-              file_too_large: "Размер файла превышает 10 МБ."
             eviction_reason:
               invalid: "Недопустимая причина выселения."
             comment:
@@ -916,7 +913,6 @@ ru:
         cancelled: "Отменено"
         application_file: "Файл заявления"
         contract_file: "Файл договора"
-        payment_receipt: "Квитанция об оплате"
         documents_required: "Документы обязательны"
         current_room: "Текущая комната"
         no_accommodations: "Нет размещений"

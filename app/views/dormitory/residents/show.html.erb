@@ -91,7 +91,6 @@
           <th scope="col"><%= t("views.dormitory.audit.who_evicted") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.application") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.contract") %></th>
-          <th scope="col"><%= t("views.dormitory.accommodations.receipt") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.required_amount") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.balance") %></th>
           <th scope="col"></th>
@@ -107,7 +106,6 @@
             <td><%= user_display(who_evicted(acc)) %></td>
             <td><%= render "shared/file_attachment", attachment: acc.application_file %></td>
             <td><%= render "shared/file_attachment", attachment: acc.contract_file %></td>
-            <td><%= render "shared/file_attachment", attachment: acc.payment_receipt %></td>
             <td><%= number_to_currency(acc.required_amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></td>
             <td class="<%= acc.balance >= 0 ? 'text-success' : 'text-danger' %> fw-bold">
               <%= number_to_currency(acc.balance, unit: "", separator: ",", delimiter: " ", precision: 2) %>

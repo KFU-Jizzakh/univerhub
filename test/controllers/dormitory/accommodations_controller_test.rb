@@ -38,7 +38,13 @@ module Dormitory
           planned_end_date: Date.current + 1.year,
           application_file: file_upload,
           contract_file: file_upload,
-          payment_receipt: file_upload
+          receipts_attributes: {
+            "0" => {
+              amount: 10000,
+              paid_at: Date.current,
+              attachment: file_upload
+            }
+          }
         }.merge(overrides)
       }
     end
@@ -194,8 +200,7 @@ module Dormitory
           contract_number: "Д-001",
           start_date: Date.current,
           application_file: file_upload,
-          contract_file: file_upload,
-          payment_receipt: file_upload
+          contract_file: file_upload
         }
       }
 
@@ -372,7 +377,13 @@ module Dormitory
           eviction_reason: "transfer",
           application_file: file_upload,
           contract_file: file_upload,
-          payment_receipt: file_upload
+          receipts_attributes: {
+            "0" => {
+              amount: 10000,
+              paid_at: Date.current,
+              attachment: file_upload
+            }
+          }
         }.merge(overrides)
       }
     end
