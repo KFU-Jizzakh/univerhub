@@ -74,39 +74,3 @@
   <%= f.label :required_amount, t("views.dormitory.accommodations.required_amount"), class: "form-label" %>
   <%= f.number_field :required_amount, step: 0.01, class: "form-control" %>
 </div>
-
-<div class="mb-3">
-  <% f.object.receipts.build(paid_at: Date.current) unless f.object.receipts.any? %>
-  <%= f.fields_for :receipts do |rf| %>
-    <div class="mb-3">
-      <%= rf.label :amount, t("views.dormitory.receipts.amount"), class: "form-label" %>
-      <%= rf.number_field :amount, step: 0.01, required: !edit_mode, class: "form-control" %>
-    </div>
-
-    <div class="mb-3">
-      <%= rf.label :paid_at, t("views.dormitory.receipts.paid_at"), class: "form-label" %>
-      <%= rf.date_field :paid_at, required: !edit_mode, class: "form-control" %>
-    </div>
-
-    <div class="mb-3">
-      <%= rf.label :comment, t("views.dormitory.accommodations.comment"), class: "form-label" %>
-      <%= rf.text_area :comment, class: "form-control", rows: 2 %>
-    </div>
-
-    <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
-      <%= rf.label :attachment, t("views.dormitory.receipts.attachment"), class: "form-label" %>
-      <%= rf.file_field :attachment, accept: "application/pdf,image/jpeg,image/png", required: !edit_mode, class: "d-none", data: { drop_zone_target: "input" } %>
-      <% unless edit_mode %>
-        <div class="mt-1"><small class="text-warning"><%= t("views.dormitory.accommodations.documents_required") %></small></div>
-      <% end %>
-      <div class="drop-zone" data-drop-zone-target="zone">
-        <div data-drop-zone-target="placeholder">
-          <i class="bi bi-cloud-arrow-up drop-zone-icon"></i>
-          <span><%= t("views.shared.drop_zone.hint") %></span>
-        </div>
-        <div data-drop-zone-target="list"></div>
-      </div>
-      <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
-    </div>
-  <% end %>
-</div>

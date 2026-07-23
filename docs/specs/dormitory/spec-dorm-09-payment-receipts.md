@@ -41,8 +41,8 @@ Status: PLANNED
 - AC-9: Receipts can only be created, edited, or deleted while the parent accommodation is active
 
 ### Settlement with receipt
-- AC-10: Settlement requires at least one receipt with an attached payment file — the receipt is created via `accepts_nested_attributes_for` on the same form
-- AC-11: Transfer to a new room also requires at least one receipt with a file for the new accommodation
+- AC-10: Receipts are created independently via the dedicated `ReceiptsController` (nested under accommodations), not inline in the settlement form — receipts are not required for settlement
+- AC-11: Receipts can be added to an active accommodation at any time, not only during settlement
 
 ### Payment summary
 - AC-13: Accommodation show page displays a payment summary block: required amount, total paid, balance
@@ -77,7 +77,7 @@ Status: PLANNED
 ## UI/UX Notes
 
 - `required_amount` field: number input with step 0.01, placed in the payment section of the accommodation form
-- First receipt in settlement form: `fields_for :receipts` with amount, paid_at (default today), comment, file drop-zone
+- Receipts are created exclusively via the dedicated `ReceiptsController` (new/create/edit/update/destroy actions), not inline in the accommodation form
 - Payment summary on show: `<div class="card">` with three info-items (required, paid, balance) using colored value display
 - Receipts table: similar to documents table — date, amount, file link, small edit/delete buttons
 - "Pay remaining" button: `btn btn-success`, links to `new_dormitory_accommodation_receipt_path(accommodation, amount: debt_amount)`
@@ -92,14 +92,14 @@ Status: PLANNED
 - BR-4: `total_paid` = sum(amount) of all kept receipts for the accommodation, computed at read time (no cached column)
 - BR-5: `balance` = `total_paid` − `required_amount`. Positive = overpayment, negative = debt, zero = settled
 - BR-6: Receipts use Discard::Model for soft-deletion — discarded receipts are excluded from `total_paid`, not displayed in lists, and cannot be restored via the UI
-- BR-7: Settlement preconditions (BR-4 from SPEC-DORM-04) are updated: at least one receipt with an attached file must be present
+- BR-7: Receipts are not required for settlement or transfer — they can be added at any time while the accommodation is active via the dedicated ReceiptsController
 - BR-8: Receipt file format: PDF, JPEG, or PNG. Maximum size: 10 MB (same as accommodation document files)
 - BR-9: Receipt create/update/delete are recorded via Trackable (OutboxEvent event types: `dormitory.receipt.created`, `dormitory.receipt.updated`, `dormitory.receipt.destroyed`)
 - BR-10: Dashboard payment metrics (total debt, debt by building) are scoped by the user's accessible buildings, matching the existing dashboard scoping rules (BR-2 through BR-12 from SPEC-DORM-07)
 - BR-11: Balance display: green (`text-success`) when ≥ 0, red (`text-danger`) when < 0
 - BR-12: "Pay remaining" button is shown only when the accommodation is active AND balance < 0. It pre-fills the receipt amount to `abs(balance)`
 - BR-13: Receipt CRUD operations are only allowed while the parent accommodation is active (status = "active")
-- BR-14: The first receipt during settlement is created via `accepts_nested_attributes_for :receipts` on Accommodation — validated and saved in the same transaction as the accommodation itself
+- BR-14: Receipts are created exclusively via the dedicated `ReceiptsController`, nested under accommodations — the accommodation model no longer uses `accepts_nested_attributes_for :receipts`
 - BR-15: Receipt attachment file validation (format and size) mirrors the existing validation rules for accommodation documents
 
 ## Behavior
@@ -110,42 +110,23 @@ And admin user exists
 And building "Building A" has room 101 (capacity 3, free, no gender restriction)
 And resident "Ivan Petrov" exists (not settled, male)
 
-### Rule: Create accommodation with receipt (BR-7, BR-14)
+### Rule: Create accommodation with required_amount (AC-1, AC-2, AC-3)
 
-#### Scenario: Settle with receipt and required amount
+#### Scenario: Settle with required amount
 Given admin is on the settlement form for Ivan
 When admin fills in: room 101, start date today, planned end date +1 year,
   application number "APP-001", contract number "CNT-001",
-  required_amount = 12000,
-  receipt: amount = 12000, paid_at = today, file = receipt.pdf
+  required_amount = 12000, and attaches application and contract files
 And submits
 Then the accommodation is created with status "active" and required_amount = 12000
-And one receipt is created with amount = 12000, paid_at = today, and receipt.pdf attached
 And Ivan is settled in room 101
 And a settlement event is logged
 
-#### Scenario: Settle without receipt file fails
-Given admin is on the settlement form for Ivan
-When admin fills in all fields including receipt amount = 12000 but does NOT upload a file
-And submits
-Then a validation error about required files is raised
-And the accommodation is NOT created
-And no receipt is created
-
-#### Scenario: Settle with receipt amount zero fails
-Given admin is on the settlement form for Ivan
-When admin fills in all fields including receipt file uploaded but amount = 0
-And submits
-Then a validation error about receipt amount is raised
-And the accommodation is NOT created
-
 #### Scenario: Settle with required_amount zero succeeds
 Given admin is on the settlement form for Ivan
-When admin fills in all fields, required_amount = 0,
-  receipt: amount = 1, paid_at = today, file = receipt.pdf
+When admin fills in all fields, required_amount = 0, and attaches required files
 And submits
 Then the accommodation is created with required_amount = 0
-And one receipt is created with amount = 1
 
 ### Rule: Receipt management (BR-2, BR-3, BR-8, BR-13)
 

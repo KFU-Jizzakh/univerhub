@@ -37,14 +37,7 @@ module Dormitory
           start_date: Date.current,
           planned_end_date: Date.current + 1.year,
           application_file: file_upload,
-          contract_file: file_upload,
-          receipts_attributes: {
-            "0" => {
-              amount: 10000,
-              paid_at: Date.current,
-              attachment: file_upload
-            }
-          }
+          contract_file: file_upload
         }.merge(overrides)
       }
     end
@@ -376,14 +369,7 @@ module Dormitory
           planned_end_date: Date.current + 1.year,
           eviction_reason: "transfer",
           application_file: file_upload,
-          contract_file: file_upload,
-          receipts_attributes: {
-            "0" => {
-              amount: 10000,
-              paid_at: Date.current,
-              attachment: file_upload
-            }
-          }
+          contract_file: file_upload
         }.merge(overrides)
       }
     end
@@ -679,7 +665,7 @@ module Dormitory
 
     # --- SPEC-DORM-09: Payment fields in settlement ---
 
-    def settle_params_with_receipt(overrides = {})
+    def settle_params_with_amount(overrides = {})
       {
         dormitory_accommodation: {
           resident_id: @resident.id,
@@ -690,43 +676,30 @@ module Dormitory
           planned_end_date: Date.current + 1.year,
           application_file: file_upload,
           contract_file: file_upload,
-          required_amount: 12000,
-          receipts_attributes: {
-            "0" => {
-              amount: 12000,
-              paid_at: Date.current,
-              attachment: file_upload
-            }
-          }
+          required_amount: 12000
         }.deep_merge(overrides)
       }
     end
 
-    test "create settles with required_amount and nested receipt" do
+    test "create settles with required_amount" do
       sign_in @admin
 
       assert_difference -> { Accommodation.count }, 1 do
-        assert_difference -> { Dormitory::Receipt.kept.count }, 1 do
-          post dormitory_accommodations_path, params: settle_params_with_receipt
-        end
+        post dormitory_accommodations_path, params: settle_params_with_amount
       end
 
       acc = Accommodation.kept.last
       assert_equal 12000, acc.required_amount
-      assert_equal 12000, acc.total_paid
       assert_redirected_to dormitory_resident_path(@resident)
     end
 
-    test "create fails when receipt without file" do
+    test "create settles without receipt" do
       sign_in @admin
 
-      params = settle_params_with_receipt
-      params[:dormitory_accommodation][:receipts_attributes]["0"].delete(:attachment)
-
-      assert_no_difference -> { Accommodation.count } do
-        post dormitory_accommodations_path, params: params
+      assert_difference -> { Accommodation.count }, 1 do
+        post dormitory_accommodations_path, params: settle_params_with_amount
       end
-      assert_response :unprocessable_entity
+      assert_redirected_to dormitory_resident_path(@resident)
     end
 
     test "edit honors required_amount" do

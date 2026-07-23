@@ -830,33 +830,6 @@ module Dormitory
       assert_equal 0, acc.balance
     end
 
-    test "has_payment_file? true with receipt attachment" do
-      acc = build_accommodation
-      acc.application_file.attach(
-        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
-      )
-      acc.contract_file.attach(
-        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
-      )
-
-      receipt = acc.receipts.build(amount: 5000, paid_at: Date.current)
-      attach_receipt_to(receipt)
-
-      assert acc.has_payment_file?
-    end
-
-    test "has_payment_file? false without any payment document" do
-      acc = build_accommodation
-      acc.application_file.attach(
-        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
-      )
-      acc.contract_file.attach(
-        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
-      )
-
-      assert_not acc.has_payment_file?
-    end
-
     test "do_settle! succeeds with nested receipt" do
       acc = build_accommodation(required_amount: 12000)
       acc.application_file.attach(
@@ -876,20 +849,6 @@ module Dormitory
       assert_equal "active", acc.status
       assert_equal 12000, acc.total_paid
       assert_equal 0, acc.balance
-    end
-
-    test "do_settle! blocks without payment file" do
-      acc = build_accommodation
-      acc.application_file.attach(
-        io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
-      )
-      acc.contract_file.attach(
-        io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
-      )
-
-      assert_raises(ActiveRecord::RecordInvalid) { acc.do_settle! }
-      assert_includes acc.errors[:base],
-        I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.base.files_required")
     end
 
     test "payment_overdue? true when balance negative and active" do

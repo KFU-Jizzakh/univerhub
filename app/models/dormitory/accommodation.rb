@@ -13,8 +13,7 @@ module Dormitory
 
     has_one_attached :application_file
     has_one_attached :contract_file
-    has_many :receipts, -> { kept }, dependent: :destroy, class_name: "Dormitory::Receipt"
-    accepts_nested_attributes_for :receipts, allow_destroy: true
+    has_many :receipts, -> { kept }, dependent: :destroy, class_name: "Dormitory::Receipt", autosave: true
 
     EVICTION_REASONS = %w[transfer graduation expulsion voluntary violation repair other].freeze
     ACCEPTED_FILE_TYPES = %w[application/pdf image/jpeg image/png].freeze
@@ -79,10 +78,6 @@ module Dormitory
 
     def payment_overdue?
       active? && balance.negative?
-    end
-
-    def has_payment_file?
-      receipts.any? { |r| r.attachment.attached? }
     end
 
     def do_update!(attrs)
@@ -218,7 +213,7 @@ module Dormitory
         raise ActiveRecord::RecordInvalid.new(self)
       end
 
-      unless application_file.attached? && contract_file.attached? && has_payment_file?
+      unless application_file.attached? && contract_file.attached?
         errors.add(:base, :files_required)
         raise ActiveRecord::RecordInvalid.new(self)
       end
@@ -292,7 +287,7 @@ module Dormitory
     end
 
     def validate_transfer_files!(new_acc)
-      unless new_acc.application_file.attached? && new_acc.contract_file.attached? && new_acc.has_payment_file?
+      unless new_acc.application_file.attached? && new_acc.contract_file.attached?
         new_acc.errors.add(:base, :files_required)
         raise ActiveRecord::RecordInvalid.new(new_acc)
       end
