@@ -124,7 +124,7 @@ module ApplicationHelper
 
   def pagy_nav_html(pagy)
     return "" if pagy.pages <= 1
-    pagy.series_nav.html_safe
+    pagy.series_nav(:bootstrap).html_safe
   end
 
   def file_icon_class(attachment)
