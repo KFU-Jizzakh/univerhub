@@ -137,6 +137,16 @@
             <hr>
             <div class="mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-danger"><%= t('dormitory.dashboard.alerts.open_violations') %></span>
+                <span class="fw-bold"><%= @open_violations %></span>
+              </div>
+              <%= link_to dormitory_violations_path(status: :open), class: "btn btn-sm btn-outline-danger" do %>
+                <%= t('dormitory.dashboard.alerts.view_violations') %>
+              <% end %>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="badge bg-warning text-dark"><%= t('dormitory.dashboard.alerts.overdue') %></span>
                 <span class="fw-bold"><%= @overdue_accommodations.size %></span>
               </div>
@@ -286,9 +296,11 @@
                         <%= link_to t('dormitory.dashboard.events.accommodation_link', id: event.record_id), dormitory_accommodation_path(event.record_id), class: "small" %>
                       <% when "Dormitory::Room" %>
                         <%= link_to t('dormitory.dashboard.events.room_link', id: event.record_id), dormitory_room_path(event.record_id), class: "small" %>
-                      <% when "Dormitory::Building" %>
-                        <%= link_to t('dormitory.dashboard.events.building_link', id: event.record_id), dormitory_building_path(event.record_id), class: "small" %>
-                      <% end %>
+                       <% when "Dormitory::Building" %>
+                         <%= link_to t('dormitory.dashboard.events.building_link', id: event.record_id), dormitory_building_path(event.record_id), class: "small" %>
+                       <% when "Dormitory::Violation" %>
+                         <%= link_to t('dormitory.dashboard.events.violation_link', id: event.record_id), dormitory_violation_path(event.record_id), class: "small" %>
+                       <% end %>
                     </span>
                   <% end %>
                 </div>

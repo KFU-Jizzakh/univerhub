@@ -9,7 +9,7 @@ module Dormitory
 
     has_many :accommodations, class_name: "Dormitory::Accommodation", dependent: :restrict_with_error
     has_one :active_accommodation, -> { where(status: :active) }, class_name: "Dormitory::Accommodation"
-
+    has_many :violations, class_name: "Dormitory::Violation", dependent: :restrict_with_error
     has_one_attached :photo
 
     enum :gender, { male: 0, female: 1 }

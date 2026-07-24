@@ -22,7 +22,16 @@ module ApplicationHelper
     "partial" => "Частично завершено",
     "cancelled" => "Отменено",
     "pending" => "Ожидает",
-    "closed" => "Закрыт"
+    "closed" => "Закрыт",
+    "open" => "Открыто",
+    "reviewed" => "Рассмотрено",
+    "noise" => "Шум",
+    "property_damage" => "Порча имущества",
+    "smoking" => "Курение",
+    "unauthorized_guests" => "Посторонние лица",
+    "regime_violation" => "Нарушение режима",
+    "unsanitary" => "Антисанитария",
+    "other" => "Другое"
   }.freeze
 
   def current_user
@@ -157,9 +166,20 @@ module ApplicationHelper
     when "user_profile.created", "user_profile.updated" then "person-badge"
     when "role.created", "role.updated", "role.destroyed" then "key"
     when "user_role.created", "user_role.updated", "user_role.destroyed" then "shield-lock"
+    when "dormitory.violation.created", "dormitory.violation.updated", "dormitory.violation.discarded" then "exclamation-triangle"
     else "circle"
     end
     tag.i(class: "bi bi-#{icon}")
+  end
+
+  def violation_type_badge(violation_type)
+    label = STATUS_LABELS[violation_type.to_s] || violation_type.to_s.humanize
+    tag.span(label, class: "status-badge status-badge--violation_type")
+  end
+
+  def violation_status_badge(status)
+    label = STATUS_LABELS[status.to_s] || status.to_s.humanize
+    tag.span(label, class: "status-badge status-badge--#{status}")
   end
 
   def attachment_disposition(attachment)

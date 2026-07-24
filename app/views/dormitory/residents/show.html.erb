@@ -77,6 +77,37 @@
   </div>
 </div>
 
+<% if @violations.any? %>
+  <hr class="my-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h5 class="mb-0"><%= t("views.dormitory.violations.history_title") %></h5>
+  </div>
+  <div class="table-responsive mb-4">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.violations.violation_type") %></th>
+          <th scope="col"><%= t("views.dormitory.violations.occurred_at") %></th>
+          <th scope="col"><%= t("views.dormitory.violations.place") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @violations.each do |violation| %>
+          <tr>
+            <td><%= violation_type_badge(violation.violation_type) %></td>
+            <td><%= l(violation.occurred_at, format: :short) %></td>
+            <td><%= truncate(violation.place, length: 30) %></td>
+            <td><%= violation_status_badge(violation.status) %></td>
+            <td><%= link_to t("views.shared.actions.view"), dormitory_violation_path(violation), class: "btn btn-sm btn-outline-primary" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <% if @accommodations.any? %>
   <hr class="my-4">
   <h5 class="mb-3"><%= t("views.dormitory.accommodations.history_title") %></h5>
@@ -129,6 +160,9 @@
   <% end %>
   <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_eviction? %>
     <%= link_to t("views.dormitory.accommodations.evict_button"), new_eviction_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-danger" %>
+  <% end %>
+  <% if policy(Dormitory::Violation).new? %>
+    <%= link_to t("views.dormitory.violations.add_violation"), new_dormitory_violation_path(resident_id: @resident.id), class: "btn btn-outline-danger" %>
   <% end %>
   <% if policy(@resident).edit? %>
     <%= link_to t("views.shared.actions.edit"), edit_dormitory_resident_path(@resident), class: "btn btn-outline-secondary" %>

@@ -262,6 +262,10 @@ body.sidebar-collapsed .app-main {
 .status-badge--pending     { background: var(--uh-color-draft); }
 .status-badge--closed      { background: var(--uh-color-archived); }
 
+.status-badge--open            { background: var(--uh-color-new); }
+.status-badge--reviewed        { background: var(--uh-color-in-progress); color: #1c1c1c; }
+.status-badge--violation_type  { background: var(--uh-color-rejected); }
+
 .status-badge--xs { font-size: 0.6rem; }
 .status-badge--sm { font-size: 0.7rem; }
 
@@ -1350,5 +1354,35 @@ main.container {
 
   .status-chart-label {
     text-align: left;
+  }
+}
+
+// Resident search autocomplete
+.resident-search-results {
+  position: absolute;
+  z-index: 1050;
+  background: #fff;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  max-height: 16rem;
+  overflow-y: auto;
+  min-width: 100%;
+}
+
+.resident-search-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--bs-body-color, #212529);
+
+  &:hover,
+  &--active {
+    background: var(--uh-color-new, #2563eb);
+    color: #fff;
   }
 }

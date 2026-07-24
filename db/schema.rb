@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_23_060616) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_24_105713) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -187,6 +187,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_060616) do
     t.index ["status"], name: "index_dormitory_rooms_on_status"
   end
 
+  create_table "dormitory_violations", force: :cascade do |t|
+    t.text "commandant_comment"
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.datetime "discarded_at"
+    t.datetime "occurred_at", null: false
+    t.string "place", null: false
+    t.bigint "resident_id", null: false
+    t.text "review_result"
+    t.date "reviewed_at"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "violation_type", null: false
+    t.index ["discarded_at"], name: "index_dormitory_violations_on_discarded_at"
+    t.index ["resident_id"], name: "index_dormitory_violations_on_resident_id"
+    t.index ["status"], name: "index_dormitory_violations_on_status"
+    t.index ["violation_type"], name: "index_dormitory_violations_on_violation_type"
+  end
+
   create_table "notifications", force: :cascade do |t|
     t.string "action", null: false
     t.datetime "created_at", null: false
@@ -351,6 +370,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_060616) do
   add_foreign_key "dormitory_receipts", "dormitory_accommodations", column: "accommodation_id"
   add_foreign_key "dormitory_residents", "dormitory_rooms", column: "current_room_id"
   add_foreign_key "dormitory_rooms", "dormitory_buildings", column: "building_id"
+  add_foreign_key "dormitory_violations", "dormitory_residents", column: "resident_id"
   add_foreign_key "notifications", "users", column: "recipient_id"
   add_foreign_key "outbox_events", "users", column: "actor_id"
   add_foreign_key "reporting_report_comments", "reporting_reports", column: "report_id"

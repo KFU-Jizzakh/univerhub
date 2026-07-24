@@ -47,11 +47,18 @@ module Dormitory
       @debt_by_building = compute_debt_by_building
       @total_debt = @debt_by_building.values.sum
 
+      @open_violations = Dormitory::Violation.kept.open
+        .joins(:resident)
+        .left_joins(resident: :current_room)
+        .where("dormitory_residents.current_room_id IS NULL OR dormitory_rooms.building_id IN (?)", @buildings_scope.ids)
+        .count
+
       dormitory_record_types = %w[
         Dormitory::Building
         Dormitory::Room
         Dormitory::Resident
         Dormitory::Accommodation
+        Dormitory::Violation
       ]
 
       recent = OutboxEvent.where(record_type: dormitory_record_types)
@@ -63,13 +70,18 @@ module Dormitory
         room_ids = @rooms.ids
         resident_ids = @residents.ids
         accommodation_ids = Dormitory::Accommodation.where(room_id: room_ids).ids
+        violation_ids = Dormitory::Violation.joins(:resident)
+          .left_joins(resident: :current_room)
+          .where("dormitory_residents.current_room_id IS NULL OR dormitory_rooms.building_id IN (?)", building_ids)
+          .ids
 
         recent = recent.where(
-          "(record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?))",
+          "(record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?)) OR (record_type = ? AND record_id IN (?))",
           "Dormitory::Building", building_ids,
           "Dormitory::Room", room_ids,
           "Dormitory::Resident", resident_ids,
-          "Dormitory::Accommodation", accommodation_ids
+          "Dormitory::Accommodation", accommodation_ids,
+          "Dormitory::Violation", violation_ids
         )
       end
 

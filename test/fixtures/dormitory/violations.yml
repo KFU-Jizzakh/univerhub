@@ -1,0 +1,31 @@
+_fixture:
+  model_class: Dormitory::Violation
+
+violation_open_noise:
+  resident: resident_two_settled
+  violation_type: 0
+  occurred_at: "2026-07-20 23:30:00"
+  place: "Комната 201"
+  description: "Громкая музыка после 23:00"
+  status: 0
+
+violation_reviewed_property_damage:
+  resident: resident_one_not_settled
+  violation_type: 1
+  occurred_at: "2026-07-15 14:00:00"
+  place: "Коридор 3 этажа"
+  description: "Повреждение двери"
+  status: 1
+  reviewed_at: "2026-07-18"
+  review_result: "Проведена беседа, ущерб возмещён"
+  commandant_comment: "Зафиксировано дежурным"
+
+violation_closed_smoking:
+  resident: resident_two_settled
+  violation_type: 2
+  occurred_at: "2026-07-10 20:00:00"
+  place: "Туалет 2 этажа"
+  description: "Курение в неположенном месте"
+  status: 2
+  reviewed_at: "2026-07-12"
+  review_result: "Вынесено предупреждение"

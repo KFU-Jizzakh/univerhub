@@ -1,0 +1,82 @@
+<% content_for :title, t("views.dormitory.violations.edit_violation") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_violations"), dormitory_violations_path %>
+  <%= breadcrumb @violation.resident.full_name, dormitory_violation_path(@violation) %>
+  <%= breadcrumb t("views.shared.actions.edit") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.violations.edit_violation") %></h1>
+</div>
+
+<%= form_with(model: @violation, url: dormitory_violation_path(@violation), method: :patch) do |f| %>
+  <%= render "shared/form_errors", object: @violation %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :resident_id, t("views.dormitory.violations.resident"), class: "form-label" %>
+        <p class="form-control-plaintext"><strong><%= @violation.resident.full_name %></strong></p>
+        <%= f.hidden_field :resident_id %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :violation_type, t("views.dormitory.violations.violation_type"), class: "form-label" %>
+        <%= f.select :violation_type,
+              Dormitory::Violation.violation_types.map { |k, v| [ t("dormitory.violation.violation_type.#{k}"), k ] },
+              {},
+              { required: true, class: "form-select" } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :occurred_at, t("views.dormitory.violations.occurred_at"), class: "form-label" %>
+        <%= f.datetime_field :occurred_at, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :place, t("views.dormitory.violations.place"), class: "form-label" %>
+        <%= f.text_field :place, required: true, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :description, t("views.shared.labels.description"), class: "form-label" %>
+        <%= f.text_area :description, required: true, rows: 4, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :status, t("views.shared.labels.status"), class: "form-label" %>
+        <%= f.select :status,
+              Dormitory::Violation.statuses.map { |k, v| [ t("dormitory.violation.status.#{k}"), k ] },
+              {},
+              { required: true, class: "form-select" } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :protocol_file, t("views.dormitory.violations.protocol_file"), class: "form-label" %>
+        <%= f.file_field :protocol_file, class: "form-control" %>
+        <div class="form-text"><%= t("views.dormitory.violations.file_hint") %></div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :reviewed_at, t("views.dormitory.violations.reviewed_at"), class: "form-label" %>
+        <%= f.date_field :reviewed_at, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :review_result, t("views.dormitory.violations.review_result"), class: "form-label" %>
+        <%= f.text_area :review_result, rows: 3, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :commandant_comment, t("views.dormitory.violations.commandant_comment"), class: "form-label" %>
+        <%= f.text_area :commandant_comment, rows: 3, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3">
+    <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
+    <%= link_to t("views.shared.actions.cancel"), dormitory_violation_path(@violation), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

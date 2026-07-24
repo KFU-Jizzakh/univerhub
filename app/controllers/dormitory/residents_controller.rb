@@ -18,7 +18,7 @@ module Dormitory
               .where(status: [ :settled, :temporarily_absent ])
               .where(dormitory_rooms: { building_id: building.id })
           end
-          render json: @residents.map { |r|
+          render json: @residents.limit(50).map { |r|
             { id: r.id, full_name: r.full_name, room_number: r.current_room&.number, status: r.status }
           }
         end
@@ -28,6 +28,7 @@ module Dormitory
     def show
       authorize @resident
       @accommodations = @resident.accommodations.kept.ordered.includes(:room, :receipts)
+      @violations = @resident.violations.kept.ordered
       @audit_events = OutboxEvent.where(record: @resident).order(:created_at).includes(:actor)
       @acc_events_by = OutboxEvent.where(record: @accommodations).includes(:actor)
         .group_by { |e| [ e.record_id, e.action ] }

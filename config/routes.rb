@@ -61,6 +61,7 @@ Rails.application.routes.draw do
       resources :receipts, only: [ :new, :create, :edit, :update, :destroy ]
     end
     resources :academic_years
+    resources :violations
     resources :batch_rooms, only: [ :new, :create ]
     resources :batch_evictions, only: [ :index, :new, :create, :show ]
 

@@ -1,0 +1,68 @@
+<% content_for :title, t("views.dormitory.violations.page_title") %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_violations") %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.violations.page_title") %></h1>
+  <% if policy(Dormitory::Violation).create? %>
+    <%= link_to t("views.shared.actions.create"), new_dormitory_violation_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-8">
+    <%= form_tag dormitory_violations_path, method: :get, data: { controller: "filter-form", turbo_action: "replace" }, class: "d-flex flex-wrap gap-2" do %>
+      <%= label_tag :violation_type, t("views.dormitory.violations.violation_type"), class: "visually-hidden" %>
+      <%= select_tag :violation_type,
+            options_for_select(Dormitory::Violation.violation_types.map { |k, v| [ t("dormitory.violation.violation_type.#{k}"), k ] }, params[:violation_type]),
+            { prompt: t("views.dormitory.violations.all_types"), class: "form-select form-select-sm" } %>
+      <%= label_tag :status, t("views.shared.labels.status"), class: "visually-hidden" %>
+      <%= select_tag :status,
+            options_for_select(Dormitory::Violation.statuses.map { |k, v| [ t("dormitory.violation.status.#{k}"), k ] }, params[:status]),
+            { prompt: t("views.dormitory.violations.all_statuses"), class: "form-select form-select-sm" } %>
+    <% end %>
+  </div>
+</div>
+
+<% if @violations.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" data-controller="table-row-link">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.violations.resident") %></th>
+          <th scope="col"><%= t("views.dormitory.violations.violation_type") %></th>
+          <th scope="col"><%= t("views.dormitory.violations.occurred_at") %></th>
+          <th scope="col"><%= t("views.dormitory.violations.place") %></th>
+          <th scope="col"><%= t("views.shared.labels.status") %></th>
+          <th scope="col" class="text-end"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @violations.each do |violation| %>
+          <tr class="table-row-link" data-url="<%= dormitory_violation_path(violation) %>" data-action="click->table-row-link#navigate keydown->table-row-link#navigateByKey" role="link" tabindex="0">
+            <td><%= link_to violation.resident.full_name, dormitory_resident_path(violation.resident) %></td>
+            <td><%= violation_type_badge(violation.violation_type) %></td>
+            <td><%= l(violation.occurred_at, format: :short) %></td>
+            <td><%= truncate(violation.place, length: 30) %></td>
+            <td><%= violation_status_badge(violation.status) %></td>
+            <td class="text-end">
+              <% if policy(violation).edit? %>
+                <%= link_to t("views.shared.actions.edit"), edit_dormitory_violation_path(violation), class: "btn btn-sm btn-outline-secondary" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%== pagy_nav_html(@pagy) %>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "bi-exclamation-triangle",
+      message: t("views.dormitory.violations.no_violations"),
+      cta_text: policy(Dormitory::Violation).create? ? t("views.shared.actions.create") : nil,
+      cta_path: policy(Dormitory::Violation).create? ? new_dormitory_violation_path : nil %>
+<% end %>

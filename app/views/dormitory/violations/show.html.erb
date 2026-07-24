@@ -1,0 +1,79 @@
+<% content_for :title, t("views.dormitory.violations.show_title", name: @violation.resident.full_name) %>
+
+<% breadcrumbs do %>
+  <%= breadcrumb t("breadcrumbs.dormitory_violations"), dormitory_violations_path %>
+  <%= breadcrumb @violation.resident.full_name %>
+<% end %>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0"><%= t("views.dormitory.violations.show_title", name: @violation.resident.full_name) %></h1>
+</div>
+
+<div class="info-grid mb-4">
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.violations.resident") %></span>
+    <span class="info-value"><%= link_to @violation.resident.full_name, dormitory_resident_path(@violation.resident) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.violations.violation_type") %></span>
+    <span class="info-value"><%= violation_type_badge(@violation.violation_type) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.violations.occurred_at") %></span>
+    <span class="info-value"><%= l(@violation.occurred_at, format: :short) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.violations.place") %></span>
+    <span class="info-value"><%= @violation.place %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.description") %></span>
+    <span class="info-value"><%= simple_format(@violation.description) %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.status") %></span>
+    <span class="info-value"><%= violation_status_badge(@violation.status) %></span>
+  </div>
+  <% if @violation.protocol_file.attached? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.dormitory.violations.protocol_file") %></span>
+      <span class="info-value"><%= link_to @violation.protocol_file.filename, @violation.protocol_file, class: "btn btn-sm btn-outline-secondary" %></span>
+    </div>
+  <% end %>
+  <% if @violation.reviewed_at.present? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.dormitory.violations.reviewed_at") %></span>
+      <span class="info-value"><%= l(@violation.reviewed_at, format: :short) %></span>
+    </div>
+  <% end %>
+  <% if @violation.review_result.present? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.dormitory.violations.review_result") %></span>
+      <span class="info-value"><%= simple_format(@violation.review_result) %></span>
+    </div>
+  <% end %>
+  <% if @violation.commandant_comment.present? %>
+    <div class="info-item">
+      <span class="info-label"><%= t("views.dormitory.violations.commandant_comment") %></span>
+      <span class="info-value"><%= simple_format(@violation.commandant_comment) %></span>
+    </div>
+  <% end %>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.shared.labels.created") %></span>
+    <span class="info-value"><%= format_datetime(@violation.created_at) %></span>
+  </div>
+</div>
+
+<%= render_audit_trail(@audit_events) %>
+
+<div class="d-flex flex-wrap gap-2 my-3">
+  <% if policy(@violation).edit? %>
+    <%= link_to t("views.shared.actions.edit"), edit_dormitory_violation_path(@violation), class: "btn btn-outline-secondary" %>
+  <% end %>
+  <% if policy(@violation).destroy? %>
+    <%= button_to t("views.shared.actions.delete"), dormitory_violation_path(@violation), method: :delete,
+                  data: { turbo_confirm: t("views.dormitory.violations.confirm_delete") },
+                  class: "btn btn-outline-danger" %>
+  <% end %>
+  <%= link_to t("views.shared.actions.back"), dormitory_violations_path, class: "btn btn-outline-secondary" %>
+</div>
