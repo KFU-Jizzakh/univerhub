@@ -17,7 +17,10 @@ module Dormitory
 
     def show
       authorize @accommodation
-      @audit_events = OutboxEvent.where(record: @accommodation).order(:created_at).includes(:actor)
+      receipt_ids = @accommodation.receipts.with_discarded.pluck(:id)
+      @audit_events = OutboxEvent.where(record: @accommodation)
+        .or(OutboxEvent.where(record_type: "Dormitory::Receipt", record_id: receipt_ids))
+        .order(:created_at).includes(:actor)
     end
 
     def new

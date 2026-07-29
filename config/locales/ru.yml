@@ -454,6 +454,10 @@ ru:
           created: создал(а) корпус
           updated: обновил(а) корпус
           discarded: удалил(а) корпус
+        receipt:
+          created: добавил(а) квитанцию
+          updated: обновил(а) квитанцию
+          destroyed: удалил(а) квитанцию
         commandant_building:
           created: назначил(а) коменданта корпуса
           updated: обновил(а) коменданта корпуса

@@ -29,28 +29,28 @@ module DormitoryHelper
   def render_audit_trail(events)
     return unless events&.any?
 
-    tag.div(class: "audit-trail mt-4") do
-      concat tag.h5(class: "mb-3") { t("views.shared.labels.history") }
-      concat tag.div(class: "table-responsive") do
-        concat tag.table(class: "table table-sm table-hover align-middle") do
-          concat tag.thead(class: "table-light") do
-            concat tag.tr do
-              concat tag.th { t("views.dormitory.audit.action") }
-              concat tag.th { t("views.dormitory.audit.actor") }
-              concat tag.th { t("views.dormitory.audit.datetime") }
-            end
-          end
-          concat tag.tbody do
-            events.each do |event|
-              concat tag.tr do
-                concat tag.td { t("activity.actions.#{event.action}", default: event.action.humanize) }
-                concat tag.td { event.actor ? user_display(event.actor) : "—" }
-                concat tag.td { format_datetime(event.created_at) }
+    rows = events.map do |event|
+      content_tag(:tr) do
+        content_tag(:td, t("activity.actions.#{event.action}", default: event.action.humanize)) +
+          content_tag(:td, event.actor ? user_display(event.actor) : "—") +
+          content_tag(:td, format_datetime(event.created_at))
+      end
+    end.join.html_safe
+
+    content_tag(:div, class: "audit-trail mt-4") do
+      content_tag(:h5, t("views.shared.labels.history"), class: "mb-3") +
+        content_tag(:div, class: "table-responsive") do
+          content_tag(:table, class: "table table-sm table-hover align-middle") do
+            content_tag(:thead, class: "table-light") do
+              content_tag(:tr) do
+                content_tag(:th, t("views.dormitory.audit.action")) +
+                  content_tag(:th, t("views.dormitory.audit.actor")) +
+                  content_tag(:th, t("views.dormitory.audit.datetime"))
               end
-            end
+            end +
+              content_tag(:tbody, rows)
           end
         end
-      end
     end
   end
 
