@@ -36,6 +36,35 @@ class Dormitory::BuildingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "show displays bed statistics" do
+    sign_in_as @admin
+    get dormitory_building_path(@building)
+    assert_response :success
+    assert_select ".card", text: /Всего мест/
+    assert_select ".card", text: /Занято мест/
+    assert_select ".card", text: /Свободно мест/
+    assert_select ".card", text: /Заселённость/
+    assert_select ".card", text: /Комнаты по статусам/
+  end
+
+  test "show displays room status breakdown" do
+    sign_in_as @admin
+    get dormitory_building_path(@building)
+    assert_response :success
+    assert_select ".card-header", text: I18n.t("views.dormitory.buildings.room_status_breakdown")
+    assert_select ".card-body .fw-bold", minimum: 4
+  end
+
+  test "show with no rooms displays zero bed stats" do
+    empty_building = Dormitory::Building.create!(name: "Пустой", address: "ул. Пустая, 1", floors_count: 1)
+    sign_in_as @admin
+    get dormitory_building_path(empty_building)
+    assert_response :success
+    assert_select ".card .h2", text: "0", count: 3
+    assert_select ".card .h2", text: "0%", count: 1
+    assert_select ".card-body .fw-bold", text: "0", count: 4
+  end
+
   test "new renders" do
     sign_in_as @admin
     get new_dormitory_building_path

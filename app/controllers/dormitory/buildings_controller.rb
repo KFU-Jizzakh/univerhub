@@ -23,7 +23,18 @@ module Dormitory
     end
 
     def show
+      # PURPOSE: Display building details with bed statistics and room list
+      # SPECIFICATION: SPEC-DORM-02, SPEC-DORM-11
       authorize @building
+
+      rooms_for_stats = @building.rooms.kept
+      @total_beds = rooms_for_stats.sum(:capacity)
+      @occupied_beds = rooms_for_stats.sum(:current_occupancy)
+      @free_beds = [ @total_beds - @occupied_beds, 0 ].max
+      @building_occupancy_rate = @total_beds.positive? ? (@occupied_beds.to_f / @total_beds * 100).round(1) : 0
+
+      @room_counts_by_status = rooms_for_stats.group(:status).count
+
       @pagy, @building_rooms = pagy(:offset, @building.rooms.kept.ordered)
       @audit_events = OutboxEvent.where(record: @building).order(:created_at).includes(:actor)
     end

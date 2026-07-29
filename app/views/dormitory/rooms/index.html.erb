@@ -26,6 +26,33 @@
   </div>
 <% end %>
 
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.rooms.total_beds") %></div>
+        <div class="h2 mb-0"><%= @total_beds %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.rooms.occupied_beds") %></div>
+        <div class="h2 mb-0"><%= @occupied_beds %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.rooms.free_beds") %></div>
+        <div class="h2 mb-0"><%= @free_beds %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm bg-light">
+        <div class="text-muted small"><%= t("views.dormitory.rooms.occupancy_rate") %></div>
+        <div class="h2 mb-0"><%= @occupancy_rate %>%</div>
+      </div>
+    </div>
+  </div>
+
 <% if @rooms.any? %>
   <div class="table-responsive">
     <table class="table table-hover align-middle" data-controller="table-row-link">
@@ -35,6 +62,7 @@
           <th scope="col"><%= t("views.dormitory.rooms.building") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.floor") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.capacity") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.available_slots") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.gender_restriction") %></th>
           <th scope="col"><%= t("views.shared.labels.status") %></th>
           <th scope="col" class="text-end"></th>
@@ -47,6 +75,7 @@
             <td><%= room.building.name %></td>
             <td><%= room.floor %></td>
             <td><%= room.current_occupancy %>/<%= room.capacity %></td>
+            <td><%= [room.available_slots, 0].max %></td>
             <td>
               <% if room.gender_restriction.present? %>
                 <%= t("views.dormitory.rooms.gender_#{room.gender_restriction}") %>

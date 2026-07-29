@@ -53,6 +53,57 @@
 
 <hr class="my-4">
 
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card text-center p-3 shadow-sm">
+      <div class="text-muted small"><%= t("views.dormitory.buildings.total_beds") %></div>
+      <div class="h2 mb-0"><%= @total_beds %></div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 shadow-sm">
+      <div class="text-muted small"><%= t("views.dormitory.buildings.occupied_beds") %></div>
+      <div class="h2 mb-0"><%= @occupied_beds %></div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 shadow-sm">
+      <div class="text-muted small"><%= t("views.dormitory.buildings.free_beds") %></div>
+      <div class="h2 mb-0"><%= @free_beds %></div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 shadow-sm bg-light">
+      <div class="text-muted small"><%= t("views.dormitory.buildings.occupancy_rate") %></div>
+      <div class="h2 mb-0"><%= @building_occupancy_rate %>%</div>
+      <div class="progress mt-1 progress--sm">
+        <div class="progress-bar <%= @building_occupancy_rate > 90 ? 'bg-danger' : (@building_occupancy_rate > 70 ? 'bg-warning' : 'bg-success') %>"
+             style="width: <%= @building_occupancy_rate %>%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-white fw-bold"><%= t("views.dormitory.buildings.room_status_breakdown") %></div>
+      <div class="card-body">
+        <div class="row g-2">
+          <% %w[free partially_occupied fully_occupied overcrowded].each do |status| %>
+            <div class="col-6">
+              <div class="p-2 border rounded bg-light text-center">
+                <div class="text-muted small"><%= t("dormitory.room.status.#{status}") %></div>
+                <div class="fw-bold"><%= @room_counts_by_status[status] || 0 %></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <h4 class="mb-0"><%= t("views.dormitory.buildings.rooms_in_building") %></h4>
   <% if policy(Dormitory::Room).create? %>

@@ -4,9 +4,17 @@ module Dormitory
     before_action :set_buildings, only: [ :index, :new, :create, :edit, :update ]
 
     def index
+      # PURPOSE: List rooms with aggregated bed statistics and building filter
+      # SPECIFICATION: SPEC-DORM-02, SPEC-DORM-11
       authorize Dormitory::Room
       @rooms = policy_scope(Dormitory::Room)
       @rooms = @rooms.where(building_id: params[:building_id]) if params[:building_id].present?
+
+      @total_beds = @rooms.sum(:capacity)
+      @occupied_beds = @rooms.sum(:current_occupancy)
+      @free_beds = [ @total_beds - @occupied_beds, 0 ].max
+      @occupancy_rate = @total_beds.positive? ? (@occupied_beds.to_f / @total_beds * 100).round(1) : 0
+
       @pagy, @rooms = pagy(:offset, @rooms)
     end
 

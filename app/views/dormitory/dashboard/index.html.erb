@@ -73,6 +73,12 @@
 
   <div class="row g-3 mb-4">
     <div class="col-md-3">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t('dormitory.dashboard.metrics.total_beds') %></div>
+        <div class="h2 mb-0"><%= @total_capacity %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
       <div class="card text-center p-3 shadow-sm <%= @total_debt > 0 ? 'border-danger' : '' %>">
         <div class="text-muted small"><%= t('dormitory.dashboard.metrics.total_debt') %></div>
         <div class="h2 mb-0 <%= @total_debt > 0 ? 'text-danger' : 'text-success' %>">

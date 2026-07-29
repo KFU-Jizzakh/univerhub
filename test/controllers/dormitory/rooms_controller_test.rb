@@ -43,6 +43,31 @@ class Dormitory::RoomsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index displays bed statistics summary" do
+    sign_in_as @admin
+    get dormitory_rooms_path
+    assert_response :success
+    assert_select ".card", text: /Всего мест/
+    assert_select ".card", text: /Занято мест/
+    assert_select ".card", text: /Свободно мест/
+    assert_select ".card", text: /Заселённость/
+  end
+
+  test "index shows available slots column" do
+    sign_in_as @admin
+    get dormitory_rooms_path
+    assert_response :success
+    assert_select "th", text: /Свободных мест/
+  end
+
+  test "show displays available slots and occupancy percentage" do
+    sign_in_as @admin
+    get dormitory_room_path(@room)
+    assert_response :success
+    assert_select ".info-item", text: /Свободных мест/
+    assert_select ".info-item", text: /Заполненность/
+  end
+
   test "index filters by building_id" do
     sign_in_as @admin
     get dormitory_rooms_path, params: { building_id: @building.id }

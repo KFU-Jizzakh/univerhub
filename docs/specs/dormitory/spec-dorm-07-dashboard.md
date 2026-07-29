@@ -27,7 +27,7 @@ Status: IMPLEMENTED
 
 - Dashboard page route
 - Active year badge at the top
-- Metrics cards: Buildings, Rooms, Residents, Total Capacity, Occupancy, Rate (%)
+- Metrics cards: Buildings, Rooms, Residents, Occupancy Rate, Total Beds, Total Debt
 - Building stats table: building name, capacity, occupancy, rate
 - Room status distribution as colored badges or a bar chart
 - Gender and status distributions as counts

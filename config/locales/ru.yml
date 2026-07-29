@@ -264,6 +264,7 @@ ru:
         rooms: Всего комнат
         residents: Всего проживающих
         occupancy_rate: Заполняемость
+        total_beds: Всего мест
         total_debt: Общий долг
       alerts:
         title: Операционные оповещения
@@ -850,6 +851,10 @@ ru:
         batch_eviction: Массовое выселение
         rooms_count: Комнат
         occupancy_rate: Заселённость
+        total_beds: Всего мест
+        occupied_beds: Занято мест
+        free_beds: Свободно мест
+        room_status_breakdown: Комнаты по статусам
       rooms:
         page_title: Комнаты
         show_title: 'Комната: %{number}'
@@ -870,6 +875,12 @@ ru:
         no_rooms: Нет комнат
         confirm_delete: Удалить комнату %{number}?
         all_buildings: Все корпуса
+        total_beds: Всего мест
+        occupied_beds: Занято мест
+        free_beds: Свободно мест
+        available_slots: Свободных мест
+        occupancy_percentage: Заполненность
+        occupancy_rate: Заселённость
       batch_rooms:
         page_title: Массовое добавление комнат
         step1_title: 'Шаг 1: Параметры комнат'

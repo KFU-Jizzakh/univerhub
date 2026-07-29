@@ -27,6 +27,14 @@
     <span class="info-value"><%= @room.current_occupancy %></span>
   </div>
   <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.available_slots") %></span>
+    <span class="info-value"><%= [@room.available_slots, 0].max %></span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.occupancy_percentage") %></span>
+    <span class="info-value"><%= @room.capacity.positive? ? (@room.current_occupancy.to_f / @room.capacity * 100).round(1) : 0 %>%</span>
+  </div>
+  <div class="info-item">
     <span class="info-label"><%= t("views.dormitory.rooms.gender_restriction") %></span>
     <span class="info-value">
       <% if @room.gender_restriction.present? %>

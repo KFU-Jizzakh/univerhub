@@ -31,7 +31,17 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select "h1", text: "Дашборд общежития"
-    assert_select ".card", minimum: 5 # Top metrics including total debt
+    assert_select ".card", minimum: 6
+  end
+
+  test "dashboard shows total beds metric" do
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card", text: /Всего мест/ do
+      assert_select ".h2", text: /\A\d+\z/
+    end
   end
 
   test "dashboard shows total debt metric" do
