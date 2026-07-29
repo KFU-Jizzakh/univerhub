@@ -33,7 +33,7 @@
     <div class="col-md-6">
       <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
         <%= f.label :attachment, t("views.dormitory.receipts.attachment"), class: "form-label" %>
-        <%= f.file_field :attachment, accept: "application/pdf,image/jpeg,image/png", required: true, class: "d-none", data: { drop_zone_target: "input" } %>
+        <%= f.file_field :attachment, accept: "application/pdf,image/jpeg,image/png", class: "d-none", data: { drop_zone_target: "input" } %>
         <div class="drop-zone" data-drop-zone-target="zone">
           <div data-drop-zone-target="placeholder">
             <i class="bi bi-cloud-arrow-up drop-zone-icon"></i>

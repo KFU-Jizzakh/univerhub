@@ -91,8 +91,10 @@ export default class extends Controller {
         </div>
       `).join("")
     } else {
-      if (this.hasPlaceholderTarget) this.placeholderTarget.classList.remove("d-none")
-      this.listTarget.innerHTML = ""
+      this.listTarget.querySelectorAll(".drop-zone-file").forEach(el => el.remove())
+      if (this.listTarget.querySelectorAll(".drop-zone-error, .drop-zone-file").length === 0) {
+        if (this.hasPlaceholderTarget) this.placeholderTarget.classList.remove("d-none")
+      }
     }
 
     if (this.inputTarget.multiple) {
@@ -109,11 +111,18 @@ export default class extends Controller {
   }
 
   showFileError(name, message) {
+    if (this.hasPlaceholderTarget) this.placeholderTarget.classList.add("d-none")
     const errorEl = document.createElement("div")
     errorEl.classList.add("drop-zone-error")
     errorEl.textContent = `${name}: ${message}`
     this.listTarget.appendChild(errorEl)
-    setTimeout(() => errorEl.remove(), 4000)
+    setTimeout(() => {
+      errorEl.remove()
+      if (this.files.length === 0 &&
+          this.listTarget.querySelectorAll(".drop-zone-error, .drop-zone-file").length === 0) {
+        if (this.hasPlaceholderTarget) this.placeholderTarget.classList.remove("d-none")
+      }
+    }, 4000)
   }
 
   fileIcon(file) {
