@@ -1,8 +1,4 @@
-# Роли
-Role::NAMES.each do |role_name|
-  Role.find_or_create_by!(name: role_name)
-end
-puts "Roles: #{Role.pluck(:name).join(', ')}"
+# Роли определяются в коде (UserRole::NAMES) — таблицы ролей нет
 
 if Rails.env.production?
   password = SecureRandom.hex(16)
@@ -17,8 +13,7 @@ if Rails.env.production?
     puts "Admin already exists, password unchanged"
   end
 
-  role = Role.find_by!(name: "admin")
-  UserRole.find_or_create_by!(user: admin, role: role)
+  UserRole.find_or_create_by!(user: admin, role_name: "admin")
 
   admin.create_profile!(
     first_name: "Системный",
@@ -66,7 +61,8 @@ else
     visitor: "visitor@univerhub.local",
     reporting_admin: "reporting.admin@univerhub.local",
     dormitory_admin: "dormitory.admin@univerhub.local",
-    dormitory_commandant: "commandant@univerhub.local"
+    dormitory_commandant: "commandant@univerhub.local",
+    dormitory_registrar: "registrar@univerhub.local"
   }.each do |key, email|
       users[key] = User.find_or_create_by!(email_address: email) do |u|
         u.password = "password"
@@ -86,12 +82,12 @@ else
     visitor:         %w[reporting.visitor],
     reporting_admin: %w[reporting.admin],
     dormitory_admin: %w[dormitory.admin],
-    dormitory_commandant: %w[dormitory.commandant]
+    dormitory_commandant: %w[dormitory.commandant],
+    dormitory_registrar: %w[dormitory.registrar]
   }.each do |key, role_names|
       user = users[key]
       role_names.each do |rn|
-        role = Role.find_by!(name: rn)
-        UserRole.find_or_create_by!(user: user, role: role)
+        UserRole.find_or_create_by!(user: user, role_name: rn)
       end
     end
   puts "Roles assigned"
@@ -107,7 +103,8 @@ else
     visitor:               { first_name: "Наталья", middle_name: "Андреевна", last_name: "Морозова", summary: "Представитель учебно-методического управления" },
     reporting_admin:       { first_name: "Виктор", middle_name: "Дмитриевич", last_name: "Борисов", summary: "Администратор модуля отчётности" },
     dormitory_admin:       { first_name: "Андрей", middle_name: "Сергеевич", last_name: "Кузнецов", summary: "Администратор модуля общежития" },
-    dormitory_commandant:  { first_name: "Светлана", middle_name: "Викторовна", last_name: "Новикова", summary: "Комендант общежития" }
+    dormitory_commandant:  { first_name: "Светлана", middle_name: "Викторовна", last_name: "Новикова", summary: "Комендант общежития" },
+    dormitory_registrar:   { first_name: "Татьяна", middle_name: "Олеговна", last_name: "Соколова", summary: "Регистратор студентов общежития" }
   }.each do |key, attrs|
       user = users[key]
       user.create_profile!(attrs) unless user.profile

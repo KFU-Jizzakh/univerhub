@@ -505,7 +505,7 @@ ru:
       created: Пользователь создан.
       updated: Пользователь обновлён.
       cannot_remove_own_admin: Нельзя снять с себя роль администратора.
-      invalid_role_ids: содержит некорректные роли
+      invalid_role_names: содержит некорректные роли
       invalid_building_ids: содержит некорректные здания
       activated: Пользователь разблокирован.
       deactivated: Пользователь заблокирован.

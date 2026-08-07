@@ -6,52 +6,50 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@admin)
   end
 
-  test "create with invalid role_ids renders new with errors" do
-    invalid_role_id = Role.maximum(:id).to_i + 999
-
+  test "create with invalid role_names renders new with errors" do
     post admin_users_path, params: {
       user: {
         email_address: "newuser@test.local",
         password: "password",
         password_confirmation: "password",
-        role_ids: [ invalid_role_id.to_s ]
+        role_names: [ "hacker" ]
       }
     }
 
     assert_response :unprocessable_entity
-    assert_match I18n.t("admin.users.invalid_role_ids"), response.body
+    assert_match I18n.t("admin.users.invalid_role_names"), response.body
   end
 
-  test "create with duplicate role_ids renders new with errors" do
+  test "create with duplicate role_names renders new with errors" do
     assert_no_difference "User.count" do
       post admin_users_path, params: {
         user: {
           email_address: "dup@test.local",
           password: "password",
           password_confirmation: "password",
-          role_ids: [ roles(:reporting_reporter).id.to_s, roles(:reporting_reporter).id.to_s ]
+          role_names: [ "reporting.reporter", "reporting.reporter" ]
         }
       }
     end
 
     assert_response :unprocessable_entity
-    assert_match I18n.t("admin.users.invalid_role_ids"), response.body
+    assert_match I18n.t("admin.users.invalid_role_names"), response.body
   end
 
-  test "update with duplicate role_ids renders edit with errors" do
+  test "update with duplicate role_names renders edit with errors" do
     user = users(:reporter_user)
-    original_role_ids = user.role_ids.sort
+    original_role_names = user.role_names.sort
 
     patch admin_user_path(user), params: {
       user: {
         email_address: user.email_address,
-        role_ids: [ roles(:reporting_reporter).id.to_s, roles(:reporting_reporter).id.to_s ]
+        role_names: [ "reporting.reporter", "reporting.reporter" ]
       }
     }
 
     assert_response :unprocessable_entity
-    assert_match I18n.t("admin.users.invalid_role_ids"), response.body
-    assert_equal original_role_ids, user.reload.role_ids.sort
+    assert_match I18n.t("admin.users.invalid_role_names"), response.body
+    assert_equal original_role_names, user.reload.role_names.sort
   end
 
   test "activate sets deactivated_at to nil" do
@@ -110,7 +108,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
         email_address: "new_reporter@test.local",
         password: "password",
         password_confirmation: "password",
-        role_ids: [ roles(:reporting_reporter).id.to_s ]
+        role_names: [ "reporting.reporter" ]
       }
     }
 
@@ -125,12 +123,12 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
         email_address: "new_admin@test.local",
         password: "password",
         password_confirmation: "password",
-        role_ids: [ roles(:admin).id.to_s ]
+        role_names: [ "admin" ]
       }
     }
 
     assert_response :unprocessable_entity
-    assert_match I18n.t("admin.users.invalid_role_ids"), response.body
+    assert_match I18n.t("admin.users.invalid_role_names"), response.body
   end
 
   test "reporting.admin can deactivate reporting-only user" do
@@ -157,18 +155,18 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:reporting_admin_user))
     get new_admin_user_path
     assert_response :success
-    assert_select "label", text: roles(:reporting_reporter).name
-    assert_select "label", text: roles(:admin).name, count: 0
-    assert_select "label", text: roles(:supervisor).name, count: 0
+    assert_select "label", text: "reporting.reporter"
+    assert_select "label", text: "admin", count: 0
+    assert_select "label", text: "supervisor", count: 0
   end
 
   test "reporting.admin sees only reporting roles in edit form" do
     sign_in_as(users(:reporting_admin_user))
     get edit_admin_user_path(users(:reporter_user))
     assert_response :success
-    assert_select "label", text: roles(:reporting_reporter).name
-    assert_select "label", text: roles(:admin).name, count: 0
-    assert_select "label", text: roles(:supervisor).name, count: 0
+    assert_select "label", text: "reporting.reporter"
+    assert_select "label", text: "admin", count: 0
+    assert_select "label", text: "supervisor", count: 0
   end
 
   test "reporting.admin sees only reporting users in index" do
@@ -208,11 +206,45 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
         user: {
           email_address: user.email_address,
           first_name: "Новое",
-          last_name: "Новый"
+          last_name: "Новый",
+          role_names: [ "reporting.reporter" ]
         }
       }
     end
 
     assert_equal "user_profile.updated", OutboxEvent.last.action
+  end
+
+  # ── dormitory.admin tests ────────────────────────────────────
+
+  test "dormitory.admin can create user with registrar role" do
+    sign_in_as(users(:dormitory_admin_user))
+
+    post admin_users_path, params: {
+      user: {
+        email_address: "new_registrar@test.local",
+        password: "password",
+        password_confirmation: "password",
+        role_names: [ "dormitory.registrar" ]
+      }
+    }
+
+    assert_redirected_to admin_user_path(User.find_by(email_address: "new_registrar@test.local"))
+  end
+
+  test "dormitory.admin sees only dormitory roles in new form" do
+    sign_in_as(users(:dormitory_admin_user))
+    get new_admin_user_path
+    assert_response :success
+    assert_select "label", text: "dormitory.registrar"
+    assert_select "label", text: "dormitory.commandant"
+    assert_select "label", text: "reporting.reporter", count: 0
+  end
+
+  test "dormitory.admin sees registrar in users index" do
+    sign_in_as(users(:dormitory_admin_user))
+    get admin_users_path
+    assert_response :success
+    assert_select "td", text: users(:dormitory_registrar_user).email_address
   end
 end

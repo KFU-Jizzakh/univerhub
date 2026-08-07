@@ -4,6 +4,7 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = users(:admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @regular_user = users(:visitor_user)
   end
 
@@ -15,6 +16,12 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "commandant can access dashboard" do
     sign_in_as @commandant
+    get dormitory_dashboard_path
+    assert_response :success
+  end
+
+  test "registrar can access dashboard" do
+    sign_in_as @registrar
     get dormitory_dashboard_path
     assert_response :success
   end

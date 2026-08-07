@@ -1,14 +1,14 @@
 module Dormitory
   class ReceiptPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Receipt — admin/dormitory.admin full access, commandant scoped to assigned buildings
+    # PURPOSE: Authorization rules for Receipt — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar can add receipts (create only)
     # SPECIFICATION: SPEC-DORM-09
 
     def new?
-      admin_or_dormitory_admin? || commandant_with_access?
+      admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end
 
     def create?
-      admin_or_dormitory_admin? || commandant_with_access?
+      admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end
 
     def edit?
@@ -27,6 +27,8 @@ module Dormitory
       def resolve
         if user.has_role?("admin") || user.has_role?("dormitory.admin")
           scope.kept
+        elsif user.has_role?("dormitory.registrar")
+          scope.kept
         elsif user.has_role?("dormitory.commandant")
           scope.kept.joins(accommodation: :room).where(dormitory_rooms: { building_id: user.assigned_building_ids })
         else
@@ -43,6 +45,10 @@ module Dormitory
 
     def commandant?
       user.has_role?("dormitory.commandant")
+    end
+
+    def registrar?
+      user.has_role?("dormitory.registrar")
     end
 
     def commandant_with_access?

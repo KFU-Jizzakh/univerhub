@@ -3,7 +3,6 @@ require "test_helper"
 class UserRoleTest < ActiveSupport::TestCase
   setup do
     @user = users(:manager_user)
-    @role = roles(:reporting_manager)
     Current.session = @user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test")
   end
 
@@ -11,22 +10,32 @@ class UserRoleTest < ActiveSupport::TestCase
 
   test "valid with unique user and role" do
     user = users(:manager_user)
-    role = roles(:reporting_reporter)
-    user_role = UserRole.new(user: user, role: role)
+    user_role = UserRole.new(user: user, role_name: "reporting.reporter")
     assert user_role.valid?
+  end
+
+  test "invalid without role_name" do
+    user_role = UserRole.new(user: @user)
+    assert_not user_role.valid?
+    assert_includes user_role.errors[:role_name], "не может быть пустым"
+  end
+
+  test "invalid with role_name not in NAMES" do
+    user_role = UserRole.new(user: @user, role_name: "hacker")
+    assert_not user_role.valid?
+    assert_includes user_role.errors[:role_name], "имеет неверное значение"
   end
 
   test "invalid with duplicate user and role" do
     existing = user_roles(:manager_role)
-    user_role = UserRole.new(user: existing.user, role: existing.role)
+    user_role = UserRole.new(user: existing.user, role_name: existing.role_name)
     assert_not user_role.valid?
-    assert_includes user_role.errors[:role_id], "уже занят"
+    assert_includes user_role.errors[:role_name], "уже занят"
   end
 
   test "do_create! creates UserRole and OutboxEvent" do
     user = User.create!(email_address: "test@example.com", password: "password")
-    role = roles(:reporting_visitor)
-    user_role = UserRole.new(user: user, role: role)
+    user_role = UserRole.new(user: user, role_name: "reporting.visitor")
 
     assert_difference "UserRole.count", 1 do
       assert_difference "OutboxEvent.count", 1 do
@@ -41,13 +50,12 @@ class UserRoleTest < ActiveSupport::TestCase
 
   test "do_update! updates UserRole and creates OutboxEvent" do
     user_role = user_roles(:manager_role)
-    new_role = roles(:reporting_visitor)
 
     assert_difference "OutboxEvent.count", 1 do
-      user_role.do_update!(role_id: new_role.id)
+      user_role.do_update!(role_name: "reporting.visitor")
     end
 
-    assert_equal new_role, user_role.reload.role
+    assert_equal "reporting.visitor", user_role.reload.role_name
     assert_equal "user_role.updated", OutboxEvent.last.action
   end
 

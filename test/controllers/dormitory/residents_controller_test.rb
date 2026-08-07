@@ -5,6 +5,7 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
     @building = dormitory_buildings(:building_one)
     @building_two = dormitory_buildings(:building_two)
@@ -72,6 +73,12 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
 
   test "index renders for commandant" do
     sign_in_as @commandant
+    get dormitory_residents_path
+    assert_response :success
+  end
+
+  test "index renders for registrar" do
+    sign_in_as @registrar
     get dormitory_residents_path
     assert_response :success
   end
@@ -156,6 +163,26 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
         }
       }
     end
+  end
+
+  test "create resident as registrar" do
+    sign_in_as @registrar
+    assert_difference "Dormitory::Resident.count", 1 do
+      post dormitory_residents_path, params: {
+        dormitory_resident: {
+          last_name: "Новый", first_name: "Человек", gender: "male",
+          date_of_birth: "2000-01-01", student_ticket_number: "NEW003"
+        }
+      }
+    end
+  end
+
+  test "destroy denied for registrar" do
+    sign_in_as @registrar
+    assert_no_difference "Dormitory::Resident.kept.count" do
+      delete dormitory_resident_path(@resident)
+    end
+    assert_redirected_to root_path
   end
 
   test "edit renders" do

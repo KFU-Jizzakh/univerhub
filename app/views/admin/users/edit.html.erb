@@ -82,10 +82,10 @@
 
   <fieldset class="mb-3 p-3 border rounded">
     <legend class="fs-6"><%= t("views.admin.users.edit.roles_legend") %></legend>
-    <% @roles.each do |role| %>
+    <% @roles.each do |role_name| %>
       <div class="form-check mb-2">
-        <%= f.check_box :role_ids, { multiple: true, checked: @user.roles.include?(role), class: "form-check-input", data: { role_name: role.name } }, role.id.to_s, "" %>
-        <%= f.label :role_ids, role.name, value: role.id, class: "form-check-label" %>
+        <%= f.check_box :role_names, { multiple: true, checked: @user.role_names.include?(role_name), class: "form-check-input", data: { role_name: role_name } }, role_name, "" %>
+        <%= f.label :role_names, role_name, value: role_name, class: "form-check-label" %>
       </div>
     <% end %>
   </fieldset>

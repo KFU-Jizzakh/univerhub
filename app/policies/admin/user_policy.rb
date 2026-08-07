@@ -2,10 +2,7 @@ module Admin
   class UserPolicy < ApplicationPolicy
     # PURPOSE: Authorization rules for admin user management — super-admin full access, scoped admins manage module users only
     # SPECIFICATION: SPEC-CORE-02, SPEC-CORE-03
-    MODULE_ROLES = {
-      "reporting.admin" => %w[reporting.manager reporting.reporter reporting.reviewer reporting.visitor reporting.admin],
-      "dormitory.admin" => %w[dormitory.admin dormitory.commandant]
-    }.freeze
+    MODULE_ROLES = UserRole::MODULE_ROLES
 
     PROTECTED_ROLES = %w[dormitory.admin].freeze
 
@@ -78,8 +75,8 @@ module Admin
     def user_in_same_module?(user_record)
       MODULE_ROLES.each do |admin_role, module_roles|
         next unless user.has_role?(admin_role)
-        return false if user_record.roles.empty?
-        return user_record.roles.pluck(:name).all? { |n| module_roles.include?(n) }
+        return false if user_record.role_names.empty?
+        return user_record.role_names.all? { |n| module_roles.include?(n) }
       end
       false
     end

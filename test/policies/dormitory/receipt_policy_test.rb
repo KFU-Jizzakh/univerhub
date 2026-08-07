@@ -6,6 +6,7 @@ module Dormitory
       @admin = users(:admin_user)
       @dormitory_admin = users(:dormitory_admin_user)
       @commandant = users(:dormitory_commandant_user)
+      @registrar = users(:dormitory_registrar_user)
       @plain_user = users(:reporter_user)
 
       @building_one = dormitory_buildings(:building_one)
@@ -94,6 +95,29 @@ module Dormitory
     test "commandant can destroy for assigned building" do
       receipt = create_receipt_for(@accommodation)
       assert policy(@commandant, receipt).destroy?
+    end
+
+    # --- Registrar ---
+
+    test "registrar can new" do
+      receipt = build_receipt_for(@accommodation)
+      assert policy(@registrar, receipt).new?
+    end
+
+    test "registrar can create" do
+      receipt = build_receipt_for(@accommodation)
+      assert policy(@registrar, receipt).create?
+    end
+
+    test "registrar cannot edit" do
+      receipt = create_receipt_for(@accommodation)
+      assert_not policy(@registrar, receipt).edit?
+      assert_not policy(@registrar, receipt).update?
+    end
+
+    test "registrar cannot destroy" do
+      receipt = create_receipt_for(@accommodation)
+      assert_not policy(@registrar, receipt).destroy?
     end
 
     # --- Commandant (unassigned building) ---
@@ -194,6 +218,23 @@ module Dormitory
       scope = ReceiptPolicy::Scope.new(@admin, Receipt.all).resolve
       assert_includes scope, r1
       assert_not_includes scope, r2
+    end
+
+    test "registrar scope includes all kept receipts regardless of building" do
+      r1 = create_receipt_for(@accommodation)
+      acc_b2 = Accommodation.create!(
+        resident: dormitory_residents(:resident_four_other_building),
+        room: @room_101_b2,
+        application_number: "B2-005",
+        contract_number: "B2-005",
+        start_date: Date.current,
+        planned_end_date: Date.current + 1.year
+      )
+      r2 = create_receipt_for(acc_b2)
+
+      scope = ReceiptPolicy::Scope.new(@registrar, Receipt.all).resolve
+      assert_includes scope, r1
+      assert_includes scope, r2
     end
   end
 end

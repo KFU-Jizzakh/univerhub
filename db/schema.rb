@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_24_105713) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_07_073425) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -303,14 +303,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_105713) do
     t.index ["status", "created_at"], name: "index_reporting_reports_on_status_and_created_at", order: { created_at: :desc }
   end
 
-  create_table "roles", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "name", null: false
-    t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_roles_on_name", unique: true
-  end
-
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -333,11 +325,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_105713) do
 
   create_table "user_roles", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "role_id", null: false
+    t.string "role_name", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["role_id"], name: "index_user_roles_on_role_id"
-    t.index ["user_id", "role_id"], name: "index_user_roles_on_user_id_and_role_id", unique: true
+    t.index ["role_name"], name: "index_user_roles_on_role_name"
+    t.index ["user_id", "role_name"], name: "index_user_roles_on_user_id_and_role_name", unique: true
     t.index ["user_id"], name: "index_user_roles_on_user_id"
   end
 
@@ -384,6 +376,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_105713) do
   add_foreign_key "reporting_reports", "users", column: "reviewer_id"
   add_foreign_key "sessions", "users"
   add_foreign_key "user_profiles", "users"
-  add_foreign_key "user_roles", "roles"
   add_foreign_key "user_roles", "users"
 end

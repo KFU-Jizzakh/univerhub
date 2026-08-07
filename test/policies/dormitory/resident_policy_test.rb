@@ -5,6 +5,7 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
     @resident_building_one = dormitory_residents(:resident_one_not_settled)
     @resident_building_two = dormitory_residents(:resident_four_other_building)
@@ -58,6 +59,10 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert policy(@commandant, Dormitory::Resident).index?
   end
 
+  test "index? allowed for registrar" do
+    assert policy(@registrar, Dormitory::Resident).index?
+  end
+
   test "index? denied for manager" do
     assert_not policy(@manager, Dormitory::Resident).index?
   end
@@ -80,6 +85,11 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert_not policy(@commandant, @resident_unassigned).show?
   end
 
+  test "show? allowed for registrar for any resident" do
+    assert policy(@registrar, @resident_building_one).show?
+    assert policy(@registrar, @resident_unassigned).show?
+  end
+
   # create?
   test "create? allowed for admin" do
     assert policy(@admin, Dormitory::Resident).create?
@@ -87,6 +97,10 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
 
   test "create? allowed for commandant" do
     assert policy(@commandant, Dormitory::Resident).create?
+  end
+
+  test "create? allowed for registrar" do
+    assert policy(@registrar, Dormitory::Resident).create?
   end
 
   test "create? denied for manager" do
@@ -111,6 +125,10 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert_not policy(@commandant, @resident_unassigned).update?
   end
 
+  test "update? allowed for registrar" do
+    assert policy(@registrar, @resident_building_one).update?
+  end
+
   # destroy?
   test "destroy? allowed for admin" do
     assert policy(@admin, @resident_building_one).destroy?
@@ -124,6 +142,10 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert_not policy(@commandant, @resident_building_one).destroy?
   end
 
+  test "destroy? denied for registrar" do
+    assert_not policy(@registrar, @resident_building_one).destroy?
+  end
+
   test "destroy? denied for manager" do
     assert_not policy(@manager, @resident_building_one).destroy?
   end
@@ -135,6 +157,10 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
 
   test "check_ticket? allowed for commandant" do
     assert policy(@commandant, Dormitory::Resident).check_ticket?
+  end
+
+  test "check_ticket? allowed for registrar" do
+    assert policy(@registrar, Dormitory::Resident).check_ticket?
   end
 
   test "check_ticket? denied for manager" do
@@ -160,5 +186,13 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
   test "scope resolves to none for manager" do
     scope = Dormitory::ResidentPolicy::Scope.new(@manager, Dormitory::Resident)
     assert_empty scope.resolve
+  end
+
+  test "scope resolves to all kept residents for registrar" do
+    scope = Dormitory::ResidentPolicy::Scope.new(@registrar, Dormitory::Resident)
+    residents = scope.resolve
+    assert_includes residents, @resident_building_one
+    assert_includes residents, @resident_building_two
+    assert_includes residents, @resident_unassigned
   end
 end

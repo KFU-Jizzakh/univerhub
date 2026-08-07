@@ -1,35 +1,39 @@
 admin_role:
   user: admin_user
-  role: admin
+  role_name: admin
 
 manager_role:
   user: manager_user
-  role: reporting_manager
+  role_name: reporting.manager
 
 reporter_role:
   user: reporter_user
-  role: reporting_reporter
+  role_name: reporting.reporter
 
 reviewer_role:
   user: reviewer_user
-  role: reporting_reviewer
+  role_name: reporting.reviewer
 
 supervisor_role:
   user: supervisor_user
-  role: supervisor
+  role_name: supervisor
 
 visitor_role:
   user: visitor_user
-  role: reporting_visitor
+  role_name: reporting.visitor
 
 reporting_admin_role:
   user: reporting_admin_user
-  role: reporting_admin
+  role_name: reporting.admin
 
 dormitory_admin_role:
   user: dormitory_admin_user
-  role: dormitory_admin
+  role_name: dormitory.admin
 
 dormitory_commandant_role:
   user: dormitory_commandant_user
-  role: dormitory_commandant
+  role_name: dormitory.commandant
+
+dormitory_registrar_role:
+  user: dormitory_registrar_user
+  role_name: dormitory.registrar

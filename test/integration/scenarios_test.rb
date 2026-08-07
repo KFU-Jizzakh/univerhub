@@ -350,7 +350,7 @@ class ScenariosTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     user = users(:reporter_user)
     patch admin_user_path(user), params: {
-      user: { email_address: "changed@test.local", role_ids: [ roles(:reporting_reporter).id ] }
+      user: { email_address: "changed@test.local", role_names: [ "reporting.reporter" ] }
     }
     assert_redirected_to admin_user_path(user)
     assert_equal "changed@test.local", user.reload.email_address
@@ -361,7 +361,7 @@ class ScenariosTest < ActionDispatch::IntegrationTest
     user = users(:reporter_user)
     digest_before = user.password_digest
     patch admin_user_path(user), params: {
-      user: { email_address: user.email_address, password: "", password_confirmation: "", role_ids: [ roles(:reporting_reporter).id ] }
+      user: { email_address: user.email_address, password: "", password_confirmation: "", role_names: [ "reporting.reporter" ] }
     }
     assert_redirected_to admin_user_path(user)
     assert_equal digest_before, user.reload.password_digest
@@ -372,7 +372,7 @@ class ScenariosTest < ActionDispatch::IntegrationTest
     user = users(:reporter_user)
     digest_before = user.password_digest
     patch admin_user_path(user), params: {
-      user: { email_address: user.email_address, password: "newpass1", password_confirmation: "newpass1", role_ids: [ roles(:reporting_reporter).id ] }
+      user: { email_address: user.email_address, password: "newpass1", password_confirmation: "newpass1", role_names: [ "reporting.reporter" ] }
     }
     assert_redirected_to admin_user_path(user)
     assert_not_equal digest_before, user.reload.password_digest
@@ -382,7 +382,7 @@ class ScenariosTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     user = users(:reporter_user)
     patch admin_user_path(user), params: {
-      user: { email_address: user.email_address, password: "abc", password_confirmation: "xyz", role_ids: [ roles(:reporting_reporter).id ] }
+      user: { email_address: user.email_address, password: "abc", password_confirmation: "xyz", role_names: [ "reporting.reporter" ] }
     }
     assert_response :unprocessable_entity
   end
@@ -390,21 +390,21 @@ class ScenariosTest < ActionDispatch::IntegrationTest
   test "admin cannot remove their own admin role" do
     sign_in_as(users(:admin_user))
     patch admin_user_path(users(:admin_user)), params: {
-      user: { email_address: users(:admin_user).email_address, role_ids: [ roles(:supervisor).id ] }
+      user: { email_address: users(:admin_user).email_address, role_names: [ "supervisor" ] }
     }
     assert_response :unprocessable_entity
-    assert_includes users(:admin_user).reload.roles.pluck(:name), "admin"
+    assert_includes users(:admin_user).reload.role_names, "admin"
   end
 
-  test "admin update with unknown role_id renders 422" do
+  test "admin update with unknown role_name renders 422" do
     sign_in_as(users(:admin_user))
     user = users(:reporter_user)
-    original_role_ids = user.role_ids.sort
+    original_role_names = user.role_names.sort
     patch admin_user_path(user), params: {
-      user: { email_address: user.email_address, role_ids: [ 999_999 ] }
+      user: { email_address: user.email_address, role_names: [ "hacker" ] }
     }
     assert_response :unprocessable_entity
-    assert_equal original_role_ids, user.reload.role_ids.sort
+    assert_equal original_role_names, user.reload.role_names.sort
   end
 
   test "admin update creates profile when not present" do
@@ -412,7 +412,7 @@ class ScenariosTest < ActionDispatch::IntegrationTest
     user = users(:reporter_user)
     assert_nil user.profile
     patch admin_user_path(user), params: {
-      user: { email_address: user.email_address, first_name: "Новое", last_name: "Имя", role_ids: [ roles(:reporting_reporter).id ] }
+      user: { email_address: user.email_address, first_name: "Новое", last_name: "Имя", role_names: [ "reporting.reporter" ] }
     }
     assert_redirected_to admin_user_path(user)
     assert_equal "Новое", user.reload.profile.first_name

@@ -1,12 +1,18 @@
 class UserRole < ApplicationRecord
-  # PURPOSE: Join table linking users to roles with uniqueness constraint, audit-trailed CRUD
+  # PURPOSE: User-role assignment storing the role name as a string (roles are defined in code, not the database), audit-trailed CRUD
   # SPECIFICATION: SPEC-CORE-02
   include Trackable
 
-  belongs_to :user
-  belongs_to :role
+  NAMES = %w[admin reporting.manager reporting.reporter reporting.reviewer reporting.visitor supervisor reporting.admin dormitory.admin dormitory.commandant dormitory.registrar].freeze
 
-  validates :role_id, uniqueness: { scope: :user_id }
+  MODULE_ROLES = {
+    "reporting.admin" => %w[reporting.manager reporting.reporter reporting.reviewer reporting.visitor reporting.admin],
+    "dormitory.admin" => %w[dormitory.admin dormitory.commandant dormitory.registrar]
+  }.freeze
+
+  belongs_to :user
+
+  validates :role_name, presence: true, inclusion: { in: NAMES }, uniqueness: { scope: :user_id }
 
   def do_create!
     track_event("user_role.created") { save! }

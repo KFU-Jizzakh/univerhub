@@ -8,6 +8,7 @@ class Admin::UserPolicyTest < ActiveSupport::TestCase
     @reporting_admin = users(:reporting_admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant      = users(:dormitory_commandant_user)
+    @registrar       = users(:dormitory_registrar_user)
   end
 
   def policy(user, record)
@@ -81,6 +82,20 @@ class Admin::UserPolicyTest < ActiveSupport::TestCase
     end
   end
 
+  test "index?, show?, new?, create?, edit?, update? allowed for dormitory.admin on registrar" do
+    %i[index? show? new? create? edit? update?].each do |p|
+      assert policy(@dormitory_admin, @registrar).public_send(p), "expected #{p} true for dormitory.admin"
+    end
+  end
+
+  test "activate? allowed for dormitory.admin on registrar" do
+    assert policy(@dormitory_admin, @registrar).activate?
+  end
+
+  test "deactivate? allowed for dormitory.admin on registrar" do
+    assert policy(@dormitory_admin, @registrar).deactivate?
+  end
+
   test "activate? allowed for dormitory.admin on commandant" do
     assert policy(@dormitory_admin, @commandant).activate?
   end
@@ -131,7 +146,7 @@ class Admin::UserPolicyTest < ActiveSupport::TestCase
 
   test "destroy? allowed when multiple dormitory.admin exist" do
     second_admin = User.create!(email_address: "second_dorm_admin@test.local", password: "password123", password_confirmation: "password123")
-    second_admin.roles << Role.find_by(name: "dormitory.admin")
+    second_admin.add_role!("dormitory.admin")
     assert policy(@admin, @dormitory_admin).destroy?
   end
 
@@ -141,7 +156,7 @@ class Admin::UserPolicyTest < ActiveSupport::TestCase
 
   test "deactivate? allowed when multiple dormitory.admin exist" do
     second_admin = User.create!(email_address: "second_dorm_admin2@test.local", password: "password123", password_confirmation: "password123")
-    second_admin.roles << Role.find_by(name: "dormitory.admin")
+    second_admin.add_role!("dormitory.admin")
     assert policy(@admin, @dormitory_admin).deactivate?
   end
 

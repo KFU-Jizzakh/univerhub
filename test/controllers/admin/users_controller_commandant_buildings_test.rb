@@ -18,7 +18,7 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
           email_address: "new_commandant@test.local",
           password: "password",
           password_confirmation: "password",
-          role_ids: [ roles(:dormitory_commandant).id.to_s ],
+          role_names: [ "dormitory.commandant" ],
           building_ids: [ @building_one.id.to_s, @building_two.id.to_s ]
         }
       }
@@ -38,7 +38,7 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
           email_address: "admin_commandant@test.local",
           password: "password",
           password_confirmation: "password",
-          role_ids: [ roles(:dormitory_commandant).id.to_s ],
+          role_names: [ "dormitory.commandant" ],
           building_ids: [ @building_one.id.to_s ]
         }
       }
@@ -58,7 +58,7 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
           email_address: "no_buildings@test.local",
           password: "password",
           password_confirmation: "password",
-          role_ids: [ roles(:admin).id.to_s ],
+          role_names: [ "admin" ],
           building_ids: [ @building_one.id.to_s ]
         }
       }
@@ -73,7 +73,7 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
     patch admin_user_path(@commandant), params: {
       user: {
         email_address: @commandant.email_address,
-        role_ids: [ roles(:dormitory_commandant).id.to_s ],
+        role_names: [ "dormitory.commandant" ],
         building_ids: [ @building_two.id.to_s ]
       }
     }
@@ -91,7 +91,7 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
     patch admin_user_path(@commandant), params: {
       user: {
         email_address: @commandant.email_address,
-        role_ids: [ roles(:dormitory_commandant).id.to_s ],
+        role_names: [ "dormitory.commandant" ],
         building_ids: []
       }
     }
@@ -136,16 +136,16 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
     assert_select "legend", text: "Корпуса", count: 0
   end
 
-  test "create commandant creates OutboxEvents for buildings" do
+  test "create commandant creates OutboxEvents for role and buildings" do
     sign_in_as(@admin)
 
-    assert_difference "OutboxEvent.count", 1 do
+    assert_difference "OutboxEvent.count", 2 do
       post admin_users_path, params: {
         user: {
           email_address: "cb_commandant@test.local",
           password: "password",
           password_confirmation: "password",
-          role_ids: [ roles(:dormitory_commandant).id.to_s ],
+          role_names: [ "dormitory.commandant" ],
           building_ids: [ @building_one.id.to_s ]
         }
       }
@@ -155,6 +155,8 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
     cb = new_user.commandant_buildings.active.find_by(building: @building_one)
     event = OutboxEvent.where(record: cb, action: "dormitory.commandant_building.created").last
     assert_not_nil event
+    role_event = OutboxEvent.where(record: new_user.user_roles.first, action: "user_role.created").last
+    assert_not_nil role_event
   end
 
   test "reassigns buildings creates OutboxEvents for deactivation and creation" do
@@ -166,7 +168,7 @@ class Admin::UsersController::CommandantBuildingsTest < ActionDispatch::Integrat
     patch admin_user_path(@commandant), params: {
       user: {
         email_address: @commandant.email_address,
-        role_ids: [ roles(:dormitory_commandant).id.to_s ],
+        role_names: [ "dormitory.commandant" ],
         building_ids: [ @building_two.id.to_s, new_building.id.to_s ]
       }
     }

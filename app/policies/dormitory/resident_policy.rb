@@ -1,17 +1,17 @@
 module Dormitory
   class ResidentPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Resident — admin/dormitory.admin full access, commandant scoped to assigned buildings
+    # PURPOSE: Authorization rules for Resident — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar global create/edit without destroy
     # SPECIFICATION: SPEC-DORM-03
     def index?
-      admin_or_dormitory_admin_or_commandant?
+      admin_or_dormitory_admin_or_commandant? || registrar?
     end
 
     def show?
-      admin_or_dormitory_admin? || commandant_with_access?
+      admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end
 
     def create?
-      admin_or_dormitory_admin? || commandant_with_building_access?
+      admin_or_dormitory_admin? || commandant_with_building_access? || registrar?
     end
 
     def new?
@@ -19,7 +19,7 @@ module Dormitory
     end
 
     def update?
-      admin_or_dormitory_admin? || commandant_with_access?
+      admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end
 
     def edit?
@@ -31,7 +31,7 @@ module Dormitory
     end
 
     def check_ticket?
-      admin_or_dormitory_admin_or_commandant?
+      admin_or_dormitory_admin_or_commandant? || registrar?
     end
 
     private
@@ -42,6 +42,10 @@ module Dormitory
 
     def admin_or_dormitory_admin_or_commandant?
       admin_or_dormitory_admin? || user.has_role?("dormitory.commandant")
+    end
+
+    def registrar?
+      user.has_role?("dormitory.registrar")
     end
 
     def commandant?
@@ -61,6 +65,8 @@ module Dormitory
     class Scope < ApplicationPolicy::Scope
       def resolve
         if user.has_role?("admin") || user.has_role?("dormitory.admin")
+          scope.kept.includes(:current_room).ordered
+        elsif user.has_role?("dormitory.registrar")
           scope.kept.includes(:current_room).ordered
         elsif user.has_role?("dormitory.commandant")
           scope.kept

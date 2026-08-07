@@ -22,10 +22,10 @@
       <div class="info-item">
         <span class="info-label"><%= t("views.profiles.show.roles") %></span>
         <span class="info-value">
-          <% @user.roles.each do |role| %>
-            <span class="status-badge status-badge--published status-badge--sm"><%= role.name %></span>
+          <% @user.role_names.each do |role_name| %>
+            <span class="status-badge status-badge--published status-badge--sm"><%= role_name %></span>
           <% end %>
-          <% if @user.roles.empty? %>—<% end %>
+          <% if @user.role_names.empty? %>—<% end %>
         </span>
       </div>
       <div class="info-item">

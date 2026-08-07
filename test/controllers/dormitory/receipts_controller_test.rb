@@ -4,6 +4,7 @@ class Dormitory::ReceiptsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = users(:admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @plain_user = users(:reporter_user)
     @accommodation = dormitory_accommodations(:active_accommodation)
     @accommodation.update!(status: :active)
@@ -42,6 +43,22 @@ class Dormitory::ReceiptsControllerTest < ActionDispatch::IntegrationTest
     sign_in @plain_user
     get new_dormitory_accommodation_receipt_path(@accommodation)
     assert_redirected_to root_path
+  end
+
+  test "registrar sees new receipt form" do
+    sign_in @registrar
+    get new_dormitory_accommodation_receipt_path(@accommodation)
+    assert_response :success
+  end
+
+  test "registrar creates receipt successfully" do
+    sign_in @registrar
+
+    assert_difference -> { Dormitory::Receipt.kept.count }, 1 do
+      post dormitory_accommodation_receipts_path(@accommodation), params: receipt_params
+    end
+
+    assert_redirected_to dormitory_accommodation_path(@accommodation)
   end
 
   # --- create ---
@@ -95,6 +112,36 @@ class Dormitory::ReceiptsControllerTest < ActionDispatch::IntegrationTest
 
     get edit_dormitory_accommodation_receipt_path(@accommodation, receipt)
     assert_response :success
+  end
+
+  test "registrar cannot access edit receipt form" do
+    sign_in @registrar
+    receipt = create_receipt
+
+    get edit_dormitory_accommodation_receipt_path(@accommodation, receipt)
+    assert_redirected_to root_path
+  end
+
+  test "registrar cannot update receipt" do
+    sign_in @registrar
+    receipt = create_receipt
+
+    patch dormitory_accommodation_receipt_path(@accommodation, receipt),
+          params: { dormitory_receipt: { amount: 7000, paid_at: Date.current } }
+
+    assert_redirected_to root_path
+    assert_equal 5000, receipt.reload.amount
+  end
+
+  test "registrar cannot destroy receipt" do
+    sign_in @registrar
+    receipt = create_receipt
+
+    assert_no_difference -> { Dormitory::Receipt.kept.count } do
+      delete dormitory_accommodation_receipt_path(@accommodation, receipt)
+    end
+
+    assert_redirected_to root_path
   end
 
   # --- update ---

@@ -5,6 +5,7 @@ class Dormitory::ExportPolicyTest < ActiveSupport::TestCase
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
   end
 
@@ -15,6 +16,11 @@ class Dormitory::ExportPolicyTest < ActiveSupport::TestCase
 
   test "commandant can access export index" do
     policy = Dormitory::ExportPolicy.new(@commandant, :dormitory_export)
+    assert policy.index?
+  end
+
+  test "registrar can access export index" do
+    policy = Dormitory::ExportPolicy.new(@registrar, :dormitory_export)
     assert policy.index?
   end
 

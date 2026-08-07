@@ -1,6 +1,6 @@
 # SPEC-CORE-02: Role-Based Access Control
 
-Predefined role system with 10 roles, module-level admin roles, last-admin protection, and authorization across all system features.
+Predefined role system with roles defined in code (no roles table), module-level admin roles, last-admin protection, and authorization across all system features.
 
 Depends on: SPEC-CORE-01
 
@@ -8,9 +8,9 @@ Status: DRAFT
 
 ## Acceptance Criteria
 
-- AC-1: System has 10 predefined roles
+- AC-1: System has 11 predefined roles defined as constants in `UserRole::NAMES` (no database table)
 - AC-2: User can have multiple roles
-- AC-3: A user cannot have the same role assigned twice
+- AC-3: A user cannot have the same role assigned twice (unique `[user_id, role_name]`)
 - AC-4: Role assignments are audited (every grant and revocation is logged)
 - AC-5: `admin` is the super-admin with full access across all modules
 - AC-6: Module-scoped admin roles (`reporting.admin`, `dormitory.admin`) have full access within their module only
@@ -30,17 +30,19 @@ Status: DRAFT
 
 ## Business Rules
 
-- BR-1: Role names: `admin`, `reporting.manager`, `reporting.reporter`, `reporting.reviewer`, `reporting.visitor`, `supervisor`, `reporting.admin`, `dormitory.admin`, `dormitory.commandant`
+- BR-1: Role names: `admin`, `reporting.manager`, `reporting.reporter`, `reporting.reviewer`, `reporting.visitor`, `supervisor`, `reporting.admin`, `dormitory.admin`, `dormitory.commandant`, `dormitory.registrar`
 - BR-2: `reporting.admin` manages: `reporting.manager`, `reporting.reporter`, `reporting.reviewer`, `reporting.visitor`, `reporting.admin`
-- BR-3: `dormitory.admin` manages: `dormitory.admin`, `dormitory.commandant`
+- BR-3: `dormitory.admin` manages: `dormitory.admin`, `dormitory.commandant`, `dormitory.registrar`
 - BR-4: `supervisor` can view the activity feed but has no administrative powers
 - BR-5: `admin` bypasses all module scoping and sees everything
-- BR-6: Every role grant and revocation is recorded in the audit log
+- BR-6: Roles are defined only in code (`UserRole::NAMES`); role assignments are stored as a `role_name` string on `user_roles` — no `roles` table exists, so the role list never depends on the database contents
+- BR-7: A role assignment must reference a name from `UserRole::NAMES`
+- BR-8: Every role grant and revocation is recorded in the audit log
 
 ## Behavior
 
 ### Background
-Given the following roles exist: `admin`, `dormitory.admin`, `dormitory.commandant`, `reporting.admin`, `reporting.manager`, `reporting.reporter`, `reporting.reviewer`, `reporting.visitor`, `supervisor`
+Given the following roles exist in `UserRole::NAMES`: `admin`, `dormitory.admin`, `dormitory.commandant`, `dormitory.registrar`, `reporting.admin`, `reporting.manager`, `reporting.reporter`, `reporting.reviewer`, `reporting.visitor`, `supervisor`
 
 ### Rule: Role Assignment
 
@@ -60,6 +62,10 @@ Given user "Alice" has role `dormitory.commandant`
 When admin removes the role
 Then Alice loses the role
 And the removal is recorded in the audit log
+
+#### Scenario: Invalid role name rejected
+When admin tries to assign role "hacker"
+Then the operation is rejected with "invalid role names" alert
 
 ### Rule: Last Admin Protection
 

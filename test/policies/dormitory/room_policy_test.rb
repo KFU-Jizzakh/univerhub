@@ -5,6 +5,7 @@ class Dormitory::RoomPolicyTest < ActiveSupport::TestCase
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
     @room = dormitory_rooms(:room_101)
   end
@@ -23,6 +24,30 @@ class Dormitory::RoomPolicyTest < ActiveSupport::TestCase
 
   test "index? allowed for commandant" do
     assert policy(@commandant, Dormitory::Room).index?
+  end
+
+  test "index? allowed for registrar" do
+    assert policy(@registrar, Dormitory::Room).index?
+  end
+
+  test "show? allowed for registrar" do
+    assert policy(@registrar, @room).show?
+  end
+
+  test "create? denied for registrar" do
+    assert_not policy(@registrar, @room).create?
+  end
+
+  test "update? denied for registrar" do
+    assert_not policy(@registrar, @room).update?
+  end
+
+  test "destroy? denied for registrar" do
+    assert_not policy(@registrar, @room).destroy?
+  end
+
+  test "suggest_number? denied for registrar" do
+    assert_not policy(@registrar, Dormitory::Room).suggest_number?
   end
 
   test "index? denied for manager" do
@@ -92,5 +117,10 @@ class Dormitory::RoomPolicyTest < ActiveSupport::TestCase
   test "scope resolves to none for manager" do
     scope = Dormitory::RoomPolicy::Scope.new(@manager, Dormitory::Room)
     assert_empty scope.resolve
+  end
+
+  test "scope resolves to all rooms for registrar" do
+    scope = Dormitory::RoomPolicy::Scope.new(@registrar, Dormitory::Room)
+    assert_equal Dormitory::Room.kept.count, scope.resolve.count
   end
 end

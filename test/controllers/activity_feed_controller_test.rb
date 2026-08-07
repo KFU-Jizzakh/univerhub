@@ -104,8 +104,8 @@ class ActivityFeedControllerTest < ActionDispatch::IntegrationTest
 
   test "user with both reporting.admin and dormitory.admin sees all events" do
     dual_admin = User.create!(email_address: "dual@test.com", password: "password", password_confirmation: "password")
-    UserRole.create!(user: dual_admin, role: Role.find_by!(name: "reporting.admin"))
-    UserRole.create!(user: dual_admin, role: Role.find_by!(name: "dormitory.admin"))
+    UserRole.create!(user: dual_admin, role_name: "reporting.admin")
+    UserRole.create!(user: dual_admin, role_name: "dormitory.admin")
 
     resident = Dormitory::Resident.create!(
       last_name: "Test", first_name: "User", gender: :male,

@@ -164,7 +164,6 @@ module ApplicationHelper
     when "dormitory.commandant_building.created", "dormitory.commandant_building.updated", "dormitory.commandant_building.deactivated", "dormitory.commandant_building.destroyed" then "key"
     when "dormitory.academic_year.created", "dormitory.academic_year.updated", "dormitory.academic_year.activated", "dormitory.academic_year.closed" then "calendar3"
     when "user_profile.created", "user_profile.updated" then "person-badge"
-    when "role.created", "role.updated", "role.destroyed" then "key"
     when "user_role.created", "user_role.updated", "user_role.destroyed" then "shield-lock"
     when "dormitory.violation.created", "dormitory.violation.updated", "dormitory.violation.discarded" then "exclamation-triangle"
     else "circle"

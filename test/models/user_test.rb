@@ -107,9 +107,59 @@ class UserTest < ActiveSupport::TestCase
   test "last_active_with_role? returns false when multiple active users with role" do
     dorm_admin = users(:dormitory_admin_user)
     second = User.create!(email_address: "second_role@test.local", password: "password123", password_confirmation: "password123")
-    second.roles << Role.find_by(name: "dormitory.admin")
+    second.add_role!("dormitory.admin")
 
     assert_not User.last_active_with_role?(dorm_admin, "dormitory.admin")
+  end
+
+  test "has_role? returns true when role assigned" do
+    assert users(:dormitory_admin_user).has_role?("dormitory.admin")
+    assert_not users(:reporter_user).has_role?("dormitory.admin")
+  end
+
+  test "role_names returns assigned role names" do
+    assert_includes users(:dormitory_admin_user).role_names, "dormitory.admin"
+  end
+
+  test "role_names= assigns and removes roles" do
+    user = users(:reporter_user)
+    assert_equal [ "reporting.reporter" ], user.role_names
+
+    user.role_names = [ "reporting.reporter", "supervisor" ]
+    assert_includes user.role_names, "supervisor"
+
+    user.role_names = [ "reporting.reporter" ]
+    assert_not_includes user.role_names, "supervisor"
+  end
+
+  test "role_names= records audit events for grants and revocations" do
+    user = users(:reporter_user)
+    user.user_roles.destroy_all
+
+    assert_difference "OutboxEvent.count", 1 do
+      user.role_names = [ "supervisor" ]
+    end
+    assert_equal "user_role.created", OutboxEvent.last.action
+
+    assert_difference "OutboxEvent.count", 1 do
+      user.role_names = []
+    end
+    assert_equal "user_role.destroyed", OutboxEvent.last.action
+  end
+
+  test "add_role! records audit event" do
+    user = users(:reporter_user)
+    user.user_roles.destroy_all
+
+    assert_difference "OutboxEvent.count", 1 do
+      user.add_role!("supervisor")
+    end
+    assert_equal "user_role.created", OutboxEvent.last.action
+  end
+
+  test "with_role scope finds users with the role" do
+    assert_includes User.with_role("dormitory.admin"), users(:dormitory_admin_user)
+    assert_not_includes User.with_role("dormitory.admin"), users(:reporter_user)
   end
 
   test "last_active_with_role? returns false when user does not have the role" do

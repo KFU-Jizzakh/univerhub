@@ -33,8 +33,8 @@ Status: PLANNED
 - AC-3: `required_amount` is displayed on the accommodation show page
 
 ### Receipt CRUD
-- AC-4: Admin, dormitory administrator, and commandant can add a receipt to an active accommodation: amount (> 0), paid_at (default today), payment file (PDF/JPEG/PNG, ≤10 MB), optional comment
-- AC-5: Admin, dormitory administrator, and commandant can edit a receipt (change amount, paid_at, comment, or re-upload file)
+- AC-4: Admin, dormitory administrator, commandant, and registrar can add a receipt to an active accommodation: amount (> 0), paid_at (default today), payment file (PDF/JPEG/PNG, ≤10 MB), optional comment
+- AC-5: Admin, dormitory administrator, and commandant can edit a receipt (change amount, paid_at, comment, or re-upload file); registrar cannot edit or delete receipts
 - AC-6: File is required when creating a receipt; on edit, existing file is kept if no new file is uploaded
 - AC-7: Receipt delete is a soft-delete (Discard) — the record is marked discarded, not physically removed
 - AC-8: Deleted receipts are excluded from `total_paid`, not shown in the list, and cannot be restored via UI
@@ -61,7 +61,7 @@ Status: PLANNED
 - AC-22: Receipt creation, update, and deletion are recorded via Trackable (OutboxEvent), same as accommodation events
 
 ### Access control
-- AC-23: Receipts follow the same authorization model as Accommodation: admin/dormitory.admin have full access; commandants can only access receipts of accommodations in their assigned buildings
+- AC-23: Receipts follow the same authorization model as Accommodation: admin/dormitory.admin have full access; commandants can only access receipts of accommodations in their assigned buildings; registrar can add receipts to any active accommodation (global scope) but cannot edit or delete them
 
 ### Dashboard
 - AC-24: Dashboard shows a "Total debt" metric card (sum of negative balances across all accessible active accommodations, shown as absolute value)
@@ -101,6 +101,7 @@ Status: PLANNED
 - BR-13: Receipt CRUD operations are only allowed while the parent accommodation is active (status = "active")
 - BR-14: Receipts are created exclusively via the dedicated `ReceiptsController`, nested under accommodations — the accommodation model no longer uses `accepts_nested_attributes_for :receipts`
 - BR-15: Receipt attachment file validation (format and size) mirrors the existing validation rules for accommodation documents
+- BR-16: A registrar can create receipts for any kept accommodation (global, not building-scoped) but cannot edit, update, or delete receipts
 
 ## Behavior
 

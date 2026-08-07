@@ -5,8 +5,29 @@ class Dormitory::ViolationPolicyTest < ActiveSupport::TestCase
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
     @violation = dormitory_violations(:violation_open_noise)
+  end
+
+  test "index? allowed for registrar" do
+    assert Dormitory::ViolationPolicy.new(@registrar, Dormitory::Violation).index?
+  end
+
+  test "show? allowed for registrar" do
+    assert Dormitory::ViolationPolicy.new(@registrar, @violation).show?
+  end
+
+  test "create? denied for registrar" do
+    assert_not Dormitory::ViolationPolicy.new(@registrar, Dormitory::Violation).create?
+  end
+
+  test "update? denied for registrar" do
+    assert_not Dormitory::ViolationPolicy.new(@registrar, @violation).update?
+  end
+
+  test "destroy? denied for registrar" do
+    assert_not Dormitory::ViolationPolicy.new(@registrar, @violation).destroy?
   end
 
   test "index? allowed for admin" do
@@ -94,5 +115,10 @@ class Dormitory::ViolationPolicyTest < ActiveSupport::TestCase
   test "scope resolves none for manager" do
     scope = Dormitory::ViolationPolicy::Scope.new(@manager, Dormitory::Violation.kept).resolve
     assert_equal 0, scope.count
+  end
+
+  test "scope resolves all for registrar" do
+    scope = Dormitory::ViolationPolicy::Scope.new(@registrar, Dormitory::Violation.kept).resolve
+    assert_equal Dormitory::Violation.kept.count, scope.count
   end
 end

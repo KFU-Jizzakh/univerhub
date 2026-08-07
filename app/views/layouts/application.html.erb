@@ -126,8 +126,12 @@
                      <li><%= sidebar_link t("navigation.buildings"), dormitory_buildings_path, icon: "bi-building" %></li>
                      <li><%= sidebar_link t("navigation.rooms"), dormitory_rooms_path, icon: "bi-door-open" %></li>
                      <li><%= sidebar_link t("navigation.residents"), dormitory_residents_path, icon: "bi-person-vcard" %></li>
-                      <li><%= sidebar_link t("navigation.accommodations"), dormitory_accommodations_path, icon: "bi-key" %></li>
-                      <li><%= sidebar_link t("navigation.violations"), dormitory_violations_path, icon: "bi-exclamation-triangle" %></li>
+                      <% if policy(Dormitory::Accommodation).index? %>
+                       <li><%= sidebar_link t("navigation.accommodations"), dormitory_accommodations_path, icon: "bi-key" %></li>
+                      <% end %>
+                      <% if policy(Dormitory::Violation).index? %>
+                       <li><%= sidebar_link t("navigation.violations"), dormitory_violations_path, icon: "bi-exclamation-triangle" %></li>
+                      <% end %>
                        <% if policy(Dormitory::AcademicYear).index? %>
                         <li><%= sidebar_link t("navigation.dormitory_academic_years"), dormitory_academic_years_path, icon: "bi-calendar3" %></li>
                       <% end %>

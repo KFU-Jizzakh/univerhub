@@ -31,6 +31,7 @@ Status: IMPLEMENTED
 - AC-21: Actual end date must not be before the start date and must not be in the future
 - AC-22: An active accommodation must not have an actual end date set
 - AC-23: The accommodation list is filterable by building, academic year, and status
+- AC-24: A registrar (`dormitory.registrar`) has read-only access to accommodations (index and show); settle, transfer, evict, force-settle, and batch operations are denied
 
 ## UI/UX Notes
 

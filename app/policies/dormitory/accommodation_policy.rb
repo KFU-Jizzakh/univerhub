@@ -1,9 +1,13 @@
 module Dormitory
   class AccommodationPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Accommodation — admin/dormitory.admin full access, commandant scoped to assigned buildings
+    # PURPOSE: Authorization rules for Accommodation — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar read-only
     # SPECIFICATION: SPEC-DORM-04
     def index?
-      admin_or_dormitory_admin? || commandant?
+      admin_or_dormitory_admin? || commandant? || registrar?
+    end
+
+    def show?
+      admin_or_dormitory_admin? || commandant_with_room_access? || registrar?
     end
 
     def new?
@@ -11,10 +15,6 @@ module Dormitory
     end
 
     def create?
-      admin_or_dormitory_admin? || commandant_with_room_access?
-    end
-
-    def show?
       admin_or_dormitory_admin? || commandant_with_room_access?
     end
 
@@ -50,6 +50,8 @@ module Dormitory
       def resolve
         if user.has_role?("admin") || user.has_role?("dormitory.admin")
           scope.kept
+        elsif user.has_role?("dormitory.registrar")
+          scope.kept
         elsif user.has_role?("dormitory.commandant")
           scope.kept.joins(:room).where(dormitory_rooms: { building_id: user.assigned_building_ids })
         else
@@ -66,6 +68,10 @@ module Dormitory
 
     def commandant?
       user.has_role?("dormitory.commandant")
+    end
+
+    def registrar?
+      user.has_role?("dormitory.registrar")
     end
 
     def commandant_with_room_access?

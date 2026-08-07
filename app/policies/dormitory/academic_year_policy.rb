@@ -1,13 +1,13 @@
 module Dormitory
   class AcademicYearPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for AcademicYear — admin/dormitory.admin manage, commandant views only
+    # PURPOSE: Authorization rules for AcademicYear — admin/dormitory.admin manage, commandant and registrar view only
     # SPECIFICATION: SPEC-DORM-01
     def index?
-      admin_or_dormitory_admin_or_commandant?
+      admin_or_dormitory_admin_or_commandant? || registrar?
     end
 
     def show?
-      admin_or_dormitory_admin_or_commandant?
+      admin_or_dormitory_admin_or_commandant? || registrar?
     end
 
     def new?
@@ -34,7 +34,8 @@ module Dormitory
       def resolve
         return scope.none unless user
 
-        if user.has_role?("admin") || user.has_role?("dormitory.admin") || user.has_role?("dormitory.commandant")
+        if user.has_role?("admin") || user.has_role?("dormitory.admin") ||
+           user.has_role?("dormitory.commandant") || user.has_role?("dormitory.registrar")
           scope.kept.ordered
         else
           scope.none
@@ -50,6 +51,10 @@ module Dormitory
 
     def admin_or_dormitory_admin?
       user.has_role?("admin") || user.has_role?("dormitory.admin")
+    end
+
+    def registrar?
+      user.has_role?("dormitory.registrar")
     end
   end
 end

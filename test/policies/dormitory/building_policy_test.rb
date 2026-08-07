@@ -5,6 +5,7 @@ class Dormitory::BuildingPolicyTest < ActiveSupport::TestCase
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
     @building = dormitory_buildings(:building_one)
   end
@@ -27,6 +28,31 @@ class Dormitory::BuildingPolicyTest < ActiveSupport::TestCase
 
   test "index? denied for manager" do
     assert_not policy(@manager, Dormitory::Building).index?
+  end
+
+  test "index? allowed for registrar" do
+    assert policy(@registrar, Dormitory::Building).index?
+  end
+
+  test "show? allowed for registrar" do
+    assert policy(@registrar, @building).show?
+  end
+
+  test "create? denied for registrar" do
+    assert_not policy(@registrar, @building).create?
+  end
+
+  test "update? denied for registrar" do
+    assert_not policy(@registrar, @building).update?
+  end
+
+  test "destroy? denied for registrar" do
+    assert_not policy(@registrar, @building).destroy?
+  end
+
+  test "scope resolves to all buildings for registrar" do
+    scope = Dormitory::BuildingPolicy::Scope.new(@registrar, Dormitory::Building)
+    assert_equal Dormitory::Building.kept.count, scope.resolve.count
   end
 
   test "create? allowed for admin" do

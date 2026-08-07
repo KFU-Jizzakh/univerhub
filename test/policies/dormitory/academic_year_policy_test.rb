@@ -5,6 +5,7 @@ class Dormitory::AcademicYearPolicyTest < ActiveSupport::TestCase
     @admin = users(:admin_user)
     @dormitory_admin = users(:dormitory_admin_user)
     @commandant = users(:dormitory_commandant_user)
+    @registrar = users(:dormitory_registrar_user)
     @manager = users(:manager_user)
     @year = dormitory_academic_years(:active_year_2025_2026)
   end
@@ -19,6 +20,27 @@ class Dormitory::AcademicYearPolicyTest < ActiveSupport::TestCase
 
   test "commandant can index" do
     assert Dormitory::AcademicYearPolicy.new(@commandant, Dormitory::AcademicYear).index?
+  end
+
+  test "registrar can index" do
+    assert Dormitory::AcademicYearPolicy.new(@registrar, Dormitory::AcademicYear).index?
+  end
+
+  test "registrar can show" do
+    assert Dormitory::AcademicYearPolicy.new(@registrar, @year).show?
+  end
+
+  test "registrar cannot create" do
+    year = Dormitory::AcademicYear.new
+    assert_not Dormitory::AcademicYearPolicy.new(@registrar, year).create?
+  end
+
+  test "registrar cannot update" do
+    assert_not Dormitory::AcademicYearPolicy.new(@registrar, @year).update?
+  end
+
+  test "registrar cannot destroy" do
+    assert_not Dormitory::AcademicYearPolicy.new(@registrar, @year).destroy?
   end
 
   test "manager cannot index" do

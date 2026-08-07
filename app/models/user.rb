@@ -11,7 +11,6 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 8 }, if: -> { password.present? }
   has_many :sessions, dependent: :destroy
   has_many :user_roles, dependent: :destroy
-  has_many :roles, through: :user_roles
   has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
   has_one :profile, class_name: "UserProfile", dependent: :destroy
   has_many :report_comments, class_name: "Reporting::ReportComment", dependent: :destroy
@@ -21,14 +20,30 @@ class User < ApplicationRecord
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
-  scope :with_role, ->(name) { joins(:roles).where(roles: { name: name }).distinct }
+  scope :with_role, ->(name) { joins(:user_roles).where(user_roles: { role_name: name }).distinct }
   scope :active, -> { where(deactivated_at: nil) }
   scope :deactivated, -> { where.not(deactivated_at: nil) }
 
   after_discard :terminate_all_sessions
 
   def has_role?(role_name)
-    roles.exists?(name: role_name)
+    user_roles.exists?(role_name: role_name)
+  end
+
+  def role_names
+    user_roles.loaded? ? user_roles.map(&:role_name) : user_roles.pluck(:role_name)
+  end
+
+  def role_names=(names)
+    names = Array(names).reject(&:blank?).uniq
+    current = user_roles.pluck(:role_name)
+
+    user_roles.where.not(role_name: names).find_each(&:do_destroy!)
+    (names - current).each { |name| user_roles.build(role_name: name).do_create! }
+  end
+
+  def add_role!(role_name)
+    user_roles.build(role_name: role_name).do_create!
   end
 
   def active?

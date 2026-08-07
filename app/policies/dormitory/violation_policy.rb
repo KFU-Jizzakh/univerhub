@@ -1,14 +1,14 @@
 module Dormitory
   class ViolationPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Violation — admin, dormitory.admin, and commandant have full CRUD access; commandant scope restricted to assigned buildings
+    # PURPOSE: Authorization rules for Violation — admin, dormitory.admin, and commandant have full CRUD access; registrar read-only; commandant scope restricted to assigned buildings
     # SPECIFICATION: SPEC-DORM-10
 
     def index?
-      admin_or_dormitory_admin_or_commandant?
+      admin_or_dormitory_admin_or_commandant? || registrar?
     end
 
     def show?
-      admin_or_dormitory_admin_or_commandant?
+      admin_or_dormitory_admin_or_commandant? || registrar?
     end
 
     def create?
@@ -41,9 +41,15 @@ module Dormitory
       admin_or_dormitory_admin? || user.has_role?("dormitory.commandant")
     end
 
+    def registrar?
+      user.has_role?("dormitory.registrar")
+    end
+
     class Scope < ApplicationPolicy::Scope
       def resolve
         if user.has_role?("admin") || user.has_role?("dormitory.admin")
+          scope.kept.ordered
+        elsif user.has_role?("dormitory.registrar")
           scope.kept.ordered
         elsif user.has_role?("dormitory.commandant")
           scope.kept

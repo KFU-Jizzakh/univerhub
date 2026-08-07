@@ -6,6 +6,7 @@ module Dormitory
       @admin = users(:admin_user)
       @dormitory_admin = users(:dormitory_admin_user)
       @commandant = users(:dormitory_commandant_user)
+      @registrar = users(:dormitory_registrar_user)
       @plain_user = users(:reporter_user)
       @resident = dormitory_residents(:resident_one_not_settled)
       @room = dormitory_rooms(:room_101)
@@ -28,6 +29,10 @@ module Dormitory
 
     test "commandant can access new" do
       assert AccommodationPolicy.new(@commandant, Accommodation).new?
+    end
+
+    test "registrar cannot access new" do
+      assert_not AccommodationPolicy.new(@registrar, Accommodation).new?
     end
 
     test "plain user cannot access new" do
@@ -68,6 +73,11 @@ module Dormitory
       assert_not AccommodationPolicy.new(@commandant, acc).create?
     end
 
+    test "registrar cannot create" do
+      acc = build_accommodation
+      assert_not AccommodationPolicy.new(@registrar, acc).create?
+    end
+
     test "plain user cannot create" do
       acc = build_accommodation
       assert_not AccommodationPolicy.new(@plain_user, acc).create?
@@ -103,6 +113,10 @@ module Dormitory
 
     test "commandant can access index" do
       assert AccommodationPolicy.new(@commandant, Accommodation).index?
+    end
+
+    test "registrar can access index" do
+      assert AccommodationPolicy.new(@registrar, Accommodation).index?
     end
 
     test "plain user cannot access index" do
@@ -141,6 +155,11 @@ module Dormitory
       assert_not AccommodationPolicy.new(@plain_user, acc).show?
     end
 
+    test "registrar can view accommodation" do
+      acc = build_accommodation
+      assert AccommodationPolicy.new(@registrar, acc).show?
+    end
+
     # --- edit? / update? ---
 
     test "admin can edit accommodation" do
@@ -172,6 +191,12 @@ module Dormitory
     test "plain user cannot edit accommodation" do
       acc = build_accommodation
       assert_not AccommodationPolicy.new(@plain_user, acc).edit?
+    end
+
+    test "registrar cannot edit accommodation" do
+      acc = build_accommodation
+      assert_not AccommodationPolicy.new(@registrar, acc).edit?
+      assert_not AccommodationPolicy.new(@registrar, acc).update?
     end
 
     # --- new_transfer? / transfer? ---
@@ -248,6 +273,22 @@ module Dormitory
       assert_not AccommodationPolicy.new(@plain_user, acc).new_eviction?
     end
 
+    test "registrar cannot force settle" do
+      assert_not AccommodationPolicy.new(@registrar, Accommodation).force?
+    end
+
+    test "registrar cannot transfer" do
+      acc = build_accommodation
+      assert_not AccommodationPolicy.new(@registrar, acc).new_transfer?
+      assert_not AccommodationPolicy.new(@registrar, acc).transfer?
+    end
+
+    test "registrar cannot evict" do
+      acc = build_accommodation
+      assert_not AccommodationPolicy.new(@registrar, acc).new_eviction?
+      assert_not AccommodationPolicy.new(@registrar, acc).evict?
+    end
+
     # --- policy_scope ---
 
     test "admin scope includes all accommodations" do
@@ -258,6 +299,11 @@ module Dormitory
     test "commandant scope only includes accommodations in assigned buildings" do
       scope = AccommodationPolicy::Scope.new(@commandant, Accommodation.all).resolve
       assert scope.all? { |acc| acc.room.building_id.in?(@commandant.assigned_building_ids) }
+    end
+
+    test "registrar scope includes all accommodations" do
+      scope = AccommodationPolicy::Scope.new(@registrar, Accommodation.all).resolve
+      assert_equal Accommodation.kept.count, scope.count
     end
 
     test "plain user scope returns none" do

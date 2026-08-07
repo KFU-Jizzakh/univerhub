@@ -6,6 +6,7 @@ module Dormitory
       @admin = users(:admin_user)
       @dormitory_admin = users(:dormitory_admin_user)
       @commandant = users(:dormitory_commandant_user)
+      @registrar = users(:dormitory_registrar_user)
       @plain_user = users(:reporter_user)
       @resident = dormitory_residents(:resident_one_not_settled)
       @room = dormitory_rooms(:room_101)
@@ -60,6 +61,12 @@ module Dormitory
       sign_in @commandant
       get new_dormitory_accommodation_path(resident_id: @resident.id)
       assert_response :success
+    end
+
+    test "registrar cannot access settle form" do
+      sign_in @registrar
+      get new_dormitory_accommodation_path(resident_id: @resident.id)
+      assert_redirected_to root_path
     end
 
     test "plain user cannot access settle form" do

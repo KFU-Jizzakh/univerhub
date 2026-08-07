@@ -24,6 +24,7 @@ Status: IMPLEMENTED
 - AC-14: The resident list can be filtered by building for use in selection workflows (e.g., batch eviction)
 - AC-15: A commandant sees only residents in their assigned buildings' rooms, plus residents who are not settled
 - AC-16: All state changes are recorded in the audit log
+- AC-17: A registrar (`dormitory.registrar`) can list, view, create, and edit residents with global (non-building-scoped) access, but cannot delete residents and cannot perform settlement operations (see SPEC-DORM-04)
 
 ## UI/UX Notes
 
@@ -46,6 +47,7 @@ Status: IMPLEMENTED
 - BR-8: Name search is case-insensitive and protected against injection attacks
 - BR-9: The current room is set and cleared by accommodation operations, not directly by the user
 - BR-10: A resident's active accommodation is their current non-completed, non-cancelled accommodation
+- BR-11: Registrar access is global (not restricted by building assignments); registrar sees all kept residents and can create and edit them, but deletion is denied
 
 ## Behavior
 
@@ -119,3 +121,28 @@ Then the system responds with: found = true, resident id, full name "Petrov Ivan
 #### Scenario: Check unknown ticket number
 When a user checks ticket "ST-00000"
 Then the system responds with: found = false
+
+### Rule: Registrar Role (BR-11)
+
+#### Scenario: Registrar creates and edits a resident
+Given user "Elena" has role `dormitory.registrar` (no building assignments)
+When Elena creates a resident "Anna Volkova"
+Then the resident is created with status "not settled"
+And Elena can edit the resident's contact details
+And the changes are recorded in the audit log
+
+#### Scenario: Registrar views all residents
+Given residents exist both with and without rooms
+When Elena visits the residents index
+Then all kept residents are displayed (global scope, not building-restricted)
+
+#### Scenario: Registrar cannot delete a resident
+Given Elena has role `dormitory.registrar`
+When Elena tries to delete a resident
+Then the operation is denied (delete button is not shown and the action is unauthorized)
+
+#### Scenario: Registrar cannot settle a resident
+Given Elena has role `dormitory.registrar`
+And resident "Anna Volkova" exists (not settled)
+When Elena tries to open the settlement form for Anna
+Then the operation is denied (see SPEC-DORM-04)

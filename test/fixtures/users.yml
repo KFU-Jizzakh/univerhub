@@ -35,3 +35,7 @@ dormitory_admin_user:
 dormitory_commandant_user:
   email_address: commandant@test.local
   password_digest: <%= password_digest %>
+
+dormitory_registrar_user:
+  email_address: registrar@test.local
+  password_digest: <%= password_digest %>

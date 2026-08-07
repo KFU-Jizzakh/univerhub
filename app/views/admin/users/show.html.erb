@@ -43,10 +43,10 @@
   <div class="info-item">
     <span class="info-label"><%= t("views.shared.labels.roles") %></span>
     <span class="info-value">
-      <% @user.roles.each do |role| %>
-        <span class="status-badge status-badge--published status-badge--sm"><%= role.name %></span>
+      <% @user.role_names.each do |role_name| %>
+        <span class="status-badge status-badge--published status-badge--sm"><%= role_name %></span>
       <% end %>
-      <% if @user.roles.empty? %><%= t("views.admin.users.show.no_roles") %><% end %>
+      <% if @user.role_names.empty? %><%= t("views.admin.users.show.no_roles") %><% end %>
     </span>
   </div>
   <div class="info-item">

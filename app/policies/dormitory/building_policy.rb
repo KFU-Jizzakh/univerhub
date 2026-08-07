@@ -1,13 +1,13 @@
 module Dormitory
   class BuildingPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Building — admin/dormitory.admin manage, commandant views assigned only
+    # PURPOSE: Authorization rules for Building — admin/dormitory.admin manage, commandant views assigned only, registrar views all
     # SPECIFICATION: SPEC-DORM-02
     def index?
-      admin_or_dormitory_admin? || commandant?
+      admin_or_dormitory_admin? || commandant? || registrar?
     end
 
     def show?
-      admin_or_dormitory_admin? || commandant_with_access?
+      admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end
 
     def create?
@@ -40,6 +40,10 @@ module Dormitory
       user.has_role?("dormitory.commandant")
     end
 
+    def registrar?
+      user.has_role?("dormitory.registrar")
+    end
+
     def commandant_with_access?
       commandant? && user.assigned_building_ids.include?(record.id)
     end
@@ -47,6 +51,8 @@ module Dormitory
     class Scope < ApplicationPolicy::Scope
       def resolve
         if user.has_role?("admin") || user.has_role?("dormitory.admin")
+          scope.kept.ordered
+        elsif user.has_role?("dormitory.registrar")
           scope.kept.ordered
         elsif user.has_role?("dormitory.commandant")
           scope.kept.ordered.where(id: user.assigned_building_ids)

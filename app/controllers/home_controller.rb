@@ -10,7 +10,7 @@ class HomeController < ApplicationController
     authorize :dashboard
     @user = Current.user
     @unread_notifications = @user.notifications.unread.count
-    @user_roles = @user.roles.pluck(:name)
+    @user_roles = @user.role_names
 
     if @user.has_role?("reporting.manager")
       manager_reports = Reporting::Report.where(creator: @user)
@@ -51,7 +51,7 @@ class HomeController < ApplicationController
     end
 
     # Restrict activity feed for scoped admins (e.g., reporting.admin, dormitory.admin)
-    scoped_admin_prefixes = @user.roles.where("name LIKE '%.admin'").pluck(:name).map { |r| r.split(".").first }.uniq
+    scoped_admin_prefixes = @user.role_names.select { |r| r.end_with?(".admin") }.map { |r| r.split(".").first }.uniq
     if scoped_admin_prefixes.any? && !@user.has_role?("admin")
       @recent_events = OutboxEvent.order(created_at: :desc).includes(:actor).limit(10)
         .where(scoped_admin_prefixes.map { "action LIKE ?" }.join(" OR "), *scoped_admin_prefixes.map { |p| "#{p}.%" })

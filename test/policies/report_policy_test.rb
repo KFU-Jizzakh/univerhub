@@ -40,7 +40,7 @@ class Reporting::ReportPolicyTest < ActiveSupport::TestCase
 
   test "show? denies unrelated reporter on another's report" do
     other = User.create!(email_address: "other@t.local", password: "password123")
-    other.roles << roles(:reporting_reporter)
+    other.add_role!("reporting.reporter")
     assert_not policy(other, reporting_reports(:new_report)).show?
   end
 

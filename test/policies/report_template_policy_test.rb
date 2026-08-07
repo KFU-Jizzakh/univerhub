@@ -60,7 +60,7 @@ class Reporting::ReportTemplatePolicyTest < ActiveSupport::TestCase
 
   test "update? denied for non-owner manager" do
     other = User.create!(email_address: "other_mgr@t.local", password: "password123")
-    other.roles << roles(:reporting_manager)
+    other.add_role!("reporting.manager")
     assert_not policy(other, @draft).update?
   end
 
