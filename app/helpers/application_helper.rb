@@ -141,6 +141,8 @@ module ApplicationHelper
     when "application/pdf" then "bi-filetype-pdf"
     when "image/jpeg" then "bi-filetype-jpg"
     when "image/png" then "bi-filetype-png"
+    when "application/msword" then "bi-filetype-doc"
+    when "application/vnd.openxmlformats-officedocument.wordprocessingml.document" then "bi-filetype-docx"
     else "bi-file-earmark"
     end
   end

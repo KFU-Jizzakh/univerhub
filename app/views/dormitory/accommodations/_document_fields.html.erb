@@ -1,10 +1,12 @@
 <% edit_mode = f.object.persisted? %>
+<% required = local_assigns.fetch(:required, true) %>
+<% show_payments = local_assigns.fetch(:show_payments, true) %>
 
 <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_documents") %></h5>
 
 <div class="mb-3">
   <%= f.label :application_number, t("views.dormitory.accommodations.application_number"), class: "form-label" %>
-  <%= f.text_field :application_number, required: true, class: "form-control" %>
+  <%= f.text_field :application_number, required: required, class: "form-control" %>
 </div>
 
 <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
@@ -21,8 +23,8 @@
       <span class="text-muted small">(<%= number_to_human_size(f.object.application_file.byte_size) %>)</span>
     </div>
   <% end %>
-  <%= f.file_field :application_file, accept: "application/pdf,image/jpeg,image/png", class: "d-none", data: { drop_zone_target: "input" } %>
-  <% unless edit_mode %>
+  <%= f.file_field :application_file, accept: "application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document", class: "d-none", data: { drop_zone_target: "input" } %>
+  <% unless edit_mode || !required %>
     <div class="mt-1"><small class="text-warning"><%= t("views.dormitory.accommodations.documents_required") %></small></div>
   <% end %>
   <div class="drop-zone" data-drop-zone-target="zone">
@@ -32,12 +34,12 @@
     </div>
     <div data-drop-zone-target="list"></div>
   </div>
-  <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
+  <div class="form-text"><%= t("views.dormitory.accommodations.document_file_hint") %></div>
 </div>
 
 <div class="mb-3">
   <%= f.label :contract_number, t("views.dormitory.accommodations.contract_number"), class: "form-label" %>
-  <%= f.text_field :contract_number, required: true, class: "form-control" %>
+  <%= f.text_field :contract_number, required: required, class: "form-control" %>
 </div>
 
 <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
@@ -54,8 +56,8 @@
       <span class="text-muted small">(<%= number_to_human_size(f.object.contract_file.byte_size) %>)</span>
     </div>
   <% end %>
-  <%= f.file_field :contract_file, accept: "application/pdf,image/jpeg,image/png", class: "d-none", data: { drop_zone_target: "input" } %>
-  <% unless edit_mode %>
+  <%= f.file_field :contract_file, accept: "application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document", class: "d-none", data: { drop_zone_target: "input" } %>
+  <% unless edit_mode || !required %>
     <div class="mt-1"><small class="text-warning"><%= t("views.dormitory.accommodations.documents_required") %></small></div>
   <% end %>
   <div class="drop-zone" data-drop-zone-target="zone">
@@ -65,12 +67,14 @@
     </div>
     <div data-drop-zone-target="list"></div>
   </div>
-  <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
+  <div class="form-text"><%= t("views.dormitory.accommodations.document_file_hint") %></div>
 </div>
 
-<h5 class="mb-3"><%= t("views.dormitory.accommodations.section_payments") %></h5>
+<% if show_payments %>
+  <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_payments") %></h5>
 
-<div class="mb-3">
-  <%= f.label :required_amount, t("views.dormitory.accommodations.required_amount"), class: "form-label" %>
-  <%= f.number_field :required_amount, step: 0.01, class: "form-control" %>
-</div>
+  <div class="mb-3">
+    <%= f.label :required_amount, t("views.dormitory.accommodations.required_amount"), class: "form-label" %>
+    <%= f.number_field :required_amount, step: 0.01, class: "form-control" %>
+  </div>
+<% end %>

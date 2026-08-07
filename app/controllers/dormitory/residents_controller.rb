@@ -91,7 +91,9 @@ module Dormitory
         :gender, :date_of_birth,
         :phone, :email,
         :student_ticket_number,
-        :photo
+        :photo,
+        :application_number, :contract_number,
+        :application_file, :contract_file
       )
     end
   end

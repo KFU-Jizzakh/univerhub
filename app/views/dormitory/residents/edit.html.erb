@@ -82,6 +82,12 @@
     </div>
   </div>
 
+  <div class="row">
+    <div class="col-md-6">
+      <%= render "dormitory/accommodations/document_fields", f: f, required: false, show_payments: false %>
+    </div>
+  </div>
+
   <div class="d-flex gap-2 mb-3">
     <%= f.submit t("views.shared.actions.save"), class: "btn btn-primary" %>
     <%= link_to t("views.shared.actions.cancel"), dormitory_resident_path(@resident), class: "btn btn-outline-secondary" %>

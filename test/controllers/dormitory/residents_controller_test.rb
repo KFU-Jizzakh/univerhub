@@ -177,6 +177,72 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "registrar creates resident with documents" do
+    sign_in_as @registrar
+    assert_difference "Dormitory::Resident.count", 1 do
+      post dormitory_residents_path, params: {
+        dormitory_resident: {
+          last_name: "Новый", first_name: "Человек", gender: "male",
+          date_of_birth: "2000-01-01", student_ticket_number: "NEW004",
+          application_number: "З-777", contract_number: "Д-777",
+          application_file: Rack::Test::UploadedFile.new(
+            Rails.root.join("test/fixtures/files/test.pdf"), "application/pdf"
+          ),
+          contract_file: Rack::Test::UploadedFile.new(
+            Rails.root.join("test/fixtures/files/test.pdf"), "application/pdf"
+          )
+        }
+      }
+    end
+
+    resident = Dormitory::Resident.find_by(student_ticket_number: "NEW004")
+    assert_equal "З-777", resident.application_number
+    assert_equal "Д-777", resident.contract_number
+    assert resident.application_file.attached?
+    assert resident.contract_file.attached?
+  end
+
+  test "registrar cannot create resident with file but without document number" do
+    sign_in_as @registrar
+    assert_no_difference "Dormitory::Resident.count" do
+      post dormitory_residents_path, params: {
+        dormitory_resident: {
+          last_name: "Новый", first_name: "Человек", gender: "male",
+          date_of_birth: "2000-01-01", student_ticket_number: "NEW006",
+          application_file: Rack::Test::UploadedFile.new(
+            Rails.root.join("test/fixtures/files/test.pdf"), "application/pdf"
+          )
+        }
+      }
+    end
+    assert_response :unprocessable_entity
+    assert_match "укажите номер заявления, если прикреплён файл", response.body
+  end
+
+  test "registrar updates resident documents" do
+    sign_in_as @registrar
+    resident = Dormitory::Resident.create!(
+      last_name: "Док", first_name: "Студент", gender: :male,
+      date_of_birth: 20.years.ago, student_ticket_number: "NEW005"
+    )
+
+    patch dormitory_resident_path(resident), params: {
+      dormitory_resident: {
+        application_number: "З-888",
+        contract_number: "Д-888",
+        application_file: Rack::Test::UploadedFile.new(
+          Rails.root.join("test/fixtures/files/test.pdf"), "application/pdf"
+        )
+      }
+    }
+
+    assert_redirected_to dormitory_resident_path(resident)
+    resident.reload
+    assert_equal "З-888", resident.application_number
+    assert_equal "Д-888", resident.contract_number
+    assert resident.application_file.attached?
+  end
+
   test "destroy denied for registrar" do
     sign_in_as @registrar
     assert_no_difference "Dormitory::Resident.kept.count" do

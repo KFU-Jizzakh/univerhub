@@ -264,6 +264,19 @@ module Dormitory
       assert_includes acc.errors[:application_file], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.application_file.invalid_file_format")
     end
 
+    test "accepts doc/docx for application and contract files" do
+      acc = build_accommodation
+      acc.application_file.attach(
+        io: StringIO.new("test"), filename: "app.doc", content_type: "application/msword"
+      )
+      acc.contract_file.attach(
+        io: StringIO.new("test"), filename: "contract.docx", content_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      )
+
+      assert_empty acc.errors[:application_file]
+      assert_empty acc.errors[:contract_file]
+    end
+
     test "rejects file too large" do
       acc = build_accommodation
       acc.application_file.attach(

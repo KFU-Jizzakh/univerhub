@@ -77,6 +77,51 @@
   </div>
 </div>
 
+<% if @resident.application_number.present? || @resident.contract_number.present? ||
+      @resident.application_file.attached? || @resident.contract_file.attached? %>
+  <hr class="my-4">
+  <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_documents") %></h5>
+  <div class="table-responsive mb-4">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col"><%= t("views.dormitory.accommodations.document") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.document_number") %></th>
+          <th scope="col"><%= t("views.dormitory.accommodations.document_file") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><i class="bi bi-file-earmark-text me-1"></i> <%= t("views.dormitory.accommodations.application") %></td>
+          <td><%= @resident.application_number.presence || "—" %></td>
+          <td>
+            <% if @resident.application_file.attached? %>
+              <i class="bi <%= file_icon_class(@resident.application_file) %> me-1"></i>
+              <%= link_to @resident.application_file.filename, url_for(@resident.application_file), target: "_blank" %>
+              <span class="text-muted small">(<%= number_to_human_size(@resident.application_file.byte_size) %>)</span>
+            <% else %>
+              <span class="text-muted"><%= t("views.dormitory.accommodations.no_file") %></span>
+            <% end %>
+          </td>
+        </tr>
+        <tr>
+          <td><i class="bi bi-file-earmark-text me-1"></i> <%= t("views.dormitory.accommodations.contract") %></td>
+          <td><%= @resident.contract_number.presence || "—" %></td>
+          <td>
+            <% if @resident.contract_file.attached? %>
+              <i class="bi <%= file_icon_class(@resident.contract_file) %> me-1"></i>
+              <%= link_to @resident.contract_file.filename, url_for(@resident.contract_file), target: "_blank" %>
+              <span class="text-muted small">(<%= number_to_human_size(@resident.contract_file.byte_size) %>)</span>
+            <% else %>
+              <span class="text-muted"><%= t("views.dormitory.accommodations.no_file") %></span>
+            <% end %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <% if @violations.any? %>
   <hr class="my-4">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

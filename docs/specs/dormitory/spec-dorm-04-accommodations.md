@@ -32,6 +32,7 @@ Status: IMPLEMENTED
 - AC-22: An active accommodation must not have an actual end date set
 - AC-23: The accommodation list is filterable by building, academic year, and status
 - AC-24: A registrar (`dormitory.registrar`) has read-only access to accommodations (index and show); settle, transfer, evict, force-settle, and batch operations are denied
+- AC-25: The settlement form prefills application/contract numbers and files from the resident's prepared documents (see SPEC-DORM-03); files uploaded in the form take precedence; if the resident has no documents the form works as before (documents remain required at settlement)
 
 ## UI/UX Notes
 
@@ -48,7 +49,7 @@ Status: IMPLEMENTED
 - BR-1: Eviction reasons: transfer, graduation, expulsion, voluntary, violation, repair, other
 - BR-2: Settlement: validates preconditions, updates room occupancy, adjusts room status
 - BR-3: Force settlement allows bypassing capacity validation, available only to admin and dormitory administrator
-- BR-4: Settlement preconditions: resident must not already be active, room must be kept and active, application and contract files must be attached
+- BR-4: Settlement preconditions: resident must not already be active, room must be kept and active, application and contract files must be attached. Files are mandatory at settlement: if the resident card has no prepared documents, the commandant uploads them in the settlement form; settlement is blocked only when files are absent both on the card and in the form
 - BR-5: Capacity check: room must have available slots unless forced
 - BR-6: Transfer: completes the old accommodation, saves the new one, protects against race conditions for both rooms
 - BR-7: Transfer documents: the new accommodation must have supporting documents attached
@@ -59,7 +60,7 @@ Status: IMPLEMENTED
 - BR-12: Actual duration is computed as actual end date minus start date (when actual end date is present)
 - BR-13: Overdue accommodations: active accommodations where the planned end date has passed
 - BR-14: Transfer operations lock both the source and destination rooms to prevent concurrent conflicts
-
+- BR-15: At settlement, blank numbers and missing files are copied from the resident's prepared documents (if present); values already provided in the settlement form are never overwritten. This copying happens only on the resident's first settlement — if the resident already has any accommodation records, the settlement form is filled manually
 ## Behavior
 
 ### Background

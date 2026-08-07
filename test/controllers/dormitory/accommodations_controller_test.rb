@@ -63,6 +63,136 @@ module Dormitory
       assert_response :success
     end
 
+    test "settle form prefills documents from resident" do
+      @resident.update!(application_number: "З-100", contract_number: "Д-100")
+      @resident.application_file.attach(
+        io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      @resident.contract_file.attach(
+        io: StringIO.new("cnt"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      sign_in @commandant
+      get new_dormitory_accommodation_path(resident_id: @resident.id)
+      assert_response :success
+      assert_includes response.body, "З-100"
+      assert_includes response.body, "Д-100"
+      assert_includes response.body, "app.pdf"
+      assert_includes response.body, "contract.pdf"
+    end
+
+    test "commandant settles resident using documents prepared by registrar" do
+      @resident.update!(application_number: "З-200", contract_number: "Д-200")
+      @resident.application_file.attach(
+        io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      @resident.contract_file.attach(
+        io: StringIO.new("cnt"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      sign_in @commandant
+      assert_difference -> { Accommodation.count }, 1 do
+        post dormitory_accommodations_path, params: settle_params(
+          application_number: "З-200", contract_number: "Д-200",
+          application_file: nil, contract_file: nil
+        )
+      end
+
+      accommodation = Accommodation.last
+      assert_redirected_to dormitory_resident_path(@resident)
+      assert accommodation.application_file.attached?
+      assert accommodation.contract_file.attached?
+      assert_equal "app.pdf", accommodation.application_file.filename.to_s
+      assert_equal "contract.pdf", accommodation.contract_file.filename.to_s
+    end
+
+    test "settlement files uploaded in form take precedence over resident documents" do
+      @resident.update!(application_number: "З-300", contract_number: "Д-300")
+      @resident.application_file.attach(
+        io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+      )
+
+      sign_in @commandant
+      post dormitory_accommodations_path, params: settle_params
+
+      accommodation = Accommodation.last
+      assert_equal "test.pdf", accommodation.application_file.filename.to_s
+    end
+
+    test "settlement without files anywhere fails with files_required" do
+      sign_in @commandant
+      assert_no_difference -> { Accommodation.count } do
+        post dormitory_accommodations_path, params: settle_params(
+          application_file: nil, contract_file: nil
+        )
+      end
+      assert_response :unprocessable_entity
+      assert_match "Необходимо прикрепить все документы.", response.body
+    end
+
+    test "settlement copies numbers from resident card when form sends blank values" do
+      @resident.update!(application_number: "З-400", contract_number: "Д-400")
+      @resident.application_file.attach(
+        io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      @resident.contract_file.attach(
+        io: StringIO.new("cnt"), filename: "contract.pdf", content_type: "application/pdf"
+      )
+
+      sign_in @commandant
+      post dormitory_accommodations_path, params: settle_params(
+        application_number: "", contract_number: "",
+        application_file: nil, contract_file: nil
+      )
+
+      accommodation = Accommodation.last
+      assert_redirected_to dormitory_resident_path(@resident)
+      assert_equal "З-400", accommodation.application_number
+      assert_equal "Д-400", accommodation.contract_number
+    end
+
+    test "settlement form does not prefill documents when resident already has accommodations" do
+      Dormitory::Accommodation.create!(
+        resident: @resident,
+        room: @room,
+        application_number: "З-OLD",
+        contract_number: "Д-OLD",
+        start_date: Date.current,
+        planned_end_date: Date.current + 1.year
+      )
+      @resident.update!(application_number: "З-500", contract_number: "Д-500")
+      @resident.application_file.attach(
+        io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+      )
+
+      sign_in @commandant
+      get new_dormitory_accommodation_path(resident_id: @resident.id)
+      assert_response :success
+      assert_not_includes response.body, "З-500"
+      assert_not_includes response.body, "app.pdf"
+    end
+
+    test "settlement does not copy documents when resident already has accommodations" do
+      Dormitory::Accommodation.create!(
+        resident: @resident,
+        room: @room,
+        application_number: "З-OLD",
+        contract_number: "Д-OLD",
+        start_date: Date.current,
+        planned_end_date: Date.current + 1.year
+      )
+      @resident.update!(application_number: "З-600", contract_number: "Д-600")
+
+      sign_in @commandant
+      assert_no_difference -> { Accommodation.count } do
+        post dormitory_accommodations_path, params: settle_params(
+          application_number: "", contract_number: "",
+          application_file: nil, contract_file: nil
+        )
+      end
+      assert_response :unprocessable_entity
+    end
+
     test "registrar cannot access settle form" do
       sign_in @registrar
       get new_dormitory_accommodation_path(resident_id: @resident.id)

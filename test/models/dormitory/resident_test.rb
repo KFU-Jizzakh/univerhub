@@ -274,6 +274,172 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert_includes results, dormitory_residents(:resident_one_not_settled)
   end
 
+  test "document numbers are optional" do
+    resident = Dormitory::Resident.new(
+      last_name: "Тест", first_name: "Тест", gender: :male,
+      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ018",
+    )
+    assert resident.valid?
+  end
+
+  test "accepts document numbers" do
+    resident = Dormitory::Resident.new(
+      last_name: "Тест", first_name: "Тест", gender: :male,
+      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ019",
+      application_number: "З-001", contract_number: "Д-001",
+    )
+    assert resident.valid?
+  end
+
+  test "invalid when application file attached without application number" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+    )
+    assert_not resident.valid?
+    assert_includes resident.errors[:application_number], "укажите номер заявления, если прикреплён файл"
+  end
+
+  test "invalid when contract file attached without contract number" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.contract_file.attach(
+      io: StringIO.new("cnt"), filename: "contract.pdf", content_type: "application/pdf"
+    )
+    assert_not resident.valid?
+    assert_includes resident.errors[:contract_number], "укажите номер договора, если прикреплён файл"
+  end
+
+  test "valid when file attached with number" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.application_number = "З-001"
+    resident.contract_number = "Д-001"
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+    )
+    resident.contract_file.attach(
+      io: StringIO.new("cnt"), filename: "contract.pdf", content_type: "application/pdf"
+    )
+    assert resident.valid?
+  end
+
+  test "accepts doc/docx for application and contract files" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.application_number = "З-001"
+    resident.contract_number = "Д-001"
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.doc", content_type: "application/msword"
+    )
+    resident.contract_file.attach(
+      io: StringIO.new("cnt"), filename: "contract.docx", content_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    assert resident.valid?
+  end
+
+  test "valid when number present without file" do
+    resident = Dormitory::Resident.new(
+      last_name: "Тест", first_name: "Тест", gender: :male,
+      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ020",
+      application_number: "З-001", contract_number: "Д-001",
+    )
+    assert resident.valid?
+  end
+
+  test "rejects invalid application file format" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.application_file.attach(
+      io: StringIO.new("not a pdf"), filename: "app.txt", content_type: "text/plain"
+    )
+    assert_not resident.valid?
+    assert_includes resident.errors[:application_file], I18n.t("activerecord.errors.models.dormitory/resident.attributes.application_file.invalid_file_format")
+  end
+
+  test "rejects oversized contract file" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.contract_file.attach(
+      io: StringIO.new("x" * (10.megabytes + 1)), filename: "contract.pdf", content_type: "application/pdf"
+    )
+    assert_not resident.valid?
+    assert_includes resident.errors[:contract_file], "Размер файла превышает 10 МБ."
+  end
+
+  test "copy_documents_to copies numbers and files to accommodation" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.update!(application_number: "З-100", contract_number: "Д-100")
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+    )
+    resident.contract_file.attach(
+      io: StringIO.new("cnt"), filename: "contract.pdf", content_type: "application/pdf"
+    )
+
+    accommodation = Dormitory::Accommodation.new(resident: resident)
+    resident.copy_documents_to(accommodation)
+
+    assert_equal "З-100", accommodation.application_number
+    assert_equal "Д-100", accommodation.contract_number
+    assert accommodation.application_file.attached?
+    assert accommodation.contract_file.attached?
+  end
+
+  test "copy_documents_to does not overwrite existing accommodation documents" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.update!(application_number: "З-100", contract_number: "Д-100")
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+    )
+
+    accommodation = Dormitory::Accommodation.new(
+      resident: resident, application_number: "З-999", contract_number: "Д-999"
+    )
+    accommodation.application_file.attach(
+      io: StringIO.new("mine"), filename: "mine.pdf", content_type: "application/pdf"
+    )
+
+    resident.copy_documents_to(accommodation)
+
+    assert_equal "З-999", accommodation.application_number
+    assert_equal "Д-999", accommodation.contract_number
+    assert_equal "mine.pdf", accommodation.application_file.filename.to_s
+    assert_not accommodation.contract_file.attached?
+  end
+
+  test "copy_documents_to copies numbers when accommodation value is blank" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.update!(application_number: "З-100", contract_number: "Д-100")
+
+    accommodation = Dormitory::Accommodation.new(
+      resident: resident, application_number: "", contract_number: ""
+    )
+
+    resident.copy_documents_to(accommodation)
+
+    assert_equal "З-100", accommodation.application_number
+    assert_equal "Д-100", accommodation.contract_number
+  end
+
+  test "copy_documents_to does nothing when resident already has accommodations" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.update!(application_number: "З-100", contract_number: "Д-100")
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+    )
+    Dormitory::Accommodation.create!(
+      resident: resident,
+      room: dormitory_rooms(:room_101),
+      application_number: "З-OLD",
+      contract_number: "Д-OLD",
+      start_date: Date.current,
+      planned_end_date: Date.current + 1.year
+    )
+
+    accommodation = Dormitory::Accommodation.new(resident: resident)
+    resident.copy_documents_to(accommodation)
+
+    assert_nil accommodation.application_number
+    assert_nil accommodation.contract_number
+    assert_not accommodation.application_file.attached?
+  end
+
   test "optional middle_name with valid format" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", middle_name: "Тестович",

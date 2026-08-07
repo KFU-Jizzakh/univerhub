@@ -25,6 +25,7 @@ Status: IMPLEMENTED
 - AC-15: A commandant sees only residents in their assigned buildings' rooms, plus residents who are not settled
 - AC-16: All state changes are recorded in the audit log
 - AC-17: A registrar (`dormitory.registrar`) can list, view, create, and edit residents with global (non-building-scoped) access, but cannot delete residents and cannot perform settlement operations (see SPEC-DORM-04)
+- AC-18: A resident card may contain prepared settlement documents: application number, contract number, application file, and contract file (PDF/JPEG/PNG, ≤10 MB); these are filled in by the registrar before settlement and are copied into the accommodation at settlement time (see SPEC-DORM-04)
 
 ## UI/UX Notes
 
@@ -48,6 +49,8 @@ Status: IMPLEMENTED
 - BR-9: The current room is set and cleared by accommodation operations, not directly by the user
 - BR-10: A resident's active accommodation is their current non-completed, non-cancelled accommodation
 - BR-11: Registrar access is global (not restricted by building assignments); registrar sees all kept residents and can create and edit them, but deletion is denied
+- BR-12: Resident document fields (application/contract numbers and files) are optional — the registrar may leave them empty; files are validated as PDF/JPEG/PNG up to 10 MB, same rules as accommodation documents
+- BR-13: If an application or contract file is attached to a resident card, the corresponding number is required (a number without a file is allowed)
 
 ## Behavior
 

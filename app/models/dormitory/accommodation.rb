@@ -16,7 +16,7 @@ module Dormitory
     has_many :receipts, -> { kept }, dependent: :destroy, class_name: "Dormitory::Receipt", autosave: true
 
     EVICTION_REASONS = %w[transfer graduation expulsion voluntary violation repair other].freeze
-    ACCEPTED_FILE_TYPES = %w[application/pdf image/jpeg image/png].freeze
+    ACCEPTED_FILE_TYPES = %w[application/pdf image/jpeg image/png application/msword application/vnd.openxmlformats-officedocument.wordprocessingml.document].freeze
     MAX_FILE_SIZE = 10.megabytes
 
     validates :resident, :room, :application_number, :contract_number, :start_date, :planned_end_date, presence: true

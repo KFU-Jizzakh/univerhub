@@ -26,11 +26,13 @@ module Dormitory
     def new
       authorize Dormitory::Accommodation
       @accommodation = Dormitory::Accommodation.new(resident: @resident, start_date: Date.current)
+      @resident.copy_documents_to(@accommodation)
     end
 
     def create
       @accommodation = Dormitory::Accommodation.new(accommodation_params)
       authorize @accommodation
+      @resident.copy_documents_to(@accommodation)
 
       force = policy(@accommodation).force? && params[:force].present?
       @accommodation.do_settle!(force: force)

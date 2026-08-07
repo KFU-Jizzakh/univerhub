@@ -121,6 +121,16 @@ ru:
             photo:
               invalid_format: неподдерживаемый формат (допустимы JPEG, PNG, WebP)
               too_large: размер файла превышает %{max_size}
+            application_file:
+              invalid_file_format: Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG, DOC, DOCX).
+              file_too_large: Размер файла превышает 10 МБ.
+            contract_file:
+              invalid_file_format: Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG, DOC, DOCX).
+              file_too_large: Размер файла превышает 10 МБ.
+            application_number:
+              required_with_file: укажите номер заявления, если прикреплён файл
+            contract_number:
+              required_with_file: укажите номер договора, если прикреплён файл
         dormitory/accommodation:
           attributes:
             resident:
@@ -144,10 +154,10 @@ ru:
             renewal_source_id:
               must_be_completed: исходное размещение должно быть завершено
             application_file:
-              invalid_file_format: Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG).
+              invalid_file_format: Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG, DOC, DOCX).
               file_too_large: Размер файла превышает 10 МБ.
             contract_file:
-              invalid_file_format: Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG).
+              invalid_file_format: Неподдерживаемый формат файла (допустимы PDF, JPEG, PNG, DOC, DOCX).
               file_too_large: Размер файла превышает 10 МБ.
             eviction_reason:
               invalid: Недопустимая причина выселения.
@@ -967,6 +977,7 @@ ru:
         loading_rooms: Загрузка комнат...
         force_label: Игнорировать ограничения (пол, заполненность)
         file_hint: 'Допустимые форматы: PDF, JPEG, PNG'
+        document_file_hint: 'Допустимые форматы: PDF, JPEG, PNG, DOC, DOCX'
         confirm_eviction: Выселить «%{name}»?
         comment_required_hint: Комментарий обязателен при выборе причины «Иная причина»
         all_statuses: Все статусы
