@@ -9,13 +9,13 @@ module Dormitory
     def new
       @receipt = @accommodation.receipts.build(paid_at: Date.current, amount: params[:amount])
       authorize @receipt
-      check_accommodation_active! or return
+      check_accommodation_receiptable! or return
     end
 
     def create
       @receipt = @accommodation.receipts.build(receipt_params)
       authorize @receipt
-      check_accommodation_active! or return
+      check_accommodation_receiptable! or return
       @receipt.do_create!
       redirect_to dormitory_accommodation_path(@accommodation), notice: t("dormitory.receipts.created")
     rescue ActiveRecord::RecordInvalid
@@ -28,7 +28,7 @@ module Dormitory
 
     def update
       authorize @receipt
-      check_accommodation_active! or return
+      check_accommodation_receiptable! or return
       @receipt.do_update!(receipt_params)
       redirect_to dormitory_accommodation_path(@accommodation), notice: t("dormitory.receipts.updated")
     rescue ActiveRecord::RecordInvalid
@@ -37,7 +37,7 @@ module Dormitory
 
     def destroy
       authorize @receipt
-      check_accommodation_active! or return
+      check_accommodation_receiptable! or return
       @receipt.do_discard!
       redirect_to dormitory_accommodation_path(@accommodation), notice: t("dormitory.receipts.destroyed")
     end
@@ -56,8 +56,8 @@ module Dormitory
       params.require(:dormitory_receipt).permit(:amount, :paid_at, :comment, :attachment)
     end
 
-    def check_accommodation_active!
-      return true if @accommodation.active?
+    def check_accommodation_receiptable!
+      return true if @accommodation.active? || @accommodation.pending?
 
       redirect_to dormitory_accommodation_path(@accommodation), alert: t("dormitory.accommodations.not_active")
       false

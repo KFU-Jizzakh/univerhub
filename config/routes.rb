@@ -44,11 +44,13 @@ Rails.application.routes.draw do
       collection do
         get :suggest_number
         get :available
+        get :beds
       end
     end
     resources :residents do
       collection do
         get :check_ticket
+        get :preview_place
       end
     end
     resources :accommodations, only: [ :index, :new, :create, :show, :edit, :update ] do
@@ -57,6 +59,8 @@ Rails.application.routes.draw do
         patch :transfer
         get :new_eviction
         patch :evict
+        post :confirm
+        post :reject
       end
       resources :receipts, only: [ :new, :create, :edit, :update, :destroy ]
     end

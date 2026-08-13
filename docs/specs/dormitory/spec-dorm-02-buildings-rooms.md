@@ -197,3 +197,8 @@ Then the room is created with gender_restriction set to nil
 Given building "Building A" exists
 When admin navigates to batch creation from Building A's detail page
 Then the building selector is pre-filled with Building A
+
+## Extension notes (SPEC-DORM-12)
+
+- Rooms can now define `allowed_courses` (nullable integer array, each value 1..6; `nil` = no course restriction). Room availability for a resident additionally requires the resident's course to be in `allowed_courses`.
+- `Room` exposes bed-label helpers (`bed_labels`, `occupied_bed_labels`, `free_bed_labels`, `Room.label_for`) and `best_available_for` (partially occupied → free, then building/floor/number; lowest free bed label wins). See SPEC-DORM-12.

@@ -45,6 +45,27 @@
     </span>
   </div>
   <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.allowed_courses") %></span>
+    <span class="info-value">
+      <% if @room.allowed_courses.present? %>
+        <%= @room.allowed_courses.sort.join(", ") %>
+      <% else %>
+        <%= t("views.dormitory.rooms.all_courses") %>
+      <% end %>
+    </span>
+  </div>
+  <div class="info-item">
+    <span class="info-label"><%= t("views.dormitory.rooms.beds") %></span>
+    <span class="info-value">
+      <% free_labels = @room.free_bed_labels %>
+      <% @room.bed_labels.each do |label| %>
+        <span class="badge <%= free_labels.include?(label) ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' %> me-1">
+          <%= label %>
+        </span>
+      <% end %>
+    </span>
+  </div>
+  <div class="info-item">
     <span class="info-label"><%= t("views.shared.labels.status") %></span>
     <span class="info-value"><%= status_badge(@room.status) %></span>
   </div>
@@ -73,6 +94,8 @@
         <thead class="table-light">
         <tr>
           <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.bed_label") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.course") %></th>
           <th scope="col"><%= t("views.shared.labels.status") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
           <th scope="col"><%= t("views.dormitory.audit.who_settled") %></th>
@@ -85,6 +108,8 @@
           <% @active_accommodations.each do |acc| %>
             <tr>
               <td><%= link_to acc.resident.full_name, dormitory_resident_path(acc.resident) %></td>
+              <td><%= acc.bed_label.presence || "—" %></td>
+              <td><%= acc.course %></td>
               <td><%= status_badge(acc.status) %></td>
               <td><%= l(acc.start_date, format: :short) %></td>
               <td><%= user_display(who_settled(acc)) %></td>

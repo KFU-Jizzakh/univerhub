@@ -162,3 +162,10 @@ Given Ivan's accommodation is active with planned end date 30 days ago
 When viewing the accommodations list
 Then the row is highlighted with warning styling
 And an overdue indicator is shown
+
+## Extension notes (SPEC-DORM-12)
+
+- Introduced a `pending` accommodation status for the registration→confirmation flow: `pending` (set explicitly) → `active` (confirmed) or `cancelled` (rejected). The classic `do_settle!` path is unchanged and still produces `active` directly.
+- Accommodations now carry `bed_label` (place letter within the room) and a `course` snapshot of the resident's course at the time of settling/transfer.
+- Settlement/registration additionally validates course compatibility with `room.allowed_courses`; transfer re-validates both gender and course for the destination room.
+- New operations: `do_register!`, `do_confirm!`, `do_reject!`, `do_update_pending!` (see SPEC-DORM-12).

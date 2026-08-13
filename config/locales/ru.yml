@@ -30,14 +30,18 @@ ru:
         status: Статус
         eviction_reason: Причина выселения
         comment: Комментарий
+        course: Курс
+        bed_label: Койко-место
       dormitory/room:
         building: Корпус
         floor: Этаж
         number: Номер
         capacity: Вместимость
+        allowed_courses: Курсы
       dormitory/resident:
         full_name: ФИО
         student_ticket_number: "№ студ. билета"
+        course: Курс
       dormitory/violation:
         resident: Проживающий
         violation_type: Тип нарушения
@@ -92,6 +96,8 @@ ru:
               taken_in_building: уже занят в этом корпусе
             status:
               cannot_delete_not_free: комната должна быть свободна
+            allowed_courses:
+              invalid_course: курс должен быть в диапазоне от 1 до 6
             base:
               cannot_delete_occupied: Сначала выселите всех проживающих
         dormitory/building:
@@ -116,6 +122,8 @@ ru:
               taken: уже существует
             gender:
               immutable_when_settled: нельзя изменить пол заселённого проживающего
+            course:
+              immutable_when_settled: нельзя изменить курс заселённого проживающего
             status:
               cannot_delete_settled: Сначала выселите проживающего
             photo:
@@ -131,20 +139,30 @@ ru:
               required_with_file: укажите номер заявления, если прикреплён файл
             contract_number:
               required_with_file: укажите номер договора, если прикреплён файл
+            base:
+              room_required: Выберите свободную комнату.
+              bed_required: Выберите свободное койко-место.
         dormitory/accommodation:
           attributes:
             resident:
               required: не может быть пустым
               already_settled: Проживающий уже заселён. Сначала выселите или переселите его.
               not_settled: Проживающий не заселён.
+              pending_exists: У проживающего уже есть размещение, ожидающее подтверждения.
             room:
               required: не может быть пустой
+              blank: не может быть пустой
               full: Комната полностью занята.
               gender_conflict: 'Гендерный конфликт: пол проживающего не совпадает с ограничением комнаты.'
               invalid_state: Недопустимое состояние комнаты.
               same_room: Нельзя переселить в ту же комнату.
+              course_conflict: Комната не предназначена для курса проживающего.
+            bed_label:
+              invalid_for_room: не существует в выбранной комнате
+              taken_in_room: уже занято в этой комнате
             status:
               not_active: Размещение неактивно.
+              not_pending: Размещение не ожидает подтверждения.
             base:
               files_required: Необходимо прикрепить все документы.
               no_active_academic_year: Нет активного учебного года. Создайте и активируйте учебный год.
@@ -343,11 +361,14 @@ ru:
       created: Проживающий добавлен.
       updated: Данные проживающего обновлены.
       destroyed: Проживающий удалён.
+      registered_with_place: Карточка создана, место %{room_number} (койко-место %{bed_label}) забронировано и ожидает подтверждения.
     accommodations:
       settled: Проживающий заселён в комнату %{room_number}.
       updated: Размещение обновлено.
       transferred: Проживающий переселён в комнату %{room_number}.
       evicted: Проживающий выселен из комнаты %{room_number}.
+      confirmed: "Размещение подтверждено: комната %{room_number}, койко-место %{bed_label}."
+      rejected: Размещение отклонено, место освобождено.
       not_active: Размещение неактивно.
     receipts:
       created: Квитанция добавлена.
@@ -780,6 +801,7 @@ ru:
         duplicate_warning: Проживающий с таким номером студбилета уже существует
       room_select:
         room_template: "(этаж {floor}, свободно {slots})"
+        loading: Загрузка комнат...
     admin:
       users:
         show:
@@ -895,6 +917,12 @@ ru:
         available_slots: Свободных мест
         occupancy_percentage: Заполненность
         occupancy_rate: Заселённость
+        allowed_courses: Курсы
+        allowed_courses_hint: 'Комната доступна для выбранных курсов. Если ни один курс не выбран — ограничений нет.'
+        all_courses: Все курсы
+        beds: Койко-места
+        bed_label: Место
+        bed_prompt: Выберите место
       batch_rooms:
         page_title: Массовое добавление комнат
         step1_title: 'Шаг 1: Параметры комнат'
@@ -939,6 +967,18 @@ ru:
         confirm_delete: Удалить проживающего «%{name}»?
         gender_immutable_hint: Нельзя изменить пол заселённого проживающего
         batch_eviction: Массовое выселение
+        course: Курс
+        issue_place: Выдать место при регистрации
+        issue_place_hint: Следующая свободная комната и койко-место будут подставлены автоматически — вы можете изменить выбор.
+        placement_section: Размещение
+        placement_preview_template: 'Предложено: комната %{room}, койко-место %{bed} (%{building})'
+        placement_no_room: Свободных комнат для выбранных пола и курса нет.
+        placement_load_error: Ошибка загрузки. Обновите страницу.
+        manual_override: Выбор комнаты и койко-места
+        placement_documents_required: Документы обязательны при размещении.
+        payment_section: Оплата
+        payment_hint: Квитанция необязательна — оставьте поля пустыми, чтобы не фиксировать оплату.
+        course_immutable_hint: Курс нельзя изменить после заселения
       accommodations:
         page_title: Размещения
         show_title: 'Размещение: %{name}'
@@ -986,6 +1026,12 @@ ru:
         active: Активно
         completed: Завершено
         cancelled: Отменено
+        pending: Ожидает подтверждения
+        confirm_button: Подтвердить
+        reject_button: Отклонить
+        confirm_pending_dialog: Подтвердить размещение и заселить проживающего?
+        reject_pending_dialog: Отклонить размещение? Забронированное место будет освобождено.
+        section_room_change: Смена комнаты и места
         application_file: Файл заявления
         contract_file: Файл договора
         documents_required: Документы обязательны
@@ -1125,6 +1171,7 @@ ru:
     temporarily_absent: Временно отсутствует
     evicted: Выселен
     active: Активно
+    pending: Ожидает
     completed: Завершено
     cancelled: Отменено
   deadline:

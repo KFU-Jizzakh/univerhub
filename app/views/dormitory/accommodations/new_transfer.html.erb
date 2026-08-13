@@ -14,6 +14,7 @@
                multipart: true,
                data: { controller: "room-select",
                         room_select_resident_gender_value: @resident.gender,
+                        room_select_resident_course_value: @resident.course,
                         room_select_is_admin_value: false.to_s,
                         room_select_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
                         room_select_room_template_value: t("views.shared.room_select.room_template") }) do |f| %>

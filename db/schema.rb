@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_07_094738) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_13_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,8 +60,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_094738) do
     t.bigint "academic_year_id", null: false
     t.date "actual_end_date"
     t.string "application_number", null: false
+    t.string "bed_label"
     t.text "comment"
     t.string "contract_number", null: false
+    t.integer "course", default: 1, null: false
     t.datetime "created_at", null: false
     t.datetime "discarded_at"
     t.string "eviction_reason"
@@ -79,6 +81,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_094738) do
     t.index ["renewal_source_id"], name: "index_dormitory_accommodations_on_renewal_source_id"
     t.index ["resident_id"], name: "idx_active_accommodation", unique: true, where: "(((status)::text = 'active'::text) AND (discarded_at IS NULL))"
     t.index ["resident_id"], name: "index_dormitory_accommodations_on_resident_id"
+    t.index ["room_id", "bed_label"], name: "idx_room_bed_label", unique: true, where: "((bed_label IS NOT NULL) AND (discarded_at IS NULL) AND ((status)::text = ANY ((ARRAY['active'::character varying, 'pending'::character varying])::text[])))"
     t.index ["room_id"], name: "index_dormitory_accommodations_on_room_id"
     t.index ["status"], name: "index_dormitory_accommodations_on_status"
   end
@@ -154,6 +157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_094738) do
   create_table "dormitory_residents", force: :cascade do |t|
     t.string "application_number"
     t.string "contract_number"
+    t.integer "course", default: 1, null: false
     t.datetime "created_at", null: false
     t.bigint "current_room_id"
     t.date "date_of_birth", null: false
@@ -173,6 +177,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_094738) do
   end
 
   create_table "dormitory_rooms", force: :cascade do |t|
+    t.integer "allowed_courses", array: true
     t.bigint "building_id", null: false
     t.integer "capacity", default: 1, null: false
     t.datetime "created_at", null: false

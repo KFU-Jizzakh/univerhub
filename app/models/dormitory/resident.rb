@@ -1,9 +1,11 @@
 module Dormitory
   class Resident < ApplicationRecord
-    # PURPOSE: Resident personal data, status lifecycle (not_settled→settled→temporarily_absent→evicted), search, and photo management
-    # SPECIFICATION: SPEC-DORM-03
+    # PURPOSE: Resident personal data, status lifecycle (not_settled→settled→temporarily_absent→evicted), course, search, and photo management
+    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     include Discard::Model
     include Trackable
+
+    COURSE_RANGE = (1..6).freeze
 
     belongs_to :current_room, class_name: "Dormitory::Room", optional: true
 
@@ -25,6 +27,7 @@ module Dormitory
               format: { with: /\A[\p{L}\s\-]+\z/, message: :invalid_format },
               allow_blank: true
     validates :gender, inclusion: { in: genders.keys }
+    validates :course, presence: true, numericality: { only_integer: true }, inclusion: { in: COURSE_RANGE }
     validates :date_of_birth, presence: true
     validate :date_of_birth_not_in_future
     validates :phone, format: { with: /\A\+[1-9]\d{6,14}\z/, message: :invalid_phone },
@@ -34,6 +37,7 @@ module Dormitory
     validates :student_ticket_number, presence: true
     validate :student_ticket_number_unique_among_kept
     validate :gender_immutable_when_settled, on: :update
+    validate :course_immutable_when_settled, on: :update
     validate :photo_format_and_size
     validate :application_file_format_and_size
     validate :contract_file_format_and_size
@@ -75,6 +79,12 @@ module Dormitory
       accommodation.contract_file.attach(contract_file.blob) if contract_file.attached? && !accommodation.contract_file.attached?
     end
 
+    # PURPOSE: Whether the course can still be changed: only while not settled (or evicted) and without a pending accommodation
+    # SPECIFICATION: SPEC-DORM-12
+    def course_editable?
+      (not_settled? || evicted?) && accommodations.kept.where(status: :pending).none?
+    end
+
     private
 
     def date_of_birth_not_in_future
@@ -101,6 +111,13 @@ module Dormitory
       return unless gender_changed? && (settled? || temporarily_absent?)
 
       errors.add(:gender, :immutable_when_settled)
+    end
+
+    def course_immutable_when_settled
+      return unless course_changed?
+      return if course_editable?
+
+      errors.add(:course, :immutable_when_settled)
     end
 
     ACCEPTED_PHOTO_TYPES = %w[image/jpeg image/png image/webp].freeze

@@ -11,7 +11,16 @@
 </div>
 
 <%= form_with(model: @accommodation, url: dormitory_accommodation_path(@accommodation), method: :patch,
-               multipart: true) do |f| %>
+               multipart: true,
+               data: { controller: @accommodation.pending? ? "room-select" : "",
+                       room_select_resident_gender_value: @accommodation.resident.gender,
+                       room_select_resident_course_value: @accommodation.course,
+                        room_select_is_admin_value: policy(@accommodation).force?.to_s,
+                       room_select_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
+                       room_select_room_template_value: t("views.shared.room_select.room_template"),
+                       room_select_bed_prompt_value: t("views.dormitory.rooms.bed_prompt"),
+                       room_select_current_room_data_value: pending_room_select_data(@accommodation),
+                       room_select_current_bed_label_value: @accommodation.bed_label }) do |f| %>
   <% if @accommodation.errors.any? %>
     <div class="alert alert-danger"><%= @accommodation.errors.full_messages.join(", ") %></div>
   <% end %>
@@ -29,14 +38,67 @@
         <span class="info-value"><%= link_to @accommodation.resident.full_name, dormitory_resident_path(@accommodation.resident) %></span>
       </div>
 
-      <div class="mb-3">
-        <span class="info-label d-block"><%= t("views.dormitory.accommodations.building") %></span>
-        <span class="info-value"><%= link_to @accommodation.room.building.name, dormitory_building_path(@accommodation.room.building) %></span>
-      </div>
+      <% if @accommodation.pending? && policy(@accommodation).edit? %>
+        <div class="border rounded p-3 mb-3 bg-light">
+          <h6 class="mb-3"><%= t("views.dormitory.accommodations.section_room_change") %></h6>
+
+          <div class="mb-3">
+            <%= f.label :building_id, t("views.dormitory.accommodations.building"), class: "form-label" %>
+            <%= select_tag "dormitory_accommodation[building_id]",
+                           options_from_collection_for_select(@buildings, :id, :name, @accommodation.room.building_id),
+                           { prompt: t("views.dormitory.accommodations.building_prompt"), class: "form-select",
+                             data: { room_select_target: "building",
+                                     action: "change->room-select#changeBuilding blur->room-select#checkBuilding" } } %>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :room_id, t("views.dormitory.accommodations.room"), class: "form-label" %>
+            <%= f.select :room_id,
+                         options_for_select(
+                           [[ room_select_option_label(@accommodation.room), @accommodation.room_id ]],
+                           @accommodation.room_id
+                         ),
+                         { prompt: t("views.dormitory.accommodations.room_prompt") },
+                         { class: "form-select", data: { room_select_target: "room",
+                                                         action: "change->room-select#changeRoom" } } %>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :bed_label, t("views.dormitory.rooms.bed_label"), class: "form-label" %>
+            <%= f.select :bed_label,
+                         options_for_select(
+                           @accommodation.bed_label.present? ? [[ @accommodation.bed_label, @accommodation.bed_label ]] : [],
+                           @accommodation.bed_label
+                         ),
+                         { prompt: t("views.dormitory.rooms.bed_prompt") },
+                         { class: "form-select", data: { room_select_target: "bed" } } %>
+          </div>
+
+          <div class="d-none" data-room-select-target="loading">
+            <span class="spinner-border spinner-border-sm me-1"></span>
+            <span class="text-muted"><%= t("views.shared.room_select.loading") %></span>
+          </div>
+        </div>
+      <% else %>
+        <div class="mb-3">
+          <span class="info-label d-block"><%= t("views.dormitory.accommodations.building") %></span>
+          <span class="info-value"><%= link_to @accommodation.room.building.name, dormitory_building_path(@accommodation.room.building) %></span>
+        </div>
+
+        <div class="mb-3">
+          <span class="info-label d-block"><%= t("views.dormitory.accommodations.room") %></span>
+          <span class="info-value">
+            <%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %>
+            <% if @accommodation.bed_label.present? %>
+              <span class="badge bg-secondary ms-1"><%= t("views.dormitory.rooms.bed_label") %> <%= @accommodation.bed_label %></span>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
 
       <div class="mb-3">
-        <span class="info-label d-block"><%= t("views.dormitory.accommodations.room") %></span>
-        <span class="info-value"><%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %></span>
+        <span class="info-label d-block"><%= t("views.dormitory.residents.course") %></span>
+        <span class="info-value"><%= @accommodation.course %></span>
       </div>
 
       <div class="mb-3">

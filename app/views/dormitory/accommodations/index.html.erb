@@ -22,6 +22,7 @@
       <%= label_tag :status, t("views.shared.labels.status"), class: "visually-hidden" %>
       <%= select_tag :status,
                      options_for_select([ [ t("views.dormitory.accommodations.all_statuses"), "" ],
+                                          [ t("views.dormitory.accommodations.pending"), "pending" ],
                                           [ t("views.dormitory.accommodations.active"), "active" ],
                                           [ t("views.dormitory.accommodations.completed"), "completed" ],
                                           [ t("views.dormitory.accommodations.cancelled"), "cancelled" ] ], params[:status]),
@@ -40,6 +41,8 @@
           <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.building") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.room") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.bed_label") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.course") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.application_number") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.contract_number") %></th>
           <th scope="col"><%= t("views.shared.labels.status") %></th>
@@ -64,6 +67,8 @@
             <td><%= link_to acc.resident.full_name, dormitory_resident_path(acc.resident) %></td>
             <td><%= acc.room.building.name %></td>
             <td><%= acc.room.number %></td>
+            <td><%= acc.bed_label.presence || "—" %></td>
+            <td><%= acc.course %></td>
             <td><%= acc.application_number %></td>
             <td><%= acc.contract_number %></td>
             <td><%= status_badge(acc.status) %></td>

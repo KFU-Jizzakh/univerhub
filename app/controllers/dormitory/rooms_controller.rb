@@ -20,7 +20,7 @@ module Dormitory
 
     def show
       authorize @room
-      @active_accommodations = @room.accommodations.where(status: :active).includes(:resident)
+      @active_accommodations = @room.accommodations.where(status: %w[active pending]).includes(:resident)
       @audit_events = OutboxEvent.where(record: @room).order(:created_at).includes(:actor)
       @acc_events_by = OutboxEvent.where(record: @active_accommodations).includes(:actor)
         .group_by { |e| [ e.record_id, e.action ] }
@@ -78,11 +78,26 @@ module Dormitory
         rooms = rooms.where("gender_restriction IS NULL OR gender_restriction = ?", Dormitory::Room.gender_restrictions[params[:gender]])
       end
 
+      if params[:course].present? && params[:course].to_i.in?(Dormitory::Room::COURSE_RANGE)
+        rooms = rooms.where("allowed_courses IS NULL OR ? = ANY(allowed_courses)", params[:course].to_i)
+      end
+
+      occupied_by_room = Dormitory::Room.occupied_bed_labels_by_room(rooms)
+
       render json: rooms.ordered.map { |r|
         { id: r.id, number: r.number, floor: r.floor, capacity: r.capacity,
           current_occupancy: r.current_occupancy, available_slots: r.available_slots,
+          free_bed_labels: r.free_bed_labels(occupied_by_room[r.id] || []),
           gender_restriction: r.gender_restriction, status: r.status }
       }
+    end
+
+    # PURPOSE: Returns the free bed labels of a room as JSON for the bed select
+    # SPECIFICATION: SPEC-DORM-12
+    def beds
+      authorize Dormitory::Room, :index?
+      room = policy_scope(Dormitory::Room).find(params[:id])
+      render json: room.free_bed_labels
     end
 
     private
@@ -96,7 +111,10 @@ module Dormitory
     end
 
     def room_params
-      params.require(:dormitory_room).permit(:number, :building_id, :floor, :capacity, :gender_restriction)
+      permitted = params.require(:dormitory_room).permit(:number, :building_id, :floor, :capacity, :gender_restriction,
+                                                         allowed_courses: [])
+      permitted[:allowed_courses] = permitted[:allowed_courses]&.reject(&:blank?)
+      permitted
     end
   end
 end

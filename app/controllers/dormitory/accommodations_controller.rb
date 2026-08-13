@@ -1,8 +1,8 @@
 module Dormitory
   class AccommodationsController < ApplicationController
-    before_action :set_accommodation, only: [ :show, :edit, :update, :new_transfer, :transfer, :new_eviction, :evict ]
+    before_action :set_accommodation, only: [ :show, :edit, :update, :new_transfer, :transfer, :new_eviction, :evict, :confirm, :reject ]
     before_action :set_resident, only: [ :new, :create ]
-    before_action :set_buildings, only: [ :new, :create ]
+    before_action :set_buildings, only: [ :new, :create, :edit, :update ]
 
     def index
       authorize Dormitory::Accommodation
@@ -48,10 +48,37 @@ module Dormitory
 
     def update
       authorize @accommodation
-      @accommodation.do_update!(accommodation_edit_params)
+      if @accommodation.pending?
+        @accommodation.do_update_pending!(pending_edit_params)
+      else
+        @accommodation.do_update!(accommodation_edit_params)
+      end
       redirect_to dormitory_accommodation_path(@accommodation), notice: t("dormitory.accommodations.updated")
     rescue ActiveRecord::RecordInvalid
       render :edit, status: :unprocessable_entity
+    end
+
+    # PURPOSE: Confirms a pending accommodation (admin only)
+    # SPECIFICATION: SPEC-DORM-12
+    def confirm
+      authorize @accommodation
+      @accommodation.do_confirm!(force: policy(@accommodation).force?)
+      redirect_to dormitory_accommodation_path(@accommodation),
+                  notice: t("dormitory.accommodations.confirmed",
+                            room_number: @accommodation.room.number,
+                            bed_label: @accommodation.bed_label)
+    rescue ActiveRecord::RecordInvalid
+      redirect_to dormitory_accommodation_path(@accommodation), alert: @accommodation.errors.full_messages.join(", ")
+    end
+
+    # PURPOSE: Rejects a pending accommodation, releasing the reserved place (admin only)
+    # SPECIFICATION: SPEC-DORM-12
+    def reject
+      authorize @accommodation
+      @accommodation.do_reject!
+      redirect_to dormitory_accommodation_path(@accommodation), notice: t("dormitory.accommodations.rejected")
+    rescue ActiveRecord::RecordInvalid
+      redirect_to dormitory_accommodation_path(@accommodation), alert: @accommodation.errors.full_messages.join(", ")
     end
 
     def new_transfer
@@ -130,6 +157,15 @@ module Dormitory
         :start_date, :planned_end_date, :comment,
         :application_file, :contract_file,
         :required_amount
+      )
+    end
+
+    def pending_edit_params
+      params.require(:dormitory_accommodation).permit(
+        :room_id, :bed_label,
+        :application_number, :contract_number,
+        :start_date, :planned_end_date, :comment,
+        :application_file, :contract_file
       )
     end
 

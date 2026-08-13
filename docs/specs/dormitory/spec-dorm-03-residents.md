@@ -32,7 +32,7 @@ Status: IMPLEMENTED
 - Resident index: searchable table with full name, student ticket, gender badge, status badge, current room, photo thumbnail
 - Filter by status and gender (dropdown selectors)
 - Resident show: card with all fields, photo, current room, accommodations history, audit events
-- Resident form: text inputs for names, date picker for date of birth, selector for gender, phone and email inputs, student ticket, photo upload with preview
+- Resident form: text inputs for names, date picker for date of birth, selector for gender, selector for course (1–6), phone and email inputs, student ticket, photo upload with preview
 - Student ticket checker: auto-fill by ticket number in settlement forms
 - Name format: Cyrillic and Latin letters, hyphens, spaces (no digits or special characters)
 
@@ -149,3 +149,8 @@ Given Elena has role `dormitory.registrar`
 And resident "Anna Volkova" exists (not settled)
 When Elena tries to open the settlement form for Anna
 Then the operation is denied (see SPEC-DORM-04)
+
+## Extension notes (SPEC-DORM-12)
+
+- Residents now have a required `course` field (1..6). The course is immutable while the resident is `settled`/`temporarily_absent` or when a pending accommodation exists (a change would contradict the course snapshot rule). The resident edit form shows the course selector, disabled with a hint while the course is immutable.
+- Resident creation can request a place (auto-issued pending accommodation). The registrar can do this; only admin/dormitory.admin can manually override the room and bed. See SPEC-DORM-12.

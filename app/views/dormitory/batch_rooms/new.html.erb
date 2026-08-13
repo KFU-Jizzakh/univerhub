@@ -69,6 +69,18 @@
             <option value="female"><%= t("views.dormitory.rooms.gender_female") %></option>
           </select>
         </div>
+        <div class="col-md-3">
+          <label class="form-label"><%= t("views.dormitory.rooms.allowed_courses") %></label>
+          <div>
+            <% Dormitory::Room::COURSE_RANGE.each do |course| %>
+              <div class="form-check form-check-inline">
+                <input type="checkbox" class="form-check-input" value="<%= course %>" id="default_course_<%= course %>"
+                       data-batch-rooms-target="defaultCourse" data-action="change->batch-rooms#onRowChange">
+                <label class="form-check-label" for="default_course_<%= course %>"><%= course %></label>
+              </div>
+            <% end %>
+          </div>
+        </div>
       </div>
       <div class="mt-3">
         <button type="button" class="btn btn-primary" data-action="batch-rooms#generate">
@@ -93,6 +105,7 @@
                 <th scope="col"><%= t("views.dormitory.rooms.room_number") %></th>
                 <th scope="col"><%= t("views.dormitory.rooms.capacity") %></th>
                 <th scope="col"><%= t("views.dormitory.rooms.gender_restriction") %></th>
+                <th scope="col"><%= t("views.dormitory.rooms.allowed_courses") %></th>
                 <th scope="col" style="width:60px"></th>
               </tr>
             </thead>

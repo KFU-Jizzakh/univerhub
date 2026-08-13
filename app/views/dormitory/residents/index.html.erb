@@ -48,6 +48,7 @@
           <th scope="col"><%= t("views.dormitory.residents.photo") %></th>
           <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
           <th scope="col"><%= t("views.dormitory.residents.current_room") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.course") %></th>
           <th scope="col"><%= t("views.dormitory.residents.gender") %></th>
           <th scope="col"><%= t("views.dormitory.residents.student_ticket") %></th>
           <th scope="col"><%= t("views.dormitory.residents.phone") %></th>
@@ -69,6 +70,7 @@
             </td>
             <td><%= link_to resident.full_name, dormitory_resident_path(resident) %></td>
             <td><% if resident.current_room.present? %><%= link_to resident.current_room.number, dormitory_room_path(resident.current_room) %><% else %>—<% end %></td>
+            <td><%= resident.course.presence || "—" %></td>
             <td><%= t("views.dormitory.residents.gender_#{resident.gender}") %></td>
             <td><%= resident.student_ticket_number %></td>
             <td><%= resident.phone.presence || "—" %></td>

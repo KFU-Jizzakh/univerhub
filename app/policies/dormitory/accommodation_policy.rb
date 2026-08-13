@@ -19,11 +19,25 @@ module Dormitory
     end
 
     def edit?
-      admin_or_dormitory_admin? || commandant_with_room_access?
+      update?
     end
 
     def update?
+      return admin_or_dormitory_admin? if record.is_a?(Dormitory::Accommodation) && record.pending?
+
       admin_or_dormitory_admin? || commandant_with_room_access?
+    end
+
+    # PURPOSE: An admin or the registrar can confirm a pending accommodation
+    # SPECIFICATION: SPEC-DORM-12
+    def confirm?
+      admin_or_dormitory_admin? || registrar?
+    end
+
+    # PURPOSE: Only admin/dormitory.admin can reject a pending accommodation
+    # SPECIFICATION: SPEC-DORM-12
+    def reject?
+      admin_or_dormitory_admin?
     end
 
     def force?

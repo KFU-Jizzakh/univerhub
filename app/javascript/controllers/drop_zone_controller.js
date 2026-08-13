@@ -3,26 +3,50 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["input", "zone", "list", "placeholder"]
 
-  connect() {
-    this.files = []
+  initialize() {
     this._dragOver = this.handleDragOver.bind(this)
     this._dragLeave = this.handleDragLeave.bind(this)
     this._drop = this.handleDrop.bind(this)
     this._click = this.handleClick.bind(this)
     this._change = this.handleInputChange.bind(this)
+  }
+
+  connect() {
+    this.setup()
+  }
+
+  setup() {
+    if (!this._dragOver || !this.hasInputTarget || this._setupDone) return
+    this._setupDone = true
+    this.files = Array.from(this.inputTarget.files)
     this.zoneTarget.addEventListener("dragover", this._dragOver)
     this.zoneTarget.addEventListener("dragleave", this._dragLeave)
     this.zoneTarget.addEventListener("drop", this._drop)
     this.zoneTarget.addEventListener("click", this._click)
     this.inputTarget.addEventListener("change", this._change)
+    this.renderList()
+  }
+
+  inputTargetConnected() {
+    this.setup()
+  }
+
+  inputTargetDisconnected() {
+    this.teardown()
   }
 
   disconnect() {
+    this.teardown()
+  }
+
+  teardown() {
+    if (!this._setupDone) return
     this.zoneTarget.removeEventListener("dragover", this._dragOver)
     this.zoneTarget.removeEventListener("dragleave", this._dragLeave)
     this.zoneTarget.removeEventListener("drop", this._drop)
     this.zoneTarget.removeEventListener("click", this._click)
     this.inputTarget.removeEventListener("change", this._change)
+    this._setupDone = false
   }
 
   handleDragOver(event) {

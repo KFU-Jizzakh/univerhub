@@ -854,5 +854,182 @@ module Dormitory
       assert_equal 15000, acc.reload.required_amount
       assert_redirected_to dormitory_accommodation_path(acc)
     end
+
+    # --- SPEC-DORM-12: pending registration flow ---
+
+    def create_pending_accommodation
+      acc = Accommodation.new(
+        resident: @resident, room: @room,
+        application_number: "З-ПЕНД", contract_number: "Д-ПЕНД",
+        start_date: Date.current, planned_end_date: Date.current + 1.year
+      )
+      acc.application_file.attach(io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf")
+      acc.contract_file.attach(io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf")
+      acc.do_register!
+      acc
+    end
+
+    test "admin confirms pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @admin
+
+      post confirm_dormitory_accommodation_path(acc)
+
+      assert_redirected_to dormitory_accommodation_path(acc)
+      assert_equal "active", acc.reload.status
+      assert_equal "settled", @resident.reload.status
+      assert_equal @room.id, @resident.current_room_id
+    end
+
+    test "registrar confirms pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @registrar
+
+      post confirm_dormitory_accommodation_path(acc)
+
+      assert_redirected_to dormitory_accommodation_path(acc)
+      assert_equal "active", acc.reload.status
+      assert_equal "settled", @resident.reload.status
+      assert_equal @room.id, @resident.current_room_id
+    end
+
+    test "registrar cannot reject pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @registrar
+
+      post reject_dormitory_accommodation_path(acc)
+
+      assert_redirected_to root_path
+      assert_equal "pending", acc.reload.status
+    end
+
+    test "commandant cannot confirm pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @commandant
+
+      post confirm_dormitory_accommodation_path(acc)
+
+      assert_redirected_to root_path
+      assert_equal "pending", acc.reload.status
+    end
+
+    test "admin rejects pending accommodation and releases place" do
+      acc = create_pending_accommodation
+      sign_in @admin
+
+      post reject_dormitory_accommodation_path(acc)
+
+      assert_redirected_to dormitory_accommodation_path(acc)
+      assert_equal "cancelled", acc.reload.status
+      assert_equal "not_settled", @resident.reload.status
+      assert_equal 0, @room.reload.current_occupancy
+    end
+
+    test "commandant cannot reject pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @commandant
+
+      post reject_dormitory_accommodation_path(acc)
+
+      assert_redirected_to root_path
+      assert_equal "pending", acc.reload.status
+    end
+
+    test "admin cannot reject pending accommodation with future start_date" do
+      acc = Accommodation.new(
+        resident: @resident, room: @room,
+        application_number: "З-ПЕНД", contract_number: "Д-ПЕНД",
+        start_date: Date.current + 1.month, planned_end_date: Date.current + 1.year
+      )
+      acc.application_file.attach(io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf")
+      acc.contract_file.attach(io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf")
+      acc.do_register!
+      sign_in @admin
+
+      post reject_dormitory_accommodation_path(acc)
+
+      assert_redirected_to dormitory_accommodation_path(acc)
+      assert_equal "pending", acc.reload.status
+      assert_equal 1, @room.reload.current_occupancy
+      assert_nil OutboxEvent.find_by(action: "dormitory.accommodation.rejected")
+    end
+
+    test "admin updates pending accommodation room via edit" do
+      acc = create_pending_accommodation
+      target_room = dormitory_rooms(:room_102)
+      sign_in @admin
+
+      patch dormitory_accommodation_path(acc), params: {
+        dormitory_accommodation: {
+          room_id: target_room.id,
+          application_number: "З-ПЕНД", contract_number: "Д-ПЕНД",
+          start_date: Date.current, planned_end_date: Date.current + 1.year
+        }
+      }
+
+      assert_redirected_to dormitory_accommodation_path(acc)
+      assert_equal target_room.id, acc.reload.room_id
+      assert_equal 0, @room.reload.current_occupancy
+      assert_equal 1, target_room.reload.current_occupancy
+    end
+
+    test "admin cannot move pending accommodation to a gender-conflicting room" do
+      acc = create_pending_accommodation
+      target_room = dormitory_rooms(:room_102)
+      target_room.update_column(:gender_restriction, :female)
+      sign_in @admin
+
+      patch dormitory_accommodation_path(acc), params: {
+        dormitory_accommodation: {
+          room_id: target_room.id,
+          application_number: "З-ПЕНД", contract_number: "Д-ПЕНД",
+          start_date: Date.current, planned_end_date: Date.current + 1.year
+        }
+      }
+
+      assert_response :unprocessable_entity
+      assert_includes response.body, I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.gender_conflict")
+      assert_equal @room.id, acc.reload.room_id
+      assert_equal 1, @room.reload.current_occupancy
+      assert_equal 0, target_room.reload.current_occupancy
+    end
+
+    test "commandant cannot edit pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @commandant
+
+      patch dormitory_accommodation_path(acc), params: {
+        dormitory_accommodation: { application_number: "З-ХАК" }
+      }
+
+      assert_redirected_to root_path
+      assert_equal "pending", acc.reload.status
+    end
+
+    test "show renders pending accommodation" do
+      acc = create_pending_accommodation
+      sign_in @admin
+
+      get dormitory_accommodation_path(acc)
+
+      assert_response :success
+    end
+
+    test "show renders the payment block for a pending accommodation" do
+      acc = create_pending_accommodation
+      receipt = acc.receipts.build(amount: 5000, paid_at: Date.current)
+      receipt.attachment.attach(
+        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+      )
+      receipt.do_create!
+      sign_in @admin
+
+      get dormitory_accommodation_path(acc)
+
+      assert_response :success
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.section_payments")
+      assert_includes response.body, "5 000,00"
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.add_receipt")
+    end
   end
 end

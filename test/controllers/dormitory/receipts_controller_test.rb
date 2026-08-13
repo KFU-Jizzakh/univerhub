@@ -104,6 +104,17 @@ class Dormitory::ReceiptsControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:alert], I18n.t("dormitory.accommodations.not_active")
   end
 
+  test "receipts can be created on a pending accommodation" do
+    @accommodation.update!(status: :pending)
+    sign_in @admin
+
+    assert_difference -> { Dormitory::Receipt.kept.count }, 1 do
+      post dormitory_accommodation_receipts_path(@accommodation), params: receipt_params
+    end
+
+    assert_redirected_to dormitory_accommodation_path(@accommodation)
+  end
+
   # --- edit ---
 
   test "admin sees edit receipt form" do
@@ -181,6 +192,33 @@ class Dormitory::ReceiptsControllerTest < ActionDispatch::IntegrationTest
     assert receipt.reload.discarded?
     follow_redirect!
     assert_includes response.body, "Квитанция удалена"
+  end
+
+  # --- pending accommodation ---
+
+  test "receipts on a pending accommodation can be edited" do
+    @accommodation.update!(status: :pending)
+    sign_in @admin
+    receipt = create_receipt
+
+    patch dormitory_accommodation_receipt_path(@accommodation, receipt),
+          params: { dormitory_receipt: { amount: 7000, paid_at: Date.current } }
+
+    assert_redirected_to dormitory_accommodation_path(@accommodation)
+    assert_equal 7000, receipt.reload.amount
+  end
+
+  test "receipts on a pending accommodation can be destroyed" do
+    @accommodation.update!(status: :pending)
+    sign_in @admin
+    receipt = create_receipt
+
+    assert_difference -> { Dormitory::Receipt.kept.count }, -1 do
+      delete dormitory_accommodation_receipt_path(@accommodation, receipt)
+    end
+
+    assert_redirected_to dormitory_accommodation_path(@accommodation)
+    assert receipt.reload.discarded?
   end
 
   # --- Authorization ---

@@ -4,6 +4,8 @@ _fixture:
 active_accommodation:
   resident: resident_two_settled
   room: room_201
+  course: 2
+  bed_label: "A"
   application_number: "З-001"
   contract_number: "Д-001"
   start_date: <%= Date.current %>

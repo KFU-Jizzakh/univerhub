@@ -9,7 +9,17 @@
   <h1 class="h3 mb-0"><%= t("views.dormitory.residents.new_resident") %></h1>
 </div>
 
-<%= form_with(model: @resident, url: dormitory_residents_path) do |f| %>
+<%= form_with(model: @resident, url: dormitory_residents_path, multipart: true, builder: ErrorHighlightingFormBuilder,
+             data: { controller: "placement-form",
+                     placement_form_preview_url_value: preview_place_dormitory_residents_path,
+                     placement_form_rooms_url_value: available_dormitory_rooms_path,
+                     placement_form_beds_url_value: beds_dormitory_rooms_path,
+                     placement_form_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
+                     placement_form_bed_prompt_value: t("views.dormitory.rooms.bed_prompt"),
+                     placement_form_preview_template_value: t("views.dormitory.residents.placement_preview_template"),
+                     placement_form_no_room_value: t("views.dormitory.residents.placement_no_room"),
+                     placement_form_load_error_value: t("views.dormitory.residents.placement_load_error"),
+                     placement_form_manual_value: @manual_building_selected.to_s }) do |f| %>
   <%= render "shared/form_errors", object: @resident %>
 
   <div class="row">
@@ -33,7 +43,18 @@
         <%= f.label :gender, t("views.dormitory.residents.gender"), class: "form-label" %>
         <%= f.select :gender,
                      resident_gender_options,
-                     { prompt: true }, class: "form-select", required: true %>
+                     { prompt: true },
+                     { class: "form-select", required: true,
+                       data: { placement_form_target: "gender", action: "change->placement-form#updateSuggestion" } } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :course, t("views.dormitory.residents.course"), class: "form-label" %>
+        <%= f.select :course,
+                     options_for_select(1..6, @resident.course || 1),
+                     {},
+                     { class: "form-select", required: true,
+                       data: { placement_form_target: "course", action: "change->placement-form#updateSuggestion" } } %>
       </div>
 
       <div class="mb-3">
@@ -62,9 +83,123 @@
 
       <div class="mb-3">
         <%= f.label :photo, t("views.dormitory.residents.photo"), class: "form-label" %>
-        <%= f.file_field :photo, accept: "image/jpeg,image/png,image/webp", class: "form-control" %>
+        <%= f.file_field :photo, accept: "image/jpeg,image/png,image/webp", class: "form-control", data: { turbo_permanent: true } %>
         <div class="form-text"><%= t("views.dormitory.residents.photo_hint") %></div>
       </div>
+    </div>
+
+    <div class="col-md-6">
+      <% if policy(Dormitory::Resident).create_with_placement? %>
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <%= hidden_field_tag "placement[place]", "0" %>
+            <%= check_box_tag "placement[place]", "1", params.dig(:placement, :place) != "0", class: "form-check-input",
+                              data: { placement_form_target: "toggle", action: "change->placement-form#toggle" } %>
+            <%= label_tag "placement_place", t("views.dormitory.residents.issue_place"), class: "form-check-label" %>
+          </div>
+          <div class="form-text"><%= t("views.dormitory.residents.issue_place_hint") %></div>
+        </div>
+
+        <div data-placement-form-target="fields">
+          <div class="card shadow-sm mb-3">
+            <div class="card-header">
+              <h5 class="mb-0"><%= t("views.dormitory.residents.placement_section") %></h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <%= label_tag "placement[start_date]", t("views.dormitory.accommodations.start_date"), class: "form-label" %>
+                  <%= date_field_tag "placement[start_date]", @placement_start_date, class: "form-control" %>
+                </div>
+                <div class="col-md-6">
+                  <%= label_tag "placement[planned_end_date]", t("views.dormitory.accommodations.planned_end_date"), class: "form-label" %>
+                  <%= date_field_tag "placement[planned_end_date]", @placement_end_date, class: "form-control" %>
+                </div>
+              </div>
+
+              <div class="alert alert-info mb-3" data-placement-form-target="preview"></div>
+
+              <h6 class="mb-2"><%= t("views.dormitory.residents.manual_override") %></h6>
+              <div class="row g-3">
+                <div class="col-md-5">
+                  <%= label_tag "placement[building_id]", t("views.dormitory.accommodations.building"), class: "form-label" %>
+                  <%= select_tag "placement[building_id]",
+                                 options_from_collection_for_select(@buildings, :id, :name, @suggested_building&.id),
+                                 { prompt: t("views.dormitory.accommodations.building_prompt"), class: "form-select",
+                                   required: true,
+                                   data: { placement_form_target: "building",
+                                           action: "change->placement-form#markManual change->placement-form#loadRooms" } } %>
+                </div>
+                <div class="col-md-4">
+                  <%= label_tag "placement[room_id]", t("views.dormitory.accommodations.room"), class: "form-label" %>
+                  <%= select_tag "placement[room_id]",
+                                 options_for_select(
+                                   @suggested_rooms.map { |r|
+                                     labels = r.free_bed_labels(@occupied_labels[r.id] || [])
+                                     [ labels.any? ? "#{r.number} (#{labels.join(", ")})" : r.number, r.id ]
+                                   },
+                                   @suggested_room&.id
+                                 ),
+                                 { prompt: t("views.dormitory.accommodations.room_prompt"), class: "form-select",
+                                   required: true,
+                                   data: { placement_form_target: "room",
+                                           action: "change->placement-form#markManual change->placement-form#changeRoom" } } %>
+                </div>
+                <div class="col-md-3">
+                  <%= label_tag "placement[bed_label]", t("views.dormitory.rooms.bed_label"), class: "form-label" %>
+                  <%= select_tag "placement[bed_label]",
+                                 options_for_select(@suggested_beds, @suggested_bed),
+                                 { prompt: t("views.dormitory.rooms.bed_prompt"), class: "form-select",
+                                   required: true,
+                                   data: { placement_form_target: "bed",
+                                           action: "change->placement-form#markManual" } } %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm mb-3">
+            <div class="card-header">
+              <h5 class="mb-0"><%= t("views.dormitory.residents.payment_section") %></h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <%= label_tag "placement[required_amount]", t("views.dormitory.accommodations.required_amount"), class: "form-label" %>
+                  <%= number_field_tag "placement[required_amount]", @placement_required_amount, step: 0.01, min: 0, class: "form-control" %>
+                </div>
+                <div class="col-md-4">
+                  <%= label_tag "receipt[amount]", t("views.dormitory.receipts.amount"), class: "form-label" %>
+                  <%= number_field_tag "receipt[amount]", @receipt_amount, step: 0.01, min: 0.01, class: "form-control" %>
+                </div>
+                <div class="col-md-4">
+                  <%= label_tag "receipt[paid_at]", t("views.dormitory.receipts.paid_at"), class: "form-label" %>
+                  <%= date_field_tag "receipt[paid_at]", @receipt_paid_at, class: "form-control" %>
+                </div>
+              </div>
+
+              <div class="mb-3" data-controller="drop-zone" data-drop-zone-max-size="10485760" data-drop-zone-format-error="<%= t('views.shared.drop_zone.format_error') %>" data-drop-zone-size-error="<%= t('views.shared.drop_zone.size_error') %>" data-drop-zone-remove-label="<%= t('views.shared.drop_zone.remove_file') %>" data-drop-zone-unit-bytes="<%= t('views.shared.drop_zone.unit_bytes') %>" data-drop-zone-unit-kb="<%= t('views.shared.drop_zone.unit_kb') %>" data-drop-zone-unit-mb="<%= t('views.shared.drop_zone.unit_mb') %>">
+                <%= label_tag "receipt[attachment]", t("views.dormitory.receipts.attachment"), class: "form-label" %>
+                <%= file_field_tag "receipt[attachment]", accept: "application/pdf,image/jpeg,image/png", class: "d-none",
+                                   data: { drop_zone_target: "input", turbo_permanent: true } %>
+                <div class="drop-zone" data-drop-zone-target="zone">
+                  <div data-drop-zone-target="placeholder">
+                    <i class="bi bi-cloud-arrow-up drop-zone-icon"></i>
+                    <span><%= t("views.shared.drop_zone.hint") %></span>
+                  </div>
+                  <div data-drop-zone-target="list"></div>
+                </div>
+                <div class="form-text"><%= t("views.dormitory.accommodations.file_hint") %></div>
+              </div>
+              <div class="form-text"><%= t("views.dormitory.residents.payment_hint") %></div>
+            </div>
+          </div>
+
+        <div class="alert alert-warning mb-3" data-placement-form-target="docsNote">
+          <i class="bi bi-exclamation-triangle me-1"></i><%= t("views.dormitory.residents.placement_documents_required") %>
+        </div>
+      </div>
+      <% end %>
     </div>
   </div>
 

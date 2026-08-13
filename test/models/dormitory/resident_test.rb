@@ -14,7 +14,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "valid resident with all required fields" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ001",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ001",
     )
     assert resident.valid?
   end
@@ -22,7 +22,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "initial status is not_settled" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ002",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ002",
     )
     assert resident.not_settled?
   end
@@ -30,7 +30,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "initial current_room_id is nil" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ003",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ003",
     )
     assert_nil resident.current_room_id
   end
@@ -38,7 +38,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "invalid without last_name" do
     resident = Dormitory::Resident.new(
       first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ004",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ004",
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:last_name], :any?
@@ -47,7 +47,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "invalid without first_name" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ005",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ005",
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:first_name], :any?
@@ -56,7 +56,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "invalid without gender" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван",
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ006",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ006",
       gender: nil,
     )
     assert_not resident.valid?
@@ -66,7 +66,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "invalid without date_of_birth" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      student_ticket_number: "UNIQ007",
+      course: 1, student_ticket_number: "UNIQ007",
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:date_of_birth], :any?
@@ -75,7 +75,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "invalid without student_ticket_number" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago,
+      date_of_birth: 20.years.ago, course: 1,
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:student_ticket_number], :any?
@@ -84,7 +84,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "valid name with hyphen" do
     resident = Dormitory::Resident.new(
       last_name: "Иванова-Петрова", first_name: "Мария", gender: :female,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ009",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ009",
     )
     assert resident.valid?
   end
@@ -92,7 +92,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "valid name with space" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Жан Поль", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ010",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ010",
     )
     assert resident.valid?
   end
@@ -100,7 +100,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "invalid name with digits" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов123", first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ011",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ011",
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:last_name], :any?
@@ -109,7 +109,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "date_of_birth in future is invalid" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      date_of_birth: 1.day.from_now, student_ticket_number: "UNIQ012",
+      date_of_birth: 1.day.from_now, course: 1, student_ticket_number: "UNIQ012",
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:date_of_birth], :any?
@@ -118,7 +118,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "phone with invalid format" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ013",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ013",
       phone: "abc",
     )
     assert_not resident.valid?
@@ -128,7 +128,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "phone with valid E.164 format" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ014",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ014",
       phone: "+79001234567",
     )
     assert resident.valid?
@@ -137,7 +137,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "email with invalid format" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ015",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ015",
       email: "not-email",
     )
     assert_not resident.valid?
@@ -148,7 +148,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     existing = dormitory_residents(:resident_one_not_settled)
     resident = Dormitory::Resident.new(
       last_name: "Новый", first_name: "Человек", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: existing.student_ticket_number,
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: existing.student_ticket_number,
     )
     assert_not resident.valid?
     assert_predicate resident.errors[:student_ticket_number], :any?
@@ -159,7 +159,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     existing.discard!
     resident = Dormitory::Resident.new(
       last_name: "Новый", first_name: "Человек", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "АБ123456",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "АБ123456",
     )
     assert resident.valid?
   end
@@ -192,6 +192,18 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert resident.valid?
   end
 
+  test "course_editable? returns true for not_settled resident" do
+    assert dormitory_residents(:resident_one_not_settled).course_editable?
+  end
+
+  test "course_editable? returns true for evicted resident" do
+    assert dormitory_residents(:resident_three_evicted).course_editable?
+  end
+
+  test "course_editable? returns false for settled resident" do
+    assert_not dormitory_residents(:resident_two_settled).course_editable?
+  end
+
   test "full_name concatenates names" do
     resident = dormitory_residents(:resident_one_not_settled)
     assert_equal "Иванов Иван Иванович", resident.full_name
@@ -205,7 +217,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "do_create! creates OutboxEvent" do
     resident = Dormitory::Resident.new(
       last_name: "Тестов", first_name: "Тест", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ016",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ016",
     )
     assert_difference "OutboxEvent.count", 1 do
       resident.do_create!
@@ -277,7 +289,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "document numbers are optional" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ018",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ018",
     )
     assert resident.valid?
   end
@@ -285,7 +297,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "accepts document numbers" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ019",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ019",
       application_number: "З-001", contract_number: "Д-001",
     )
     assert resident.valid?
@@ -338,7 +350,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "valid when number present without file" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", gender: :male,
-      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ020",
+      date_of_birth: 20.years.ago, course: 1, student_ticket_number: "UNIQ020",
       application_number: "З-001", contract_number: "Д-001",
     )
     assert resident.valid?
@@ -440,10 +452,57 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert_not accommodation.application_file.attached?
   end
 
+  test "course defaults to 1" do
+    resident = Dormitory::Resident.new(
+      last_name: "Иванов", first_name: "Иван", gender: :male,
+      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ021",
+    )
+    assert_equal 1, resident.course
+    assert resident.valid?
+  end
+
+  test "course must be within 1..6" do
+    resident = Dormitory::Resident.new(
+      last_name: "Иванов", first_name: "Иван", gender: :male, course: 7,
+      date_of_birth: 20.years.ago, student_ticket_number: "UNIQ022",
+    )
+    assert_not resident.valid?
+    assert_predicate resident.errors[:course], :any?
+  end
+
+  test "course changeable when not_settled" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.course = 4
+    assert resident.valid?
+  end
+
+  test "course immutable when settled" do
+    resident = dormitory_residents(:resident_two_settled)
+    resident.course = 5
+    assert_not resident.valid?
+    assert_predicate resident.errors[:course], :any?
+  end
+
+  test "course immutable when pending accommodation exists" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    room = dormitory_rooms(:room_102)
+    Dormitory::Accommodation.create!(
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-ПН", contract_number: "Д-ПН",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending
+    )
+    resident.reload
+    resident.course = 5
+    assert_not resident.valid?
+    assert_predicate resident.errors[:course], :any?
+  end
+
   test "optional middle_name with valid format" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", middle_name: "Тестович",
-      gender: :male, date_of_birth: 20.years.ago,
+      gender: :male, date_of_birth: 20.years.ago, course: 1,
       student_ticket_number: "UNIQ017",
     )
     assert resident.valid?
@@ -452,7 +511,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
   test "blank middle_name is valid" do
     resident = Dormitory::Resident.new(
       last_name: "Тест", first_name: "Тест", middle_name: "",
-      gender: :male, date_of_birth: 20.years.ago,
+      gender: :male, date_of_birth: 20.years.ago, course: 1,
       student_ticket_number: "UNIQ018",
     )
     assert resident.valid?

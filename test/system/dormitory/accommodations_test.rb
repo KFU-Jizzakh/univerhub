@@ -17,7 +17,7 @@ module Dormitory
       click_on "Заселить"
 
       assert_current_path new_dormitory_accommodation_path(resident_id: @resident.id)
-      assert_selector "h2", text: "Заселение проживающего"
+      assert_selector "h1", text: "Заселение — Иванов Иван Иванович"
       assert_field "Номер заявления"
       assert_field "Номер договора"
       assert_field "Дата заселения"
@@ -37,7 +37,7 @@ module Dormitory
       click_on "Подтвердить"
 
       assert_equal 422, page.status_code
-      assert_selector "h2", text: "Заселение проживающего"
+      assert_selector "h1", text: "Заселение — Иванов Иван Иванович"
     end
   end
 end

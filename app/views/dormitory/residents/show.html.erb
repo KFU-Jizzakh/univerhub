@@ -51,6 +51,10 @@
         <span class="info-label"><%= t("views.dormitory.residents.student_ticket") %></span>
         <span class="info-value"><%= @resident.student_ticket_number %></span>
       </div>
+      <div class="info-item">
+        <span class="info-label"><%= t("views.dormitory.residents.course") %></span>
+        <span class="info-value"><%= @resident.course.presence || "—" %></span>
+      </div>
       <% if @resident.current_room.present? %>
         <div class="info-item">
           <span class="info-label"><%= t("views.dormitory.residents.current_room") %></span>
@@ -162,6 +166,7 @@
         <tr>
           <th scope="col"><%= t("views.shared.labels.status") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.room") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.bed_label") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
           <th scope="col"><%= t("views.dormitory.audit.who_settled") %></th>
           <th scope="col"><%= t("views.dormitory.audit.who_evicted") %></th>
@@ -177,6 +182,7 @@
           <tr>
             <td><%= status_badge(acc.status) %></td>
             <td><%= link_to acc.room.number, dormitory_room_path(acc.room) %></td>
+            <td><%= acc.bed_label.presence || "—" %></td>
             <td><%= l(acc.start_date, format: :short) %></td>
             <td><%= user_display(who_settled(acc)) %></td>
             <td><%= user_display(who_evicted(acc)) %></td>

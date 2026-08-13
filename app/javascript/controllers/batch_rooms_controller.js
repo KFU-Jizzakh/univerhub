@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "building", "floor", "startNumber", "endNumber", "defaultCapacity", "defaultGender",
-    "tableCard", "tableBody", "hiddenFields", "countBadge", "submitBtn"
+    "defaultCourse", "tableCard", "tableBody", "hiddenFields", "countBadge", "submitBtn"
   ]
   static values = { url: String }
 
@@ -65,11 +65,18 @@ export default class extends Controller {
       rooms.push({
         number: String(i),
         capacity: defaultCapacity || "1",
-        gender_restriction: defaultGender || ""
+        gender_restriction: defaultGender || "",
+        allowed_courses: this.defaultCourses
       })
     }
 
     this.buildTable(rooms)
+  }
+
+  get defaultCourses() {
+    return Array.from(this.defaultCourseTargets)
+      .filter(cb => cb.checked)
+      .map(cb => parseInt(cb.value, 10))
   }
 
   buildTable(rooms) {
@@ -89,6 +96,15 @@ export default class extends Controller {
     const genderNone = this.genderNoneLabel
     const genderMale = this.genderMaleLabel
     const genderFemale = this.genderFemaleLabel
+    const courses = Array.isArray(room.allowed_courses) ? room.allowed_courses : []
+    const courseCheckboxes = [1, 2, 3, 4, 5, 6].map(course =>
+      `<span class="form-check form-check-inline me-2">
+        <input type="checkbox" class="form-check-input" value="${course}"
+          ${courses.includes(course) ? "checked" : ""}
+          data-action="change->batch-rooms#onRowChange" data-index="${index}" data-field="allowed_courses">
+        <label class="form-check-label">${course}</label>
+      </span>`
+    ).join("")
     return `
       <td><input type="text" class="form-control form-control-sm" value="${esc(room.number)}"
             data-action="input->batch-rooms#onRowChange" data-index="${index}" data-field="number" required></td>
@@ -101,6 +117,7 @@ export default class extends Controller {
           <option value="female" ${room.gender_restriction === "female" ? "selected" : ""}>${esc(genderFemale)}</option>
         </select>
       </td>
+      <td>${courseCheckboxes}</td>
       <td class="text-center">
         <button type="button" class="btn btn-sm btn-outline-danger" data-action="batch-rooms#deleteRow" data-index="${index}">&times;</button>
       </td>`
@@ -128,12 +145,18 @@ export default class extends Controller {
       const num = tr.querySelector("[data-field='number']").value.trim()
       const cap = tr.querySelector("[data-field='capacity']").value.trim()
       const gen = tr.querySelector("[data-field='gender_restriction']").value
+      const courses = Array.from(tr.querySelectorAll("[data-field='allowed_courses']:checked"))
+        .map(cb => cb.value)
+      const courseFields = courses.map(course =>
+        `<input type="hidden" name="rooms[][allowed_courses][]" value="${this.esc(course)}">`
+      ).join("")
       this.hiddenFieldsTarget.innerHTML += `
         <input type="hidden" name="rooms[][building_id]" value="${this.esc(buildingId)}">
         <input type="hidden" name="rooms[][floor]" value="${this.esc(floor)}">
         <input type="hidden" name="rooms[][number]" value="${this.esc(num)}">
         <input type="hidden" name="rooms[][capacity]" value="${this.esc(cap)}">
         <input type="hidden" name="rooms[][gender_restriction]" value="${this.esc(gen)}">
+        ${courseFields}
       `
     })
   }

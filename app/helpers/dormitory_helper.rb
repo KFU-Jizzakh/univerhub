@@ -58,6 +58,32 @@ module DormitoryHelper
     Dormitory::Resident.genders.map { |k, _v| [ t("views.dormitory.residents.gender_#{k}"), k ] }
   end
 
+  # PURPOSE: label for a room option in the room-select controller (matches the JS-rendered format)
+  # SPECIFICATION: SPEC-DORM-12
+  def room_select_option_label(room)
+    template = t("views.shared.room_select.room_template",
+                 floor: room.floor,
+                 slots: room.available_slots)
+    "#{room.number} #{template}"
+  end
+
+  # PURPOSE: JSON payload for pre-selecting the current room and bed in the room-select controller on a pending accommodation edit
+  # SPECIFICATION: SPEC-DORM-12
+  def pending_room_select_data(accommodation)
+    return nil unless accommodation.pending? && accommodation.room
+
+    {
+      id: accommodation.room.id,
+      building_id: accommodation.room.building_id,
+      number: accommodation.room.number,
+      floor: accommodation.room.floor,
+      available_slots: accommodation.room.available_slots,
+      status: accommodation.room.status,
+      bed_labels: accommodation.room.bed_labels,
+      free_bed_labels: accommodation.room.free_bed_labels
+    }.to_json
+  end
+
   private
 
   def actor_for_action(record, action)

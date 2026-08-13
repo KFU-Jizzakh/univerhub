@@ -63,6 +63,7 @@
           <th scope="col"><%= t("views.dormitory.rooms.floor") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.capacity") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.available_slots") %></th>
+          <th scope="col"><%= t("views.dormitory.rooms.allowed_courses") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.gender_restriction") %></th>
           <th scope="col"><%= t("views.shared.labels.status") %></th>
           <th scope="col" class="text-end"></th>
@@ -76,6 +77,13 @@
             <td><%= room.floor %></td>
             <td><%= room.current_occupancy %>/<%= room.capacity %></td>
             <td><%= [room.available_slots, 0].max %></td>
+            <td>
+              <% if room.allowed_courses.present? %>
+                <%= room.allowed_courses.sort.join(", ") %>
+              <% else %>
+                <%= t("views.dormitory.rooms.all_courses") %>
+              <% end %>
+            </td>
             <td>
               <% if room.gender_restriction.present? %>
                 <%= t("views.dormitory.rooms.gender_#{room.gender_restriction}") %>

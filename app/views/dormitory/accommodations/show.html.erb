@@ -30,7 +30,16 @@
         </div>
         <div class="info-item">
           <span class="info-label"><%= t("views.dormitory.accommodations.room") %></span>
-          <span class="info-value"><%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %></span>
+          <span class="info-value">
+            <%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %>
+            <% if @accommodation.bed_label.present? %>
+              <span class="badge bg-secondary ms-1"><%= t("views.dormitory.rooms.bed_label") %> <%= @accommodation.bed_label %></span>
+            <% end %>
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><%= t("views.dormitory.residents.course") %></span>
+          <span class="info-value"><%= @accommodation.course %></span>
         </div>
         <div class="info-item">
           <span class="info-label"><%= t("views.dormitory.accommodations.start_date") %></span>
@@ -115,108 +124,110 @@
   </table>
 </div>
 
-<h5 class="mb-3"><%= t("views.dormitory.accommodations.section_payments") %></h5>
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card text-center p-3 shadow-sm">
-      <div class="text-muted small"><%= t("views.dormitory.accommodations.required_amount") %></div>
-      <div class="h5 mb-0"><%= number_to_currency(@accommodation.required_amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></div>
+<% if @accommodation.active? || @accommodation.pending? %>
+  <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_payments") %></h5>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.accommodations.required_amount") %></div>
+        <div class="h5 mb-0"><%= number_to_currency(@accommodation.required_amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></div>
+      </div>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card text-center p-3 shadow-sm">
-      <div class="text-muted small"><%= t("views.dormitory.accommodations.total_paid") %></div>
-      <div class="h5 mb-0"><%= number_to_currency(@accommodation.total_paid, unit: "", separator: ",", delimiter: " ", precision: 2) %></div>
+    <div class="col-md-4">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.accommodations.total_paid") %></div>
+        <div class="h5 mb-0"><%= number_to_currency(@accommodation.total_paid, unit: "", separator: ",", delimiter: " ", precision: 2) %></div>
+      </div>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card text-center p-3 shadow-sm">
-      <div class="text-muted small"><%= t("views.dormitory.accommodations.balance") %></div>
-      <div class="h5 mb-0 <%= @accommodation.balance >= 0 ? 'text-success' : 'text-danger' %>">
-        <%= number_to_currency(@accommodation.balance, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+    <div class="col-md-4">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.accommodations.balance") %></div>
+        <div class="h5 mb-0 <%= @accommodation.balance >= 0 ? 'text-success' : 'text-danger' %>">
+          <%= number_to_currency(@accommodation.balance, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<% if @accommodation.receipts.any? %>
-  <div class="mb-3">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th scope="col"><%= t("views.dormitory.receipts.paid_at") %></th>
-          <th scope="col"><%= t("views.dormitory.receipts.amount") %></th>
-          <th scope="col"><%= t("views.dormitory.accommodations.document_file") %></th>
-          <th scope="col"><%= t("views.dormitory.accommodations.comment") %></th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @accommodation.receipts.ordered.each do |receipt| %>
+  <% if @accommodation.receipts.any? %>
+    <div class="mb-3">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
           <tr>
-            <td><%= l(receipt.paid_at, format: :short) %></td>
-            <td><%= number_to_currency(receipt.amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></td>
-            <td>
-              <% if receipt.attachment.attached? %>
-                <i class="bi <%= file_icon_class(receipt.attachment) %> me-1"></i>
-                <%= link_to receipt.attachment.filename, url_for(receipt.attachment), target: "_blank" %>
-                <span class="text-muted small">(<%= number_to_human_size(receipt.attachment.byte_size) %>)</span>
-              <% else %>
-                —
-              <% end %>
-            </td>
-            <td><%= receipt.comment.presence || "—" %></td>
-            <td>
-              <% if @accommodation.active? && (policy(receipt).edit? || policy(receipt).destroy?) %>
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
-                    <i class="bi bi-three-dots-vertical"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <% if policy(receipt).edit? %>
-                      <li>
-                        <%= link_to edit_dormitory_accommodation_receipt_path(@accommodation, receipt), class: "dropdown-item" do %>
-                          <i class="bi bi-pencil me-1"></i> <%= t("views.shared.actions.edit") %>
-                        <% end %>
-                      </li>
-                    <% end %>
-                    <% if policy(receipt).destroy? %>
-                      <% if policy(receipt).edit? %>
-                        <li><hr class="dropdown-divider"></li>
-                      <% end %>
-                      <li>
-                        <%= button_to dormitory_accommodation_receipt_path(@accommodation, receipt),
-                              method: :delete, class: "dropdown-item text-danger",
-                              form: { data: { turbo_confirm: t("views.dormitory.receipts.confirm_delete") } } do %>
-                          <i class="bi bi-trash me-1"></i> <%= t("views.shared.actions.delete") %>
-                        <% end %>
-                      </li>
-                    <% end %>
-                  </ul>
-                </div>
-              <% end %>
-            </td>
+            <th scope="col"><%= t("views.dormitory.receipts.paid_at") %></th>
+            <th scope="col"><%= t("views.dormitory.receipts.amount") %></th>
+            <th scope="col"><%= t("views.dormitory.accommodations.document_file") %></th>
+            <th scope="col"><%= t("views.dormitory.accommodations.comment") %></th>
+            <th scope="col"></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% else %>
-  <p class="text-muted mb-3"><%= t("views.dormitory.accommodations.no_receipts") %></p>
-<% end %>
+        </thead>
+        <tbody>
+          <% @accommodation.receipts.ordered.each do |receipt| %>
+            <tr>
+              <td><%= l(receipt.paid_at, format: :short) %></td>
+              <td><%= number_to_currency(receipt.amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></td>
+              <td>
+                <% if receipt.attachment.attached? %>
+                  <i class="bi <%= file_icon_class(receipt.attachment) %> me-1"></i>
+                  <%= link_to receipt.attachment.filename, url_for(receipt.attachment), target: "_blank" %>
+                  <span class="text-muted small">(<%= number_to_human_size(receipt.attachment.byte_size) %>)</span>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+              <td><%= receipt.comment.presence || "—" %></td>
+              <td>
+                <% if (@accommodation.active? || @accommodation.pending?) && (policy(receipt).edit? || policy(receipt).destroy?) %>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <% if policy(receipt).edit? %>
+                        <li>
+                          <%= link_to edit_dormitory_accommodation_receipt_path(@accommodation, receipt), class: "dropdown-item" do %>
+                            <i class="bi bi-pencil me-1"></i> <%= t("views.shared.actions.edit") %>
+                          <% end %>
+                        </li>
+                      <% end %>
+                      <% if policy(receipt).destroy? %>
+                        <% if policy(receipt).edit? %>
+                          <li><hr class="dropdown-divider"></li>
+                        <% end %>
+                        <li>
+                          <%= button_to dormitory_accommodation_receipt_path(@accommodation, receipt),
+                                method: :delete, class: "dropdown-item text-danger",
+                                form: { data: { turbo_confirm: t("views.dormitory.receipts.confirm_delete") } } do %>
+                            <i class="bi bi-trash me-1"></i> <%= t("views.shared.actions.delete") %>
+                          <% end %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-muted mb-3"><%= t("views.dormitory.accommodations.no_receipts") %></p>
+  <% end %>
 
-<div class="d-flex flex-wrap gap-2 mb-4">
-  <% if @accommodation.active? && policy(Dormitory::Receipt).new? %>
-    <%= link_to new_dormitory_accommodation_receipt_path(@accommodation), class: "btn btn-outline-primary" do %>
-      <i class="bi bi-plus-circle"></i> <%= t("views.dormitory.accommodations.add_receipt") %>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <% if policy(Dormitory::Receipt).new? %>
+      <%= link_to new_dormitory_accommodation_receipt_path(@accommodation), class: "btn btn-outline-primary" do %>
+        <i class="bi bi-plus-circle"></i> <%= t("views.dormitory.accommodations.add_receipt") %>
+      <% end %>
     <% end %>
-  <% end %>
-  <% if @accommodation.active? && @accommodation.balance < 0 && policy(Dormitory::Receipt).new? %>
-    <%= link_to new_dormitory_accommodation_receipt_path(@accommodation, amount: @accommodation.balance.abs), class: "btn btn-success" do %>
-      <i class="bi bi-cash"></i> <%= t("views.dormitory.accommodations.pay_remaining") %>
+    <% if @accommodation.balance < 0 && policy(Dormitory::Receipt).new? %>
+      <%= link_to new_dormitory_accommodation_receipt_path(@accommodation, amount: @accommodation.balance.abs), class: "btn btn-success" do %>
+        <i class="bi bi-cash"></i> <%= t("views.dormitory.accommodations.pay_remaining") %>
+      <% end %>
     <% end %>
-  <% end %>
-</div>
+  </div>
+<% end %>
 
 <%= render_audit_trail(@audit_events) %>
 
@@ -226,6 +237,16 @@
   <% end %>
 
   <div class="d-flex gap-2">
+    <% if @accommodation.pending? && policy(@accommodation).confirm? %>
+      <%= button_to t("views.dormitory.accommodations.confirm_button"),
+            confirm_dormitory_accommodation_path(@accommodation), method: :post, class: "btn btn-success",
+            data: { turbo_confirm: t("views.dormitory.accommodations.confirm_pending_dialog") } %>
+    <% end %>
+    <% if @accommodation.pending? && policy(@accommodation).reject? %>
+      <%= button_to t("views.dormitory.accommodations.reject_button"),
+            reject_dormitory_accommodation_path(@accommodation), method: :post, class: "btn btn-outline-danger",
+            data: { turbo_confirm: t("views.dormitory.accommodations.reject_pending_dialog") } %>
+    <% end %>
     <% if @accommodation.active? && policy(@accommodation).new_transfer? %>
       <%= link_to new_transfer_dormitory_accommodation_path(@accommodation), class: "btn btn-warning" do %>
         <i class="bi bi-arrow-left-right me-1"></i> <%= t("views.dormitory.accommodations.transfer_button") %>

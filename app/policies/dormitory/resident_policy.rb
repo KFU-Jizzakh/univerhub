@@ -1,7 +1,7 @@
 module Dormitory
   class ResidentPolicy < ApplicationPolicy
     # PURPOSE: Authorization rules for Resident — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar global create/edit without destroy
-    # SPECIFICATION: SPEC-DORM-03
+    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     def index?
       admin_or_dormitory_admin_or_commandant? || registrar?
     end
@@ -16,6 +16,12 @@ module Dormitory
 
     def new?
       create?
+    end
+
+    # PURPOSE: Whether the user may register a resident with a place (manual room and bed selection during registration)
+    # SPECIFICATION: SPEC-DORM-12
+    def create_with_placement?
+      admin_or_dormitory_admin? || commandant_with_building_access? || registrar?
     end
 
     def update?

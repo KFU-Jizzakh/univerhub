@@ -48,6 +48,18 @@
           {}, class: "form-select" %>
   </div>
 
+  <div class="mb-3">
+    <span class="form-label d-block"><%= t("views.dormitory.rooms.allowed_courses") %></span>
+    <% Dormitory::Room::COURSE_RANGE.each do |course| %>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "dormitory_room[allowed_courses][]", course, Array(@room.allowed_courses).include?(course),
+              id: "dormitory_room_allowed_courses_#{course}", class: "form-check-input" %>
+        <%= label_tag "dormitory_room_allowed_courses_#{course}", course, class: "form-check-label" %>
+      </div>
+    <% end %>
+    <div class="form-text"><%= t("views.dormitory.rooms.allowed_courses_hint") %></div>
+  </div>
+
   <div class="d-flex gap-2 mb-3">
     <%= f.submit t("views.shared.actions.create"), class: "btn btn-primary" %>
     <%= link_to t("views.shared.actions.cancel"), dormitory_rooms_path, class: "btn btn-outline-secondary" %>

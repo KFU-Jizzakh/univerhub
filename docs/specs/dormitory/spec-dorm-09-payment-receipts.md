@@ -38,7 +38,7 @@ Status: PLANNED
 - AC-6: File is required when creating a receipt; on edit, existing file is kept if no new file is uploaded
 - AC-7: Receipt delete is a soft-delete (Discard) — the record is marked discarded, not physically removed
 - AC-8: Deleted receipts are excluded from `total_paid`, not shown in the list, and cannot be restored via UI
-- AC-9: Receipts can only be created, edited, or deleted while the parent accommodation is active
+- AC-9: Receipts can only be created, edited, or deleted while the parent accommodation is active or pending
 
 ### Settlement with receipt
 - AC-10: Receipts are created independently via the dedicated `ReceiptsController` (nested under accommodations), not inline in the settlement form — receipts are not required for settlement
@@ -54,8 +54,8 @@ Status: PLANNED
 
 ### Receipt list on accommodation show
 - AC-19: Accommodation show displays a table of all kept receipts: paid_at, amount, file link, comment, edit/delete actions
-- AC-20: "Add receipt" button is shown when the accommodation is active
-- AC-21: "Pay remaining" quick-action button is shown when accommodation is active AND balance < 0 — clicking it opens the receipt form with amount pre-filled to the remaining debt
+- AC-20: "Add receipt" button is shown when the accommodation is active or pending
+- AC-21: "Pay remaining" quick-action button is shown when accommodation is active or pending AND balance < 0 — clicking it opens the receipt form with amount pre-filled to the remaining debt
 
 ### Audit logging
 - AC-22: Receipt creation, update, and deletion are recorded via Trackable (OutboxEvent), same as accommodation events
@@ -98,10 +98,11 @@ Status: PLANNED
 - BR-10: Dashboard payment metrics (total debt, debt by building) are scoped by the user's accessible buildings, matching the existing dashboard scoping rules (BR-2 through BR-12 from SPEC-DORM-07)
 - BR-11: Balance display: green (`text-success`) when ≥ 0, red (`text-danger`) when < 0
 - BR-12: "Pay remaining" button is shown only when the accommodation is active AND balance < 0. It pre-fills the receipt amount to `abs(balance)`
-- BR-13: Receipt CRUD operations are only allowed while the parent accommodation is active (status = "active")
-- BR-14: Receipts are created exclusively via the dedicated `ReceiptsController`, nested under accommodations — the accommodation model no longer uses `accepts_nested_attributes_for :receipts`
+- BR-13: Receipt CRUD operations are only allowed while the parent accommodation is active or pending (status in ["active", "pending"])
+- BR-14: Receipts are created exclusively via the dedicated `ReceiptsController`, nested under accommodations, or via resident registration (SPEC-DORM-12) — the accommodation model no longer uses `accepts_nested_attributes_for :receipts`
 - BR-15: Receipt attachment file validation (format and size) mirrors the existing validation rules for accommodation documents
 - BR-16: A registrar can create receipts for any kept accommodation (global, not building-scoped) but cannot edit, update, or delete receipts
+- BR-17: A receipt created during resident registration (SPEC-DORM-12) stays attached if the pending accommodation is later rejected — it documents money actually received and is not discarded automatically
 
 ## Behavior
 

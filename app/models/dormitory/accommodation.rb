@@ -1,10 +1,12 @@
 module Dormitory
   class Accommodation < ApplicationRecord
-    # PURPOSE: Core settlement operations: settling residents into rooms, transferring between rooms, and evicting with document management, payment tracking, and date tracking
-    # SPECIFICATION: SPEC-DORM-04, SPEC-DORM-09
+    # PURPOSE: Core settlement operations: pending registration with automatic place issuance, confirmation, settlement, transfer between rooms, and eviction with document management, payment tracking, and date tracking
+    # SPECIFICATION: SPEC-DORM-04, SPEC-DORM-09, SPEC-DORM-12
     include AASM
     include Discard::Model
     include Trackable
+
+    COURSE_RANGE = (1..6).freeze
 
     belongs_to :resident, class_name: "Dormitory::Resident"
     belongs_to :room, class_name: "Dormitory::Room"
@@ -23,19 +25,26 @@ module Dormitory
     validates :comment, length: { maximum: 2000 }
     validates :eviction_reason, inclusion: { in: EVICTION_REASONS }, allow_nil: true
     validates :required_amount, numericality: { greater_than_or_equal_to: 0 }
+    validates :course, numericality: { only_integer: true }, inclusion: { in: COURSE_RANGE }
     validate :application_file_format_and_size
     validate :contract_file_format_and_size
     validate :comment_required_for_other_reason, if: -> { eviction_reason == "other" }
     validate :planned_end_date_after_start_date
     validate :renewal_source_must_be_completed
+    validate :bed_label_in_room_range
+    validate :bed_label_not_taken
     validates :actual_end_date, presence: true, if: -> { completed? || cancelled? }
     validate :actual_end_date_not_before_start_date
     validate :actual_end_date_not_in_future
     validate :no_actual_end_date_when_active
 
     before_validation :set_academic_year, on: :create
+    before_validation :set_course_snapshot, on: :create
 
-    aasm column: :status, whiny_transitions: true do
+    attr_readonly :course
+
+    aasm column: :status, whiny_transitions: true, whiny_persistence: true do
+      state :pending
       state :active, initial: true
       state :completed
       state :cancelled
@@ -44,8 +53,12 @@ module Dormitory
         transitions from: :active, to: :completed
       end
 
+      event :confirm do
+        transitions from: :pending, to: :active
+      end
+
       event :cancel do
-        transitions from: :active, to: :cancelled
+        transitions from: [ :active, :pending ], to: :cancelled
       end
     end
 
@@ -88,16 +101,129 @@ module Dormitory
       raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
 
       track_event("dormitory.accommodation.created",
-                  { resident_id: resident.id, room_id: room.id, room_number: room.number, force: force }) do
+                  -> { { resident_id: resident.id, room_id: room.id, room_number: room.number,
+                         bed_label: self.bed_label, force: force } }) do
         room.with_lock do
           resident.lock!
-          validate_settle_preconditions!(force)
+          validate_settle_preconditions!
           validate_room_capacity!(force)
           room.skip_capacity_validation = true if force
+          assign_bed!(force)
           save!
           resident.update!(status: :settled, current_room: room)
           room.increment!(:current_occupancy)
           trigger_room_transition!(force)
+        end
+      end
+      self
+    end
+
+    # PURPOSE: Registers a resident into a room as a pending accommodation, reserving the place (bed label) without settling the resident
+    # SPECIFICATION: SPEC-DORM-12
+    def do_register!(force: false, bed_label: nil)
+      raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
+
+      track_event("dormitory.accommodation.created",
+                  -> { { resident_id: resident.id, room_id: room.id, room_number: room.number,
+                         bed_label: self.bed_label, force: force } }) do
+        room.with_lock do
+          resident.lock!
+          validate_register_preconditions!
+          validate_room_capacity!(force)
+          room.skip_capacity_validation = true if force
+          self.status = :pending
+          self.bed_label = bed_label if bed_label.present?
+          assign_bed!(force)
+          save!
+          room.increment!(:current_occupancy)
+          trigger_room_transition!(force)
+        end
+      end
+      self
+    end
+
+    # PURPOSE: Confirms a pending accommodation: resident becomes settled, accommodation becomes active, reserved place is kept
+    # SPECIFICATION: SPEC-DORM-12
+    def do_confirm!(force: false)
+      raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
+
+      track_event("dormitory.accommodation.confirmed",
+                  { resident_id: resident.id, room_id: room.id, room_number: room.number,
+                    bed_label: bed_label }) do
+        room.with_lock do
+          resident.lock!
+          reload
+          validate_pending!
+          if !force && room.current_occupancy > room.capacity
+            errors.add(:room, :full)
+            raise ActiveRecord::RecordInvalid.new(self)
+          end
+          confirm!
+          resident.update!(status: :settled, current_room: room)
+        end
+      end
+      self
+    end
+
+    # PURPOSE: Rejects a pending accommodation: releases the reserved place, accommodation becomes cancelled, resident stays not settled
+    # SPECIFICATION: SPEC-DORM-12
+    def do_reject!
+      track_event("dormitory.accommodation.rejected",
+                  { resident_id: resident.id, room_id: room.id, room_number: room.number }) do
+        room.with_lock do
+          reload
+          validate_pending!
+          self.actual_end_date = Date.current
+          cancel!
+          room.decrement!(:current_occupancy)
+          recalculate_room_status!(room, "other")
+        end
+      end
+      self
+    end
+
+    # PURPOSE: Updates a pending accommodation, releasing the old room and reserving a new one when the room changes
+    # SPECIFICATION: SPEC-DORM-12
+    def do_update_pending!(attrs, force: false)
+      raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
+
+      track_event("dormitory.accommodation.updated",
+                  -> { { resident_id: resident.id, room_id: room_id } }) do
+        lock_room_ids_for(attrs).each { |rid| Dormitory::Room.where(id: rid).lock.pluck(:id) }
+        reload
+        validate_pending!
+        old_room = room
+        bed_before = bed_label
+        requested_bed = attrs[:bed_label].to_s.strip
+        self.assign_attributes(attrs)
+
+        if room_id_changed?
+          if room.nil?
+            errors.add(:room, :blank)
+            raise ActiveRecord::RecordInvalid.new(self)
+          end
+
+          new_room = Dormitory::Room.find(room_id)
+          old_room.reload
+          new_room.reload
+
+          validate_room_capacity!(force)
+          validate_course_compatibility!
+          validate_gender_compatibility!
+          self.bed_label = requested_bed.presence
+          assign_bed!(force)
+          save!
+
+          old_room.decrement!(:current_occupancy)
+          recalculate_room_status!(old_room, "other")
+
+          new_room.skip_capacity_validation = true if force
+          new_room.increment!(:current_occupancy)
+          room.reload
+          trigger_room_transition!(force)
+        else
+          self.bed_label = bed_before if requested_bed.blank?
+          save!
         end
       end
       self
@@ -127,13 +253,14 @@ module Dormitory
         recalculate_room_status!(old_room, eviction_reason)
 
         new_acc.resident = resident
+        new_acc.assign_bed!
         new_acc.save!
 
         OutboxEvent.create!(
           actor: Current.user,
           action: "dormitory.accommodation.created",
           record: new_acc,
-          payload: { resident_id: resident.id, room_id: new_room.id, room_number: new_room.number, via: :transfer }
+          payload: { resident_id: resident.id, room_id: new_room.id, room_number: new_room.number, bed_label: new_acc.bed_label, via: :transfer }
         )
 
         new_room.increment!(:current_occupancy)
@@ -164,6 +291,13 @@ module Dormitory
         end
       end
       self
+    end
+
+    # PURPOSE: Assigns the first free bed label of the current room; under force leaves the label empty on a full room unless a bed label was explicitly requested
+    # SPECIFICATION: SPEC-DORM-12
+    def assign_bed!(force = false)
+      self.bed_label = room.free_bed_labels.first if bed_label.blank? && room.free_bed_labels.any?
+      self.bed_label = nil if force && bed_label.blank? && room.free_bed_labels.none?
     end
 
     private
@@ -202,21 +336,94 @@ module Dormitory
       reason == "other" && comment_text.blank?
     end
 
-    def validate_settle_preconditions!(force)
+    def validate_settle_preconditions!
       if resident.status != "not_settled"
         errors.add(:resident, :already_settled)
         raise ActiveRecord::RecordInvalid.new(self)
       end
 
-      unless gender_compatible?
-        errors.add(:room, :gender_conflict)
+      active_scope = resident.accommodations.kept.where(status: :active)
+      active_scope = active_scope.where.not(id: id) if persisted?
+      if active_scope.exists?
+        errors.add(:resident, :already_settled)
         raise ActiveRecord::RecordInvalid.new(self)
       end
+
+      if resident.accommodations.kept.where(status: :pending).exists?
+        errors.add(:resident, :pending_exists)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+
+      validate_gender_compatibility!
+
+      validate_course_compatibility!
 
       unless application_file.attached? && contract_file.attached?
         errors.add(:base, :files_required)
         raise ActiveRecord::RecordInvalid.new(self)
       end
+    end
+
+    def validate_register_preconditions!
+      if resident.status != "not_settled"
+        errors.add(:resident, :already_settled)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+
+      if resident.accommodations.kept.where(status: :active).exists?
+        errors.add(:resident, :already_settled)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+
+      if resident.accommodations.kept.where(status: :pending).exists?
+        errors.add(:resident, :pending_exists)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+
+      validate_gender_compatibility!
+
+      validate_course_compatibility!
+
+      unless application_file.attached? && contract_file.attached?
+        errors.add(:base, :files_required)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+    end
+
+    def validate_pending!
+      unless pending?
+        errors.add(:status, :not_pending)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+    end
+
+    # PURPOSE: Returns the sorted ids of the rooms that must be locked before a pending update: the current room and, when present, the requested target room
+    # SPECIFICATION: SPEC-DORM-12
+    def lock_room_ids_for(attrs)
+      target = attrs[:room_id].to_s.strip.presence
+      [ room_id.to_s, target ].compact.map(&:to_i).uniq.sort
+    end
+
+    def validate_course_compatibility!
+      return if course_compatible?
+
+      errors.add(:room, :course_conflict)
+      raise ActiveRecord::RecordInvalid.new(self)
+    end
+
+    def validate_gender_compatibility!
+      return if gender_compatible?
+
+      errors.add(:room, :gender_conflict)
+      raise ActiveRecord::RecordInvalid.new(self)
+    end
+
+    def course_compatible?
+      room.allows_course?(resident.course)
+    end
+
+    def course_compatible_with?(other_room)
+      other_room.allows_course?(resident.course)
     end
 
     def validate_room_capacity!(force)
@@ -243,6 +450,10 @@ module Dormitory
         room.occupy_more!
         room.track_status_change!(:occupy_more)
       when :fully_occupied
+        raise ActiveRecord::RecordInvalid.new(self) unless force
+        room.force_occupy!
+        room.track_status_change!(:force_occupy)
+      when :overcrowded
         raise ActiveRecord::RecordInvalid.new(self) unless force
         room.force_occupy!
         room.track_status_change!(:force_occupy)
@@ -282,6 +493,11 @@ module Dormitory
 
       unless gender_compatible_with?(new_room)
         errors.add(:room, :gender_conflict)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+
+      unless course_compatible_with?(new_room)
+        errors.add(:room, :course_conflict)
         raise ActiveRecord::RecordInvalid.new(self)
       end
     end
@@ -374,6 +590,28 @@ module Dormitory
       else
         errors.add(:base, :no_active_academic_year)
       end
+    end
+
+    def set_course_snapshot
+      self.course = resident.course if resident&.course.present?
+    end
+
+    def bed_label_in_room_range
+      return if bed_label.blank? || room.nil?
+
+      unless room.bed_labels.include?(bed_label)
+        errors.add(:bed_label, :invalid_for_room)
+      end
+    end
+
+    def bed_label_not_taken
+      return if bed_label.blank? || room_id.nil?
+
+      scope = self.class.kept
+        .where(room_id: room_id, bed_label: bed_label, status: %w[active pending])
+      scope = scope.where.not(id: id) if persisted?
+
+      errors.add(:bed_label, :taken_in_room) if scope.exists?
     end
 
     def renewal_source_must_be_completed

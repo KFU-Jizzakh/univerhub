@@ -198,4 +198,65 @@ class Dormitory::RoomsControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal "401", json["number"]
   end
+
+  test "available returns free and partially occupied rooms with free_bed_labels" do
+    sign_in_as @admin
+    get available_dormitory_rooms_path, params: { building_id: @building.id }, as: :json
+    assert_response :success
+    json = JSON.parse(response.body)
+    room = json.find { |r| r["id"] == dormitory_rooms(:room_201).id }
+    assert room.present?
+    assert_equal [ "B", "C", "D" ], room["free_bed_labels"]
+  end
+
+  test "available precomputes free bed labels without per-room queries" do
+    sign_in_as @admin
+    assert_queries_count 5 do
+      get available_dormitory_rooms_path, params: { building_id: @building.id }, as: :json
+    end
+    assert_response :success
+  end
+
+  test "available filters rooms by course" do
+    room_101 = dormitory_rooms(:room_101)
+    room_101.update!(allowed_courses: [ 5 ])
+    sign_in_as @admin
+
+    get available_dormitory_rooms_path, params: { course: "1" }, as: :json
+    json = JSON.parse(response.body)
+    assert_not_includes json.map { |r| r["id"] }, room_101.id
+
+    get available_dormitory_rooms_path, params: { course: "5" }, as: :json
+    json = JSON.parse(response.body)
+    assert_includes json.map { |r| r["id"] }, room_101.id
+  end
+
+  test "available with out-of-range course ignores the filter" do
+    room_101 = dormitory_rooms(:room_101)
+    room_101.update!(allowed_courses: [ 5 ])
+    sign_in_as @admin
+
+    get available_dormitory_rooms_path, params: { course: "9" }, as: :json
+    json = JSON.parse(response.body)
+    assert_includes json.map { |r| r["id"] }, room_101.id
+  end
+
+  test "available denied for manager" do
+    sign_in_as @manager
+    get available_dormitory_rooms_path, as: :json
+    assert_redirected_to root_path
+  end
+
+  test "beds returns free bed labels" do
+    sign_in_as @admin
+    get beds_dormitory_rooms_path, params: { id: dormitory_rooms(:room_201).id }, as: :json
+    assert_response :success
+    assert_equal [ "B", "C", "D" ], JSON.parse(response.body)
+  end
+
+  test "beds denied for manager" do
+    sign_in_as @manager
+    get beds_dormitory_rooms_path, params: { id: dormitory_rooms(:room_101).id }, as: :json
+    assert_redirected_to root_path
+  end
 end

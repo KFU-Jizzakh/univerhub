@@ -39,12 +39,17 @@ module Dormitory
           gender = room_data[:gender_restriction].presence
           gender = nil unless gender.in?(allowed_genders)
 
+          allowed_courses = Array(room_data[:allowed_courses]).map(&:to_i)
+            .uniq
+            .select { |course| course.in?(Dormitory::Room::COURSE_RANGE) }
+
           Dormitory::Room.new(
             building_id: room_data[:building_id],
             floor: room_data[:floor],
             number: room_data[:number],
             capacity: room_data[:capacity],
-            gender_restriction: gender
+            gender_restriction: gender,
+            allowed_courses: allowed_courses.presence
           ).do_create!
         end
       end

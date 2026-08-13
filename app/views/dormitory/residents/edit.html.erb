@@ -45,6 +45,22 @@
       </div>
 
       <div class="mb-3">
+        <%= f.label :course, t("views.dormitory.residents.course"), class: "form-label" %>
+        <% if @resident.course_editable? %>
+          <%= f.select :course,
+                       options_for_select(1..6, @resident.course),
+                       {},
+                       { class: "form-select", required: true } %>
+        <% else %>
+          <%= f.select :course,
+                       options_for_select(1..6, @resident.course),
+                       {},
+                       { class: "form-select", disabled: true } %>
+          <div class="form-text"><%= t("views.dormitory.residents.course_immutable_hint") %></div>
+        <% end %>
+      </div>
+
+      <div class="mb-3">
         <%= f.label :date_of_birth, t("views.dormitory.residents.date_of_birth"), class: "form-label" %>
         <%= f.date_field :date_of_birth, required: true, class: "form-control" %>
       </div>
@@ -71,7 +87,7 @@
 
       <div class="mb-3">
         <%= f.label :photo, t("views.dormitory.residents.photo"), class: "form-label" %>
-        <%= f.file_field :photo, accept: "image/jpeg,image/png,image/webp", class: "form-control" %>
+        <%= f.file_field :photo, accept: "image/jpeg,image/png,image/webp", class: "form-control", data: { turbo_permanent: true } %>
         <div class="form-text"><%= t("views.dormitory.residents.photo_hint") %></div>
         <% if @resident.photo.attached? %>
           <div class="mt-2">

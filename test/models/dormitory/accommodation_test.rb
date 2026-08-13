@@ -892,5 +892,528 @@ module Dormitory
 
       assert_not acc.payment_overdue?
     end
+
+    # --- SPEC-DORM-12: pending registration with place issuance ---
+
+    test "do_register! happy path creates pending accommodation with bed and course snapshot" do
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert_difference -> { OutboxEvent.count }, 2 do
+        acc.do_register!
+      end
+
+      assert acc.persisted?
+      assert_equal "pending", acc.status
+      assert_equal "A", acc.bed_label
+      assert_equal @resident.course, acc.course
+      assert_equal "not_settled", @resident.reload.status
+      assert_nil @resident.current_room_id
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_register! with explicit bed label reserves it" do
+      acc = build_accommodation
+      attach_files(acc)
+
+      acc.do_register!(bed_label: "B")
+
+      assert_equal "B", acc.bed_label
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_register! blocks without files" do
+      acc = build_accommodation
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_register! }
+      assert_includes acc.errors[:base], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.base.files_required")
+    end
+
+    test "do_register! blocks when room course not allowed" do
+      @room.update!(allowed_courses: [ 5 ])
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_register! }
+      assert_includes acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.course_conflict")
+    end
+
+    test "do_register! blocks when room full" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 2, status: :fully_occupied)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_register! }
+      assert_includes acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.full")
+    end
+
+    test "do_register! with force allows full room" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 2, status: :fully_occupied)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+      acc.do_register!(force: true)
+
+      assert acc.persisted?
+      assert_equal "pending", acc.status
+      assert_nil acc.bed_label
+      assert_equal "overcrowded", room.reload.status
+    end
+
+    test "do_register! with force keeps an explicitly requested bed label on a full room" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 2, status: :fully_occupied)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+      acc.do_register!(force: true, bed_label: "B")
+
+      assert_equal "B", acc.bed_label
+      assert_equal "overcrowded", room.reload.status
+    end
+
+    test "do_register! with force errors when explicit bed label is taken" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 2, status: :fully_occupied)
+      Dormitory::Accommodation.create!(
+        resident: dormitory_residents(:resident_three_evicted),
+        room: room, course: 3, bed_label: "A",
+        application_number: "З-ЗАН", contract_number: "Д-ЗАН",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026),
+        status: :active
+      )
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_register!(force: true, bed_label: "A") }
+      assert_includes acc.errors[:bed_label], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.bed_label.taken_in_room")
+    end
+
+    test "do_register! with force into an already overcrowded room" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 3, status: :overcrowded)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+      acc.do_register!(force: true)
+
+      assert acc.persisted?
+      assert_equal "pending", acc.status
+      assert_equal 4, room.reload.current_occupancy
+      assert_equal "overcrowded", room.reload.status
+    end
+
+    test "do_settle! with force into an already overcrowded room" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 3, status: :overcrowded)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+      acc.do_settle!(force: true)
+
+      assert acc.persisted?
+      assert_equal "active", acc.status
+      assert_equal "settled", @resident.reload.status
+      assert_equal 4, room.reload.current_occupancy
+      assert_equal "overcrowded", room.reload.status
+    end
+
+    test "do_register! audit payload records the auto-assigned bed label" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      event = OutboxEvent.find_by(action: "dormitory.accommodation.created")
+      assert_equal "A", event.payload["bed_label"]
+    end
+
+    test "do_register! audit payload records an explicitly requested bed label" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!(bed_label: "B")
+
+      event = OutboxEvent.find_by(action: "dormitory.accommodation.created")
+      assert_equal "B", event.payload["bed_label"]
+    end
+
+    test "do_register! blocks when resident already has pending or active accommodation" do
+      Dormitory::Accommodation.create!(
+        resident: @resident, room: dormitory_rooms(:room_102), course: @resident.course,
+        application_number: "З-ПВ", contract_number: "Д-ПВ",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026),
+        status: :pending
+      )
+
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_register! }
+      assert_includes acc.errors[:resident], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.resident.pending_exists")
+    end
+
+    test "do_register! blocks with already_settled when resident has active accommodation" do
+      Dormitory::Accommodation.create!(
+        resident: @resident, room: dormitory_rooms(:room_102), course: @resident.course,
+        application_number: "З-АКТ", contract_number: "Д-АКТ",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026),
+        status: :active
+      )
+
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_register! }
+      assert_includes acc.errors[:resident], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.resident.already_settled")
+    end
+
+    test "do_settle! blocks with already_settled when resident has active accommodation" do
+      Dormitory::Accommodation.create!(
+        resident: @resident, room: dormitory_rooms(:room_102), course: @resident.course,
+        application_number: "З-АКТ2", contract_number: "Д-АКТ2",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026),
+        status: :active
+      )
+
+      acc = build_accommodation
+      attach_files(acc)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_settle! }
+      assert_includes acc.errors[:resident], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.resident.already_settled")
+    end
+
+    test "do_settle! allows a persisted accommodation without counting itself as active" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.save!
+
+      acc.do_settle!
+
+      assert_equal "active", acc.reload.status
+      assert_equal "settled", @resident.reload.status
+      assert_equal @room.id, @resident.current_room_id
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_confirm! activates accommodation and settles resident" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      assert_difference -> { OutboxEvent.count }, 1 do
+        acc.do_confirm!
+      end
+
+      assert_equal "active", acc.reload.status
+      assert_equal "settled", @resident.reload.status
+      assert_equal @room.id, @resident.current_room_id
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_confirm! blocks when not pending" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_settle!
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_confirm! }
+      assert_includes acc.errors[:status], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.status.not_pending")
+    end
+
+    test "do_confirm! re-checks pending status under the room lock against stale reads" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+      acc.update_column(:status, :active)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_confirm! }
+      assert_includes acc.errors[:status], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.status.not_pending")
+      assert_equal "active", acc.reload.status
+    end
+
+    test "do_confirm! blocks an overcrowded pending accommodation without force" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 2, status: :fully_occupied)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+      acc.do_register!(force: true)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_confirm! }
+      assert_includes acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.full")
+      assert_equal "pending", acc.reload.status
+      assert_equal "not_settled", @resident.reload.status
+    end
+
+    test "do_confirm! with force confirms an overcrowded pending accommodation" do
+      room = dormitory_rooms(:room_102)
+      room.update_columns(current_occupancy: 2, status: :fully_occupied)
+
+      acc = build_accommodation(room: room)
+      attach_files(acc)
+      acc.do_register!(force: true)
+
+      assert_difference -> { OutboxEvent.count }, 1 do
+        acc.do_confirm!(force: true)
+      end
+
+      assert_equal "active", acc.reload.status
+      assert_equal "settled", @resident.reload.status
+      assert_equal room.id, @resident.current_room_id
+      assert_equal 3, room.reload.current_occupancy
+    end
+
+    test "do_confirm! blocks on persistence failure without settling the resident" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      acc.update_column(:actual_end_date, Date.current)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_confirm! }
+      assert_equal "pending", acc.reload.status
+      assert_equal "not_settled", @resident.reload.status
+      assert_nil @resident.current_room_id
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_reject! cancels accommodation and releases place" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      assert_difference -> { OutboxEvent.count }, 2 do
+        acc.do_reject!
+      end
+
+      assert_equal "cancelled", acc.reload.status
+      assert_equal Date.current, acc.actual_end_date
+      assert_equal "not_settled", @resident.reload.status
+      assert_nil @resident.current_room_id
+      assert_equal 0, @room.reload.current_occupancy
+    end
+
+    test "do_reject! blocks when not pending" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_settle!
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_reject! }
+      assert_includes acc.errors[:status], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.status.not_pending")
+    end
+
+    test "do_reject! re-checks pending status under the room lock against stale reads" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+      acc.update_column(:status, :active)
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_reject! }
+      assert_includes acc.errors[:status], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.status.not_pending")
+      assert_equal "active", acc.reload.status
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_reject! blocks on validation failure without releasing the place" do
+      acc = build_accommodation(start_date: Date.current + 1.month)
+      attach_files(acc)
+      acc.do_register!
+
+      assert_raises(ActiveRecord::RecordInvalid) { acc.do_reject! }
+      assert_equal "pending", acc.reload.status
+      assert_equal 1, @room.reload.current_occupancy
+      assert_nil OutboxEvent.find_by(action: "dormitory.accommodation.rejected")
+    end
+
+    test "do_update_pending! changes room and re-reserves place" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      target_room = dormitory_rooms(:room_102)
+      acc.do_update_pending!({ room_id: target_room.id })
+
+      assert_equal target_room.id, acc.reload.room_id
+      assert_equal "A", acc.bed_label
+      assert_equal 0, @room.reload.current_occupancy
+      assert_equal 1, target_room.reload.current_occupancy
+    end
+
+    test "do_update_pending! audit payload records the new room_id when place moves" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      target_room = dormitory_rooms(:room_102)
+      acc.do_update_pending!({ room_id: target_room.id })
+
+      event = OutboxEvent.where(record: acc, action: "dormitory.accommodation.updated").first
+      assert event, "Expected dormitory.accommodation.updated OutboxEvent"
+      assert_equal target_room.id, event.payload["room_id"]
+    end
+
+    test "do_update_pending! keeps room when only bed_label changes within same room is rejected" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      acc.do_update_pending!({ bed_label: "B" })
+
+      assert_equal "B", acc.reload.bed_label
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_update_pending! preserves bed label when bed_label blank and room unchanged" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      acc.do_update_pending!({ comment: "обновление дат", bed_label: "" })
+
+      assert_equal "A", acc.reload.bed_label
+      assert_equal @room.id, acc.room_id
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_update_pending! never carries stale bed label into a new room" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      target_room = dormitory_rooms(:room_102)
+      acc.do_update_pending!({ room_id: target_room.id })
+
+      assert_equal target_room.id, acc.reload.room_id
+      assert_equal "A", acc.bed_label
+      assert_equal 0, @room.reload.current_occupancy
+      assert_equal 1, target_room.reload.current_occupancy
+    end
+
+    test "do_update_pending! rejects bed_label outside the new room range" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      target_room = dormitory_rooms(:room_102)
+      assert_raises(ActiveRecord::RecordInvalid) do
+        acc.do_update_pending!({ room_id: target_room.id, bed_label: "Z" })
+      end
+      assert_includes acc.errors[:bed_label], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.bed_label.invalid_for_room")
+    end
+
+    test "do_update_pending! rejects a taken bed_label in the same room" do
+      occupied = Dormitory::Accommodation.create!(
+        resident: dormitory_residents(:resident_two_settled), room: @room, course: 3,
+        application_number: "З-З1", contract_number: "Д-З1",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026),
+        status: :pending, bed_label: "A"
+      )
+
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!(bed_label: "B")
+
+      assert_raises(ActiveRecord::RecordInvalid) do
+        acc.do_update_pending!({ bed_label: "A" })
+      end
+      assert_includes acc.errors[:bed_label], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.bed_label.taken_in_room")
+    end
+
+    test "do_update_pending! blocks on gender conflict when changing room" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      target_room = dormitory_rooms(:room_102)
+      target_room.update_column(:gender_restriction, :female)
+
+      assert_raises(ActiveRecord::RecordInvalid) do
+        acc.do_update_pending!({ room_id: target_room.id })
+      end
+      assert_includes acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.gender_conflict")
+      assert_equal @room.id, acc.reload.room_id
+      assert_equal 1, @room.reload.current_occupancy
+      assert_equal 0, target_room.reload.current_occupancy
+    end
+
+    test "do_update_pending! with blank room raises a room error" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      assert_raises(ActiveRecord::RecordInvalid) do
+        acc.do_update_pending!({ room_id: "" })
+      end
+      assert acc.errors[:room].any?
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "do_update_pending! re-checks pending status under the room lock against stale reads" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+      acc.update_column(:status, :active)
+
+      assert_raises(ActiveRecord::RecordInvalid) do
+        acc.do_update_pending!({ comment: "не важно" })
+      end
+      assert_includes acc.errors[:status], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.status.not_pending")
+      assert_equal "active", acc.reload.status
+      assert_equal 1, @room.reload.current_occupancy
+    end
+
+    test "bed_label must exist in room range" do
+      acc = build_accommodation
+      acc.bed_label = "ZZ"
+      attach_files(acc)
+
+      assert_not acc.valid?
+      assert_includes acc.errors[:bed_label], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.bed_label.invalid_for_room")
+    end
+
+    test "bed_label must be unique among active/pending in room" do
+      first = build_accommodation
+      first.bed_label = "A"
+      attach_files(first)
+      first.do_register!
+
+      second = build_accommodation
+      second.bed_label = "A"
+      attach_files(second)
+
+      assert_not second.valid?
+      assert_includes second.errors[:bed_label], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.bed_label.taken_in_room")
+    end
+
+    test "course snapshot set from resident on create" do
+      acc = Accommodation.new(resident: @resident, room: @room)
+      acc.valid?
+      assert_equal @resident.course, acc.course
+    end
+
+    test "course is readonly after creation" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+
+      assert_raises(ActiveRecord::ReadonlyAttributeError) { acc.update!(course: 5) }
+    end
+
+    test "do_transfer! blocks when target room course not allowed" do
+      old_acc = create_settled_accommodation(room: @room)
+      target_room = dormitory_rooms(:room_102)
+      target_room.update!(allowed_courses: [ 5 ])
+
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      assert_raises(ActiveRecord::RecordInvalid) { old_acc.do_transfer!(new_acc) }
+      assert_includes old_acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.course_conflict")
+    end
   end
 end
