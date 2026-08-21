@@ -182,6 +182,18 @@ module Dormitory
       self
     end
 
+    # PURPOSE: Releases a pending accommodation reserved on a zero-occupancy room: cancels without decrementing the counter and recalibrates the room status
+    # SPECIFICATION: SPEC-DORM-12
+    def do_cancel_without_occupancy!
+      track_event("dormitory.accommodation.rejected",
+                  { resident_id: resident.id, room_id: room.id, room_number: room.number }) do
+        self.actual_end_date = Date.current
+        cancel!
+        recalculate_room_status!(room, "other")
+      end
+      self
+    end
+
     # PURPOSE: Updates a pending accommodation, releasing the old room and reserving a new one when the room changes
     # SPECIFICATION: SPEC-DORM-12
     def do_update_pending!(attrs, force: false)

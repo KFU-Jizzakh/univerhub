@@ -63,7 +63,12 @@
       <% end %>
       <div class="info-item">
         <span class="info-label"><%= t("views.shared.labels.status") %></span>
-        <span class="info-value"><%= status_badge(@resident.status) %></span>
+        <span class="info-value">
+          <%= status_badge(@resident.status) %>
+          <% if @resident.discarded? %>
+            <span class="status-badge status-badge--draft"><%= t("views.dormitory.residents.deleted") %></span>
+          <% end %>
+        </span>
       </div>
       <div class="info-item">
         <span class="info-label"><%= t("views.shared.labels.created") %></span>
@@ -203,25 +208,27 @@
 <%= render_audit_trail(@audit_events) %>
 
 <div class="d-flex flex-wrap gap-2 my-3">
-  <% if @resident.not_settled? && policy(Dormitory::Accommodation).new? %>
-    <%= link_to t("views.dormitory.accommodations.settle_button"), new_dormitory_accommodation_path(resident_id: @resident.id), class: "btn btn-success" %>
-  <% end %>
-  <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_transfer? %>
-    <%= link_to t("views.dormitory.accommodations.transfer_button"), new_transfer_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-warning" %>
-  <% end %>
-  <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_eviction? %>
-    <%= link_to t("views.dormitory.accommodations.evict_button"), new_eviction_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-danger" %>
-  <% end %>
-  <% if policy(Dormitory::Violation).new? %>
-    <%= link_to t("views.dormitory.violations.add_violation"), new_dormitory_violation_path(resident_id: @resident.id), class: "btn btn-outline-danger" %>
-  <% end %>
-  <% if policy(@resident).edit? %>
-    <%= link_to t("views.shared.actions.edit"), edit_dormitory_resident_path(@resident), class: "btn btn-outline-secondary" %>
-  <% end %>
-  <% if policy(@resident).destroy? %>
-    <%= button_to t("views.shared.actions.delete"), dormitory_resident_path(@resident), method: :delete,
-                  data: { turbo_confirm: t("views.dormitory.residents.confirm_delete", name: @resident.full_name) },
-                  class: "btn btn-outline-danger" %>
+  <% unless @resident.discarded? %>
+    <% if @resident.not_settled? && policy(Dormitory::Accommodation).new? %>
+      <%= link_to t("views.dormitory.accommodations.settle_button"), new_dormitory_accommodation_path(resident_id: @resident.id), class: "btn btn-success" %>
+    <% end %>
+    <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_transfer? %>
+      <%= link_to t("views.dormitory.accommodations.transfer_button"), new_transfer_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-warning" %>
+    <% end %>
+    <% if (@resident.settled? || @resident.temporarily_absent?) && @resident.active_accommodation.present? && policy(@resident.active_accommodation).new_eviction? %>
+      <%= link_to t("views.dormitory.accommodations.evict_button"), new_eviction_dormitory_accommodation_path(@resident.active_accommodation), class: "btn btn-danger" %>
+    <% end %>
+    <% if policy(Dormitory::Violation).new? %>
+      <%= link_to t("views.dormitory.violations.add_violation"), new_dormitory_violation_path(resident_id: @resident.id), class: "btn btn-outline-danger" %>
+    <% end %>
+    <% if policy(@resident).edit? %>
+      <%= link_to t("views.shared.actions.edit"), edit_dormitory_resident_path(@resident), class: "btn btn-outline-secondary" %>
+    <% end %>
+    <% if policy(@resident).destroy? %>
+      <%= button_to t("views.shared.actions.delete"), dormitory_resident_path(@resident), method: :delete,
+                    data: { turbo_confirm: t("views.dormitory.residents.confirm_delete", name: @resident.full_name) },
+                    class: "btn btn-outline-danger" %>
+    <% end %>
   <% end %>
   <%= link_to t("views.shared.actions.back"), dormitory_residents_path, class: "btn btn-outline-secondary" %>
 </div>

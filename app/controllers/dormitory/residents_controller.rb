@@ -91,10 +91,12 @@ module Dormitory
 
     def destroy
       authorize @resident
+      already_discarded = @resident.discarded?
       @resident.do_discard!
-      redirect_to dormitory_residents_path, notice: t("dormitory.residents.destroyed")
-    rescue ActiveRecord::RecordInvalid
-      redirect_to @resident, alert: @resident.errors.full_messages.join(", ")
+      notice = already_discarded ? nil : t("dormitory.residents.destroyed")
+      redirect_to dormitory_residents_path, notice: notice
+    rescue ActiveRecord::RecordInvalid => e
+      redirect_to @resident, alert: e.record.errors.full_messages.join(", ")
     end
 
     def check_ticket

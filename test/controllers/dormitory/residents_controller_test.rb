@@ -353,6 +353,83 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "destroy already discarded resident redirects without error" do
+    sign_in_as @admin
+    @resident.discard!
+
+    delete dormitory_resident_path(@resident)
+    assert_redirected_to dormitory_residents_path
+    assert_nil flash[:notice]
+  end
+
+  test "show discarded resident renders deleted badge without action buttons" do
+    sign_in_as @admin
+    @resident.discard!
+
+    get dormitory_resident_path(@resident)
+    assert_response :success
+    assert_select ".status-badge", text: "Удалён"
+    assert_select "a", text: "Изменить", count: 0
+    assert_select "button", text: "Удалить", count: 0
+    assert_select "a", text: "Заселить", count: 0
+  end
+
+  test "update discarded resident is denied" do
+    sign_in_as @admin
+    @resident.discard!
+
+    patch dormitory_resident_path(@resident), params: {
+      dormitory_resident: { phone: "+79111111111" }
+    }
+    assert_redirected_to root_path
+    assert_equal "+79001234567", @resident.reload.phone
+  end
+
+  test "destroy resident with pending accommodation releases the reserved place" do
+    sign_in_as @dormitory_admin
+    room = dormitory_rooms(:room_101)
+    acc = Dormitory::Accommodation.create!(
+      resident: @resident, room: room, course: @resident.course,
+      application_number: "З-КН", contract_number: "Д-КН",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    room.update!(current_occupancy: 1)
+    room.update_column(:status, "partially_occupied")
+
+    assert_difference "Dormitory::Resident.kept.count", -1 do
+      delete dormitory_resident_path(@resident)
+    end
+
+    assert_redirected_to dormitory_residents_path
+    assert @resident.reload.discarded?
+    assert acc.reload.cancelled?
+    assert_equal 0, room.reload.current_occupancy
+    assert_equal "free", room.status
+  end
+
+  test "destroy shows accommodation error when pending release fails" do
+    sign_in_as @admin
+    room = dormitory_rooms(:room_101)
+    Dormitory::Accommodation.create!(
+      resident: @resident, room: room, course: @resident.course,
+      application_number: "З-СБ", contract_number: "Д-СБ",
+      start_date: Date.current + 1.day, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    room.update!(current_occupancy: 1)
+    room.update_column(:status, "partially_occupied")
+
+    delete dormitory_resident_path(@resident)
+
+    assert_redirected_to dormitory_resident_path(@resident)
+    assert flash[:alert].present?
+    assert_not @resident.reload.discarded?
+    assert_equal 1, room.reload.current_occupancy
+  end
+
   test "destroy settled resident fails" do
     sign_in_as @admin
     assert_no_difference "Dormitory::Resident.kept.count" do

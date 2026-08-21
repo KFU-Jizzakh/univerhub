@@ -129,6 +129,13 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert policy(@registrar, @resident_building_one).update?
   end
 
+  test "update? denied for discarded resident" do
+    @resident_building_one.discard!
+
+    assert_not policy(@admin, @resident_building_one).update?
+    assert_not policy(@admin, @resident_building_one).edit?
+  end
+
   # destroy?
   test "destroy? allowed for admin" do
     assert policy(@admin, @resident_building_one).destroy?

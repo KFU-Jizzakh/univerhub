@@ -259,6 +259,142 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordInvalid) { resident.do_discard! }
   end
 
+  test "do_discard! is idempotent for already discarded resident" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.discard!
+
+    assert_no_difference "OutboxEvent.count" do
+      assert resident.do_discard!
+    end
+    assert resident.reload.discarded?
+  end
+
+  test "do_discard! rejects pending accommodation and releases the reserved place" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    room = dormitory_rooms(:room_101)
+    acc = Dormitory::Accommodation.create!(
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-ПН", contract_number: "Д-ПН",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    room.update!(current_occupancy: 1)
+    room.update_column(:status, "partially_occupied")
+
+    assert_difference "Dormitory::Accommodation.kept.where(status: :pending).count", -1 do
+      resident.do_discard!
+    end
+
+    assert resident.reload.discarded?
+    assert acc.reload.cancelled?
+    assert_equal 0, room.reload.current_occupancy
+    assert_equal "free", room.status
+  end
+
+  test "do_discard! cancels pending accommodation when its room is discarded" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    room = dormitory_rooms(:room_101)
+    acc = Dormitory::Accommodation.create!(
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-КМ", contract_number: "Д-КМ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    room.discard!
+
+    assert_difference "OutboxEvent.count", 2 do
+      assert resident.do_discard!
+    end
+
+    assert resident.reload.discarded?
+    assert acc.reload.cancelled?
+    assert_equal "dormitory.accommodation.rejected", OutboxEvent.order(:id).second_to_last.action
+  end
+
+  test "do_discard! succeeds when pending accommodation was concurrently cancelled" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    room = dormitory_rooms(:room_101)
+    acc = Dormitory::Accommodation.create!(
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-КОН", contract_number: "Д-КОН",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    acc.update_columns(status: "cancelled", actual_end_date: Date.current)
+
+    assert resident.do_discard!
+    assert resident.reload.discarded?
+  end
+
+  test "do_discard! recalibrates room status after releasing a zero-occupancy room reservation" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    room = dormitory_rooms(:room_101)
+    acc = Dormitory::Accommodation.create!(
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-КАЛ", contract_number: "Д-КАЛ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    room.update_column(:status, "partially_occupied")
+
+    assert_difference "OutboxEvent.count", 3 do
+      resident.do_discard!
+    end
+
+    assert resident.reload.discarded?
+    assert acc.reload.cancelled?
+    assert_equal 0, room.reload.current_occupancy
+    assert_equal "free", room.status
+  end
+
+  test "do_discard! skips audit event when resident was discarded concurrently" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    discarded_checks = 0
+    resident.define_singleton_method(:discarded?) { (discarded_checks += 1) > 1 }
+
+    assert_no_difference "OutboxEvent.count" do
+      assert resident.do_discard!
+    end
+
+    assert_nil resident.reload.discarded_at
+  end
+
+  test "do_discard! raises when pending accommodation release fails" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    room = dormitory_rooms(:room_101)
+    Dormitory::Accommodation.create!(
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-ОШБ", contract_number: "Д-ОШБ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:active_year_2025_2026),
+      status: :pending, bed_label: "A"
+    )
+    room.update!(current_occupancy: 1)
+    room.update_column(:status, "partially_occupied")
+
+    Dormitory::Accommodation.class_eval do
+      alias_method :__original_do_reject, :do_reject!
+      def do_reject!
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+    end
+
+    assert_no_difference "OutboxEvent.count" do
+      assert_raises(ActiveRecord::RecordInvalid) { resident.do_discard! }
+    end
+    assert_not resident.reload.discarded?
+    assert_equal 1, room.reload.current_occupancy
+  ensure
+    Dormitory::Accommodation.class_eval do
+      alias_method :do_reject!, :__original_do_reject
+      remove_method :__original_do_reject
+    end
+  end
+
   test "kept scope excludes discarded" do
     resident = dormitory_residents(:resident_one_not_settled)
     resident.discard!

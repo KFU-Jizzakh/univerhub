@@ -60,13 +60,37 @@ module Dormitory
       track_event("dormitory.resident.updated") { update!(attrs) }
     end
 
+    # PURPOSE: Soft-deletes the resident, rejecting pending accommodations first so reserved beds and room occupancy are released; serialized via room and resident locks, idempotent for already discarded records
+    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     def do_discard!
-      if settled? || temporarily_absent?
-        errors.add(:status, :cannot_delete_settled)
-        raise ActiveRecord::RecordInvalid.new(self)
-      end
+      return true if discarded?
 
-      track_event("dormitory.resident.discarded") { discard! }
+      validate_discardable!
+
+      track_event("dormitory.resident.discarded") do
+        pending_room_ids = accommodations.kept.where(status: :pending).distinct.pluck(:room_id).sort
+        Dormitory::Room.where(id: pending_room_ids).lock.pluck(:id) if pending_room_ids.any?
+        lock!
+
+        if discarded?
+          false
+        else
+          validate_discardable!
+          accommodations.kept.where(status: :pending).each do |acc|
+            acc.reload
+            next if acc.cancelled?
+
+            if acc.room.current_occupancy.zero?
+              acc.do_cancel_without_occupancy!
+            else
+              acc.do_reject!
+            end
+          end
+          discard!
+          true
+        end
+      end
+      true
     end
 
     # PURPOSE: Copies prepared application/contract documents (numbers and files) into the accommodation, only on the first settlement of the resident
@@ -86,6 +110,13 @@ module Dormitory
     end
 
     private
+
+    def validate_discardable!
+      if settled? || temporarily_absent?
+        errors.add(:status, :cannot_delete_settled)
+        raise ActiveRecord::RecordInvalid.new(self)
+      end
+    end
 
     def date_of_birth_not_in_future
       return unless date_of_birth

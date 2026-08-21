@@ -25,6 +25,8 @@ module Dormitory
     end
 
     def update?
+      return false if record.discarded?
+
       admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end
 

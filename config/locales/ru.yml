@@ -965,6 +965,7 @@ ru:
         phone: Телефон
         no_residents: Нет проживающих
         confirm_delete: Удалить проживающего «%{name}»?
+        deleted: Удалён
         gender_immutable_hint: Нельзя изменить пол заселённого проживающего
         batch_eviction: Массовое выселение
         course: Курс
