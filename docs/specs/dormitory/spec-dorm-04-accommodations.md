@@ -33,6 +33,7 @@ Status: IMPLEMENTED
 - AC-23: The accommodation list is filterable by building, academic year, and status
 - AC-24: A registrar (`dormitory.registrar`) has read-only access to accommodations (index and show); settle, transfer, evict, force-settle, and batch operations are denied
 - AC-25: The settlement form prefills application/contract numbers and files from the resident's prepared documents (see SPEC-DORM-03); files uploaded in the form take precedence; if the resident has no documents the form works as before (documents remain required at settlement)
+- AC-26: Discarding an accommodation (model-level `do_discard!`, no UI) reconciles the room and resident state so discarded records never leave phantom occupancy, stuck residents, or reserved beds behind
 
 ## UI/UX Notes
 
@@ -61,6 +62,11 @@ Status: IMPLEMENTED
 - BR-13: Overdue accommodations: active accommodations where the planned end date has passed
 - BR-14: Transfer operations lock both the source and destination rooms to prevent concurrent conflicts
 - BR-15: At settlement, blank numbers and missing files are copied from the resident's prepared documents (if present); values already provided in the settlement form are never overwritten. This copying happens only on the resident's first settlement — if the resident already has any accommodation records, the settlement form is filled manually
+- BR-16: Discarding an `active` accommodation behaves like a full eviction: the accommodation is completed with `actual_end_date` = today and `eviction_reason` "other" (comment gets "discarded" appended to the existing comment, or set when blank), room occupancy is decremented, room status recalculated, the resident becomes `evicted` with `current_room` cleared; only then the record is discarded
+- BR-17: Discarding a `pending` accommodation behaves like a rejection: the accommodation is cancelled, the reserved place is released (occupancy decremented and room status recalculated, or no decrement when the room occupancy is already zero), the resident stays `not_settled`; only then the record is discarded
+- BR-18: Discarding a `completed` or `cancelled` accommodation performs no state reconciliation — the record is just discarded
+- BR-19: `do_discard!` is idempotent (a discarded record returns without effects) and atomic (a validation failure changes nothing and records no events)
+- BR-20: Discarding an `active` accommodation whose resident is not settled or temporarily absent fails with a validation error and changes nothing
 ## Behavior
 
 ### Background
@@ -162,6 +168,63 @@ Given Ivan's accommodation is active with planned end date 30 days ago
 When viewing the accommodations list
 Then the row is highlighted with warning styling
 And an overdue indicator is shown
+
+### Rule: Discard (AC-26, BR-16, BR-17, BR-18, BR-19, BR-20)
+
+#### Scenario: Discard active accommodation — full eviction equivalent
+
+Given Ivan is settled in room 101 (active accommodation)
+When the accommodation is discarded
+Then the accommodation is completed with actual end date today and eviction reason "other"
+And the accommodation comment contains "discarded"
+And room 101 occupancy decreases by 1 and the room status is recalculated
+And the resident becomes "evicted" with current room cleared
+And the accommodation is discarded (hidden from all lists)
+And the eviction and the discard are recorded in the audit log
+
+#### Scenario: Discard active accommodation of a temporarily absent resident
+
+Given Ivan is settled in room 101 and temporarily absent
+When the accommodation is discarded
+Then the accommodation is completed and discarded
+And the resident becomes "evicted" with current room cleared
+And room 101 occupancy decreases by 1
+
+#### Scenario: Discard active accommodation of a non-settled resident fails
+
+Given an active accommodation whose resident is not settled or temporarily absent
+When the accommodation is discarded
+Then a validation error is raised
+And the accommodation is not discarded and stays active
+And room occupancy does not change
+
+#### Scenario: Discard pending accommodation — rejection equivalent
+
+Given Ivan has a pending accommodation reserving a bed in room 101 (occupancy 1)
+When the accommodation is discarded
+Then the accommodation is cancelled and discarded
+And room 101 occupancy decreases by 1 and the room status is recalculated
+And the resident stays "not_settled"
+
+#### Scenario: Discard pending accommodation on a zero-occupancy room
+
+Given a pending accommodation whose room has occupancy 0
+When the accommodation is discarded
+Then the accommodation is cancelled and discarded
+And the room occupancy stays 0
+
+#### Scenario: Discard completed or cancelled accommodation
+
+Given an accommodation already completed
+When the accommodation is discarded
+Then the accommodation is discarded
+And room occupancy and resident status do not change
+
+#### Scenario: Discard is idempotent
+
+Given an already discarded accommodation
+When it is discarded again
+Then no error is raised and no new audit events are recorded
 
 ## Extension notes (SPEC-DORM-12)
 

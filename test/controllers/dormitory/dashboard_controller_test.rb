@@ -69,4 +69,34 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".card-header", text: "Долг по корпусам"
   end
+
+  test "dashboard excludes discarded accommodations from overdue list" do
+    acc = dormitory_accommodations(:active_accommodation)
+    acc.update_columns(planned_end_date: Date.current - 1.day)
+
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+    assert_includes @response.body, acc.resident.full_name
+
+    acc.update_columns(discarded_at: Time.current)
+    get dormitory_dashboard_path
+    assert_response :success
+    assert_not_includes @response.body, acc.resident.full_name
+  end
+
+  test "dashboard excludes discarded accommodations from debt calculation" do
+    acc = dormitory_accommodations(:active_accommodation)
+    acc.update!(required_amount: 10000)
+
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+    assert_select ".card-header", text: "Долг по корпусам", count: 1
+
+    acc.update_columns(discarded_at: Time.current)
+    get dormitory_dashboard_path
+    assert_response :success
+    assert_select ".card-header", text: "Долг по корпусам", count: 0
+  end
 end

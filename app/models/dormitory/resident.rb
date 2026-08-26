@@ -10,7 +10,7 @@ module Dormitory
     belongs_to :current_room, class_name: "Dormitory::Room", optional: true
 
     has_many :accommodations, class_name: "Dormitory::Accommodation", dependent: :restrict_with_error
-    has_one :active_accommodation, -> { where(status: :active) }, class_name: "Dormitory::Accommodation"
+    has_one :active_accommodation, -> { kept.where(status: :active) }, class_name: "Dormitory::Accommodation"
     has_many :violations, class_name: "Dormitory::Violation", dependent: :restrict_with_error
     has_one_attached :photo
     has_one_attached :application_file
@@ -95,7 +95,7 @@ module Dormitory
 
     # PURPOSE: Copies prepared application/contract documents (numbers and files) into the accommodation, only on the first settlement of the resident
     def copy_documents_to(accommodation)
-      return unless accommodations.none?
+      return unless accommodations.kept.none?
 
       accommodation.application_number = application_number if accommodation.application_number.blank?
       accommodation.contract_number = contract_number if accommodation.contract_number.blank?

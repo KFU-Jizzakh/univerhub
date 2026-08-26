@@ -64,7 +64,7 @@ module Dormitory
     def do_close!
       raise ActiveRecord::RecordInvalid, self unless active?
 
-      if accommodations.active.exists?
+      if accommodations.kept.active.exists?
         errors.add(:base, :has_active_accommodations)
         raise ActiveRecord::RecordInvalid, self
       end

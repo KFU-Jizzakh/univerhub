@@ -20,7 +20,7 @@ module Dormitory
 
     def show
       authorize @room
-      @active_accommodations = @room.accommodations.where(status: %w[active pending]).includes(:resident)
+      @active_accommodations = @room.accommodations.kept.where(status: %w[active pending]).includes(:resident)
       @audit_events = OutboxEvent.where(record: @room).order(:created_at).includes(:actor)
       @acc_events_by = OutboxEvent.where(record: @active_accommodations).includes(:actor)
         .group_by { |e| [ e.record_id, e.action ] }

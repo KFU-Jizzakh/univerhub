@@ -134,6 +134,33 @@ module Dormitory
       acc&.destroy!
     end
 
+    test "do_close! ignores discarded active accommodations" do
+      year = AcademicYear.create!(
+        name: "WithDiscardedAcc", start_date: Date.current,
+        end_date: Date.current + 1.year, status: :active
+      )
+      resident = dormitory_residents(:resident_one_not_settled)
+      room = dormitory_rooms(:room_101)
+      acc = Accommodation.create!(
+        resident: resident,
+        room: room,
+        academic_year: year,
+        application_number: "TESTD",
+        contract_number: "TESTD",
+        start_date: Date.current,
+        planned_end_date: Date.current + 1.month,
+        status: :active
+      )
+      acc.discard!
+
+      assert_difference -> { OutboxEvent.count }, 1 do
+        year.do_close!
+      end
+      assert year.closed?
+    ensure
+      acc&.destroy!
+    end
+
     test "do_close! succeeds when all accommodations are completed" do
       year = AcademicYear.create!(
         name: "CompletedAcc", start_date: Date.current,

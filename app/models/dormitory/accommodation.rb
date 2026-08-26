@@ -312,6 +312,34 @@ module Dormitory
       self.bed_label = nil if force && bed_label.blank? && room.free_bed_labels.none?
     end
 
+    # PURPOSE: Soft-deletes the accommodation, reconciling room and resident state first: active becomes a full eviction equivalent, pending a rejection equivalent; serialized via room and resident locks, idempotent for already discarded records
+    # SPECIFICATION: SPEC-DORM-04
+    def do_discard!
+      return true if discarded?
+
+      track_event("dormitory.accommodation.discarded",
+                  -> { { resident_id: resident_id, room_id: room_id, room_number: room.number, bed_label: bed_label } }) do
+        room.with_lock do
+          resident.lock!
+          reload
+
+          if discarded?
+            false
+          else
+            if active?
+              do_evict!(eviction_reason: "other",
+                         comment: [ comment, "discarded" ].compact_blank.join("; "))
+            elsif pending?
+              room.current_occupancy.zero? ? do_cancel_without_occupancy! : do_reject!
+            end
+            discard!
+            true
+          end
+        end
+      end
+      true
+    end
+
     private
 
     def validate_eviction_preconditions!
@@ -629,7 +657,7 @@ module Dormitory
     def renewal_source_must_be_completed
       return unless renewal_source_id.present?
 
-      source = Dormitory::Accommodation.find_by(id: renewal_source_id)
+      source = Dormitory::Accommodation.kept.find_by(id: renewal_source_id)
       return unless source && !source.completed?
 
       errors.add(:renewal_source_id, :must_be_completed)

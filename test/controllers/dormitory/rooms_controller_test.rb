@@ -80,6 +80,16 @@ class Dormitory::RoomsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "show excludes discarded accommodations from room list" do
+    acc = dormitory_accommodations(:active_accommodation)
+    acc.discard!
+
+    sign_in_as @admin
+    get dormitory_room_path(dormitory_rooms(:room_201))
+    assert_response :success
+    assert_not_includes @response.body, acc.resident.full_name
+  end
+
   test "new renders" do
     sign_in_as @admin
     get new_dormitory_room_path

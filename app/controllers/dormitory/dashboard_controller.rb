@@ -39,7 +39,7 @@ module Dormitory
 
       @overcrowded_rooms = @rooms.where("current_occupancy > capacity").includes(:building)
 
-      @overdue_accommodations = Dormitory::Accommodation.overdue
+      @overdue_accommodations = Dormitory::Accommodation.kept.overdue
         .where(room: @rooms)
         .includes(:resident, room: :building)
         .order("dormitory_rooms.building_id, dormitory_rooms.number")
@@ -69,7 +69,7 @@ module Dormitory
         building_ids = @buildings_scope.ids
         room_ids = @rooms.ids
         resident_ids = @residents.ids
-        accommodation_ids = Dormitory::Accommodation.where(room_id: room_ids).ids
+        accommodation_ids = Dormitory::Accommodation.kept.where(room_id: room_ids).ids
         violation_ids = Dormitory::Violation.joins(:resident)
           .left_joins(resident: :current_room)
           .where("dormitory_residents.current_room_id IS NULL OR dormitory_rooms.building_id IN (?)", building_ids)
@@ -92,7 +92,7 @@ module Dormitory
 
     def compute_debt_by_building
       result = {}
-      active_accommodations = Dormitory::Accommodation.active
+      active_accommodations = Dormitory::Accommodation.kept.active
         .where(room: @rooms)
         .includes(:receipts, room: :building)
 

@@ -162,7 +162,7 @@ module ApplicationHelper
     when "dormitory.building.created", "dormitory.building.updated", "dormitory.building.discarded" then "building"
     when "dormitory.room.created", "dormitory.room.updated", "dormitory.room.discarded" then "door-open"
     when "dormitory.resident.created", "dormitory.resident.updated", "dormitory.resident.discarded" then "person"
-    when "dormitory.accommodation.created", "dormitory.accommodation.updated", "dormitory.accommodation.transferred", "dormitory.accommodation.evicted" then "house-door"
+    when "dormitory.accommodation.created", "dormitory.accommodation.updated", "dormitory.accommodation.transferred", "dormitory.accommodation.evicted", "dormitory.accommodation.discarded" then "house-door"
     when "dormitory.commandant_building.created", "dormitory.commandant_building.updated", "dormitory.commandant_building.deactivated", "dormitory.commandant_building.destroyed" then "key"
     when "dormitory.academic_year.created", "dormitory.academic_year.updated", "dormitory.academic_year.activated", "dormitory.academic_year.closed" then "calendar3"
     when "user_profile.created", "user_profile.updated" then "person-badge"

@@ -204,6 +204,15 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert_not dormitory_residents(:resident_two_settled).course_editable?
   end
 
+  test "active_accommodation excludes discarded accommodations" do
+    resident = dormitory_residents(:resident_two_settled)
+    acc = resident.active_accommodation
+    assert_not_nil acc
+
+    acc.discard!
+    assert_nil resident.reload.active_accommodation
+  end
+
   test "full_name concatenates names" do
     resident = dormitory_residents(:resident_one_not_settled)
     assert_equal "Иванов Иван Иванович", resident.full_name
@@ -586,6 +595,29 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert_nil accommodation.application_number
     assert_nil accommodation.contract_number
     assert_not accommodation.application_file.attached?
+  end
+
+  test "copy_documents_to copies documents when resident has only discarded accommodations" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.update!(application_number: "З-100", contract_number: "Д-100")
+    resident.application_file.attach(
+      io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+    )
+    Dormitory::Accommodation.create!(
+      resident: resident,
+      room: dormitory_rooms(:room_101),
+      application_number: "З-OLD",
+      contract_number: "Д-OLD",
+      start_date: Date.current,
+      planned_end_date: Date.current + 1.year
+    ).discard!
+
+    accommodation = Dormitory::Accommodation.new(resident: resident)
+    resident.copy_documents_to(accommodation)
+
+    assert_equal "З-100", accommodation.application_number
+    assert_equal "Д-100", accommodation.contract_number
+    assert accommodation.application_file.attached?
   end
 
   test "course defaults to 1" do

@@ -1405,6 +1405,19 @@ module Dormitory
       assert_raises(ActiveRecord::ReadonlyAttributeError) { acc.update!(course: 5) }
     end
 
+    test "renewal_source validation ignores discarded source accommodation" do
+      source = build_accommodation(application_number: "З-SRC", contract_number: "Д-SRC")
+      attach_files(source)
+      source.save!
+      source.discard!
+
+      acc = build_accommodation(application_number: "З-NEW", contract_number: "Д-NEW", renewal_source_id: source.id)
+      attach_files(acc)
+
+      assert acc.valid?
+      assert_not_predicate acc.errors[:renewal_source_id], :any?
+    end
+
     test "do_transfer! blocks when target room course not allowed" do
       old_acc = create_settled_accommodation(room: @room)
       target_room = dormitory_rooms(:room_102)
@@ -1414,6 +1427,129 @@ module Dormitory
 
       assert_raises(ActiveRecord::RecordInvalid) { old_acc.do_transfer!(new_acc) }
       assert_includes old_acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.course_conflict")
+    end
+
+    # --- do_discard! ---
+
+    test "do_discard! on active — full eviction equivalent" do
+      old_acc = create_settled_for_eviction(room: @room, occupancy: 1, status: :partially_occupied)
+
+      assert_difference -> { OutboxEvent.count }, 3 do
+        old_acc.do_discard!
+      end
+
+      old_acc.reload
+      assert old_acc.discarded?
+      assert_equal "completed", old_acc.status
+      assert_equal "other", old_acc.eviction_reason
+      assert_equal Date.current, old_acc.actual_end_date
+      assert_equal "discarded", old_acc.comment
+
+      assert_equal 0, @room.reload.current_occupancy
+      assert_equal "free", @room.status
+
+      assert_equal "evicted", @resident.reload.status
+      assert_nil @resident.current_room_id
+
+      event = OutboxEvent.find_by(record: old_acc, action: "dormitory.accommodation.discarded")
+      assert_equal @resident.id, event.payload["resident_id"]
+      assert_equal @room.id, event.payload["room_id"]
+    end
+
+    test "do_discard! on active keeps existing comment and appends marker" do
+      old_acc = create_settled_for_eviction(room: @room, occupancy: 1, status: :partially_occupied)
+      old_acc.update_column(:comment, "Старый комментарий")
+
+      old_acc.do_discard!
+
+      assert_equal "Старый комментарий; discarded", old_acc.reload.comment
+    end
+
+    test "do_discard! on active works for temporarily absent resident" do
+      old_acc = create_settled_for_eviction(room: @room, occupancy: 1, status: :partially_occupied)
+      @resident.update!(status: :temporarily_absent)
+
+      old_acc.do_discard!
+
+      assert old_acc.reload.discarded?
+      assert_equal "completed", old_acc.status
+      assert_equal "evicted", @resident.reload.status
+      assert_nil @resident.current_room_id
+      assert_equal 0, @room.reload.current_occupancy
+    end
+
+    test "do_discard! on active blocks when resident not settled and changes nothing" do
+      old_acc = Accommodation.create!(
+        resident: @resident, room: @room,
+        application_number: "З-DC", contract_number: "Д-DC",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026)
+      )
+      @room.update_columns(current_occupancy: 1, status: :partially_occupied)
+
+      assert_raises(ActiveRecord::RecordInvalid) { old_acc.do_discard! }
+
+      old_acc.reload
+      assert_not old_acc.discarded?
+      assert_equal "active", old_acc.status
+      assert_equal 1, @room.reload.current_occupancy
+      assert_equal "not_settled", @resident.reload.status
+      assert_nil OutboxEvent.find_by(record: old_acc, action: "dormitory.accommodation.discarded")
+    end
+
+    test "do_discard! on pending releases the reserved place" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+      assert_equal 1, @room.reload.current_occupancy
+
+      acc.do_discard!
+
+      acc.reload
+      assert acc.discarded?
+      assert_equal "cancelled", acc.status
+      assert_equal 0, @room.reload.current_occupancy
+      assert_equal "free", @room.status
+      assert_equal "not_settled", @resident.reload.status
+      assert_nil @resident.current_room_id
+    end
+
+    test "do_discard! on pending with zero occupancy room does not go negative" do
+      acc = build_accommodation
+      attach_files(acc)
+      acc.do_register!
+      @room.update_columns(current_occupancy: 0, status: :free)
+
+      acc.do_discard!
+
+      acc.reload
+      assert acc.discarded?
+      assert_equal "cancelled", acc.status
+      assert_equal 0, @room.reload.current_occupancy
+      assert_equal "not_settled", @resident.reload.status
+    end
+
+    test "do_discard! on completed accommodation is a plain discard" do
+      old_acc = create_settled_for_eviction(room: @room, occupancy: 1, status: :partially_occupied)
+      old_acc.update_columns(actual_end_date: Date.current, status: "completed")
+
+      assert_difference -> { OutboxEvent.count }, 1 do
+        old_acc.do_discard!
+      end
+
+      assert old_acc.reload.discarded?
+      assert_equal "completed", old_acc.status
+      assert_equal 1, @room.reload.current_occupancy
+      assert_equal "settled", @resident.reload.status
+    end
+
+    test "do_discard! is idempotent" do
+      old_acc = create_settled_for_eviction(room: @room, occupancy: 1, status: :partially_occupied)
+      old_acc.do_discard!
+
+      assert_no_difference -> { OutboxEvent.count } do
+        assert old_acc.do_discard!
+      end
     end
   end
 end
