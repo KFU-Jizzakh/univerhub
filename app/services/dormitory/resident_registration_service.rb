@@ -9,9 +9,9 @@ module Dormitory
     end
 
     # Returns :created (no placement) or :pending (pending accommodation created)
-    def call(resident_params:, place: false, manual_room_id: nil, manual_bed_label: nil,
+    def call(resident: nil, resident_params:, place: false, manual_room_id: nil, manual_bed_label: nil,
              start_date: nil, planned_end_date: nil, required_amount: nil, receipt_params: {})
-      @resident = Dormitory::Resident.new(resident_params)
+      @resident = resident || Dormitory::Resident.new(resident_params)
       @resident.validate!
 
       unless place

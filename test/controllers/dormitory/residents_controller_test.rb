@@ -508,6 +508,39 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("dormitory.residents.registered_with_place", room_number: room.number, bed_label: "B"), flash[:notice]
   end
 
+  test "create with placement does not leak unattached document blobs" do
+    sign_in_as @admin
+    room = dormitory_rooms(:room_201)
+
+    assert_no_difference "ActiveStorage::Blob.unattached.count" do
+      post dormitory_residents_path, params: {
+        dormitory_resident: {
+          last_name: "Новый", first_name: "БезДублей", gender: "male", course: "1",
+          date_of_birth: "2000-01-01", student_ticket_number: "NODUPBLOB1",
+          application_number: "З-Д1", contract_number: "Д-Д1",
+          application_file: Rack::Test::UploadedFile.new(
+            Rails.root.join("test/fixtures/files/test.pdf"), "application/pdf"
+          ),
+          contract_file: Rack::Test::UploadedFile.new(
+            Rails.root.join("test/fixtures/files/test.pdf"), "application/pdf"
+          )
+        },
+        placement: {
+          place: "1",
+          room_id: room.id,
+          bed_label: "B"
+        }
+      }
+    end
+
+    resident = Dormitory::Resident.find_by(student_ticket_number: "NODUPBLOB1")
+    assert resident.application_file.attached?
+    assert resident.contract_file.attached?
+    acc = resident.accommodations.kept.last
+    assert acc.application_file.attached?
+    assert acc.contract_file.attached?
+  end
+
   test "commandant selects room and bed manually during registration" do
     sign_in_as @commandant
     post dormitory_residents_path, params: {

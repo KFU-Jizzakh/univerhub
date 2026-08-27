@@ -50,6 +50,7 @@ module Dormitory
 
       service = Dormitory::ResidentRegistrationService.new(room_scope: policy_scope(Dormitory::Room))
       result = service.call(
+        resident: @resident,
         resident_params: resident_params,
         place: place,
         manual_room_id: placement_params[:room_id],

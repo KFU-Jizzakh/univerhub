@@ -5,6 +5,7 @@ module Dormitory
     include AASM
     include Discard::Model
     include Trackable
+    include PreservesAttachmentChanges
 
     COURSE_RANGE = (1..6).freeze
 
@@ -104,7 +105,7 @@ module Dormitory
                   -> { { resident_id: resident.id, room_id: room.id, room_number: room.number,
                          bed_label: self.bed_label, force: force } }) do
         room.with_lock do
-          resident.lock!
+          resident.lock_preserving_attachment_changes!
           validate_settle_preconditions!
           validate_room_capacity!(force)
           room.skip_capacity_validation = true if force
@@ -127,7 +128,7 @@ module Dormitory
                   -> { { resident_id: resident.id, room_id: room.id, room_number: room.number,
                          bed_label: self.bed_label, force: force } }) do
         room.with_lock do
-          resident.lock!
+          resident.lock_preserving_attachment_changes!
           validate_register_preconditions!
           validate_room_capacity!(force)
           room.skip_capacity_validation = true if force
@@ -151,7 +152,7 @@ module Dormitory
                   { resident_id: resident.id, room_id: room.id, room_number: room.number,
                     bed_label: bed_label }) do
         room.with_lock do
-          resident.lock!
+          resident.lock_preserving_attachment_changes!
           reload
           validate_pending!
           if !force && room.current_occupancy > room.capacity
@@ -320,7 +321,7 @@ module Dormitory
       track_event("dormitory.accommodation.discarded",
                   -> { { resident_id: resident_id, room_id: room_id, room_number: room.number, bed_label: bed_label } }) do
         room.with_lock do
-          resident.lock!
+          resident.lock_preserving_attachment_changes!
           reload
 
           if discarded?

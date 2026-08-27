@@ -620,6 +620,23 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert accommodation.application_file.attached?
   end
 
+  test "lock_preserving_attachment_changes! keeps pending uploads through the lock reload" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    resident.update!(application_number: "З-ЛК", contract_number: "Д-ЛК")
+
+    ActiveRecord::Base.transaction do
+      resident.application_file.attach(
+        io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf"
+      )
+      resident.save!
+      resident.lock_preserving_attachment_changes!
+      assert resident.attachment_changes["application_file"].present?
+    end
+
+    assert resident.application_file.blob.service.exist?(resident.application_file.blob.key)
+    assert_equal "app", resident.application_file.download
+  end
+
   test "course defaults to 1" do
     resident = Dormitory::Resident.new(
       last_name: "Иванов", first_name: "Иван", gender: :male,

@@ -48,6 +48,30 @@ module Dormitory
       assert acc.pending?
     end
 
+    test "registration with placement keeps document uploads alive through the resident lock" do
+      service = ResidentRegistrationService.new(room_scope: @scope)
+      result = service.call(
+        resident_params: resident_params(ticket: "SVC013").merge(files_params),
+        place: true,
+        manual_room_id: dormitory_rooms(:room_101).id,
+        manual_bed_label: "C"
+      )
+
+      assert_equal :pending, result
+      resident = service.resident
+      acc = service.accommodation
+      assert resident.application_file.attached?
+      assert resident.contract_file.attached?
+      assert acc.application_file.attached?
+      assert acc.contract_file.attached?
+      assert_equal resident.application_file.blob, acc.application_file.blob
+      assert_equal resident.contract_file.blob, acc.contract_file.blob
+      assert resident.application_file.blob.service.exist?(resident.application_file.blob.key)
+      assert resident.contract_file.blob.service.exist?(resident.contract_file.blob.key)
+      assert_equal "app", resident.application_file.download
+      assert_equal "contract", resident.contract_file.download
+    end
+
     test "without place creates resident only" do
       service = ResidentRegistrationService.new(room_scope: @scope)
       result = service.call(

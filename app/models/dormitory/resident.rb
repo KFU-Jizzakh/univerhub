@@ -4,6 +4,7 @@ module Dormitory
     # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     include Discard::Model
     include Trackable
+    include PreservesAttachmentChanges
 
     COURSE_RANGE = (1..6).freeze
 
@@ -70,7 +71,7 @@ module Dormitory
       track_event("dormitory.resident.discarded") do
         pending_room_ids = accommodations.kept.where(status: :pending).distinct.pluck(:room_id).sort
         Dormitory::Room.where(id: pending_room_ids).lock.pluck(:id) if pending_room_ids.any?
-        lock!
+        lock_preserving_attachment_changes!
 
         if discarded?
           false
