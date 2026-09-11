@@ -22,6 +22,14 @@ module Dormitory
     ACCEPTED_FILE_TYPES = %w[application/pdf image/jpeg image/png application/msword application/vnd.openxmlformats-officedocument.wordprocessingml.document].freeze
     MAX_FILE_SIZE = 10.megabytes
 
+    DEBT_SQL = <<~SQL.squish.freeze
+      dormitory_accommodations.required_amount - COALESCE(
+        (SELECT SUM(dormitory_receipts.amount)
+         FROM dormitory_receipts
+         WHERE dormitory_receipts.accommodation_id = dormitory_accommodations.id
+           AND dormitory_receipts.discarded_at IS NULL), 0)
+    SQL
+
     validates :resident, :room, :application_number, :contract_number, :start_date, :planned_end_date, presence: true
     validates :comment, length: { maximum: 2000 }
     validates :eviction_reason, inclusion: { in: EVICTION_REASONS }, allow_nil: true
@@ -66,6 +74,27 @@ module Dormitory
     scope :ordered, -> { order(created_at: :desc) }
     scope :overdue, -> { active.where("planned_end_date < ?", Date.current) }
 
+    # PURPOSE: Returns active, non-discarded accommodations whose kept receipts total less than the required amount (debtors)
+    # SPECIFICATION: SPEC-DORM-09
+    scope :with_debt, -> { kept.active.where(Arel.sql("#{DEBT_SQL} > 0")) }
+
+    # PURPOSE: Orders accommodations by debt amount descending (largest debt first)
+    # SPECIFICATION: SPEC-DORM-09
+    scope :debt_desc, -> { reorder(Arel.sql("#{DEBT_SQL} DESC")) }
+
+    # PURPOSE: Sums the outstanding debt over the given accommodation scope without join duplication from eager-loaded receipts
+    # SPECIFICATION: SPEC-DORM-09
+    def self.total_debt(scope)
+      scope.except(:includes, :eager_load, :preload).left_outer_joins(:room).sum(Arel.sql(DEBT_SQL))
+    end
+
+    # PURPOSE: Sums kept receipt amounts for debtors in the given accommodation scope
+    # SPECIFICATION: SPEC-DORM-09
+    def self.total_paid_for(scope)
+      debtors = scope.except(:includes, :eager_load, :preload, :order).left_outer_joins(:room).with_debt.select(:id)
+      Dormitory::Receipt.kept.where(accommodation_id: debtors).sum(:amount)
+    end
+
     def planned_duration_days
       return nil unless start_date && planned_end_date
 
@@ -82,10 +111,16 @@ module Dormitory
       active? && planned_end_date && planned_end_date < Date.current
     end
 
+    # PURPOSE: Sums the amounts of kept receipts, reusing the preloaded association to avoid per-row SUM queries
+    # SPECIFICATION: SPEC-DORM-09
     def total_paid
-      receipts.sum(:amount)
+      return receipts.sum(:amount) unless receipts.loaded?
+
+      receipts.select(&:kept?).sum(&:amount)
     end
 
+    # PURPOSE: Returns the difference between the paid amount and the required amount (positive = overpayment, negative = debt)
+    # SPECIFICATION: SPEC-DORM-09
     def balance
       total_paid - required_amount
     end

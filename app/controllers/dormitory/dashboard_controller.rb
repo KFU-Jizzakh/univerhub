@@ -46,6 +46,7 @@ module Dormitory
 
       @debt_by_building = compute_debt_by_building
       @total_debt = @debt_by_building.values.sum
+      @total_paid_debtors = Dormitory::Accommodation.total_paid_for(Dormitory::Accommodation.where(room: @rooms))
 
       @open_violations = Dormitory::Violation.kept.open
         .joins(:resident)

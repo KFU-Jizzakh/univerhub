@@ -14,16 +14,14 @@
   <% end %>
 </div>
 
-<%= form_tag dormitory_rooms_path, method: :get, class: "row g-2 mb-4" do %>
+<%= form_tag dormitory_rooms_path, method: :get, data: { controller: "filter-form", turbo_action: "replace" }, class: "row g-2 mb-4" do %>
   <div class="col-md-4">
     <%= select_tag :building_id,
           options_from_collection_for_select(@buildings, :id, :name, params[:building_id]),
           include_blank: t("views.dormitory.rooms.all_buildings"),
           class: "form-select form-select-sm" %>
   </div>
-  <div class="col-md-2">
-    <%= submit_tag t("views.shared.actions.filter"), class: "btn btn-outline-secondary btn-sm" %>
-  </div>
+  <%= submit_tag t("views.shared.actions.filter"), class: "visually-hidden" %>
 <% end %>
 
   <div class="row g-3 mb-4">

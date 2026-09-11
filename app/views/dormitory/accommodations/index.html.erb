@@ -6,6 +6,11 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <h1 class="h3 mb-0"><%= t("views.dormitory.accommodations.page_title") %></h1>
+  <% if @debtors_mode %>
+    <%= link_to dormitory_accommodations_path(request.query_parameters.merge(format: :csv)), class: "btn btn-success" do %>
+      <i class="bi bi-download"></i> <%= t("views.dormitory.accommodations.export_csv") %>
+    <% end %>
+  <% end %>
 </div>
 
 <div class="row mb-3">
@@ -27,10 +32,41 @@
                                           [ t("views.dormitory.accommodations.completed"), "completed" ],
                                           [ t("views.dormitory.accommodations.cancelled"), "cancelled" ] ], params[:status]),
                      { class: "form-select form-select-sm" } %>
-      <%= submit_tag t("views.shared.actions.filter"), class: "btn btn-outline-secondary btn-sm" %>
+      <div class="form-check d-flex align-items-center gap-1 mb-0">
+        <%= check_box_tag :debtors, "1", @debtors_mode, class: "form-check-input mt-0" %>
+        <%= label_tag :debtors, t("views.dormitory.accommodations.debtors_only"), class: "form-check-label text-nowrap" %>
+      </div>
+      <%= submit_tag t("views.shared.actions.filter"), class: "visually-hidden" %>
     <% end %>
   </div>
 </div>
+
+<% if @debtors_mode %>
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.accommodations.debtors_count") %></div>
+        <div class="h3 mb-0"><%= @debtors_count %></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center p-3 shadow-sm">
+        <div class="text-muted small"><%= t("views.dormitory.accommodations.total_paid_all") %></div>
+        <div class="h3 mb-0 text-success">
+          <%= number_to_currency(@total_paid, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center p-3 shadow-sm <%= "border-danger" if @total_debt.positive? %>">
+        <div class="text-muted small"><%= t("views.dormitory.accommodations.total_debt") %></div>
+        <div class="h3 mb-0 text-danger">
+          <%= number_to_currency(@total_debt, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
 
 <% if @accommodations.any? %>
   <div class="table-responsive mb-4">
@@ -39,6 +75,9 @@
         <tr>
           <th scope="col"><%= t("views.dormitory.residents.photo") %></th>
           <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
+          <% if @debtors_mode %>
+            <th scope="col"><%= t("views.dormitory.residents.phone") %></th>
+          <% end %>
           <th scope="col"><%= t("views.dormitory.accommodations.building") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.room") %></th>
           <th scope="col"><%= t("views.dormitory.rooms.bed_label") %></th>
@@ -49,7 +88,11 @@
           <th scope="col"><%= t("views.dormitory.accommodations.start_date") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.planned_end_date") %></th>
           <th scope="col"><%= t("views.dormitory.accommodations.days_column") %></th>
-          <th scope="col"><%= t("views.dormitory.accommodations.balance") %></th>
+          <% if @debtors_mode %>
+            <th scope="col"><%= t("views.dormitory.accommodations.required_amount") %></th>
+            <th scope="col"><%= t("views.dormitory.accommodations.total_paid") %></th>
+          <% end %>
+          <th scope="col"><%= @debtors_mode ? t("views.dormitory.accommodations.debt") : t("views.dormitory.accommodations.balance") %></th>
         </tr>
       </thead>
       <tbody>
@@ -65,6 +108,9 @@
               <% end %>
             </td>
             <td><%= link_to acc.resident.full_name, dormitory_resident_path(acc.resident) %></td>
+            <% if @debtors_mode %>
+              <td><%= acc.resident.phone.presence || "—" %></td>
+            <% end %>
             <td><%= acc.room.building.name %></td>
             <td><%= acc.room.number %></td>
             <td><%= acc.bed_label.presence || "—" %></td>
@@ -80,8 +126,12 @@
               <% end %>
             </td>
             <td><%= acc.planned_duration_days ? t("views.dormitory.accommodations.days", count: acc.planned_duration_days) : "—" %></td>
-            <td class="<%= acc.balance >= 0 ? 'text-success' : 'text-danger' %> fw-bold">
-              <%= number_to_currency(acc.balance, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+            <% if @debtors_mode %>
+              <td><%= number_to_currency(acc.required_amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></td>
+              <td><%= number_to_currency(acc.total_paid, unit: "", separator: ",", delimiter: " ", precision: 2) %></td>
+            <% end %>
+            <td class="<%= @debtors_mode ? "text-danger" : (acc.balance >= 0 ? "text-success" : "text-danger") %> fw-bold">
+              <%= number_to_currency(@debtors_mode ? acc.balance.abs : acc.balance, unit: "", separator: ",", delimiter: " ", precision: 2) %>
             </td>
           </tr>
         <% end %>
@@ -91,5 +141,5 @@
 
   <%== pagy_nav_html(@pagy) %>
 <% else %>
-  <%= render "shared/empty_state", icon: "bi-key", message: t("views.dormitory.accommodations.no_accommodations") %>
+  <%= render "shared/empty_state", icon: "bi-key", message: t(@debtors_mode ? "views.dormitory.accommodations.no_debtors" : "views.dormitory.accommodations.no_accommodations") %>
 <% end %>

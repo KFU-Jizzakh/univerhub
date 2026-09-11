@@ -893,6 +893,160 @@ module Dormitory
       assert_not acc.payment_overdue?
     end
 
+    # --- SPEC-DORM-09: debtors scope ---
+
+    test "with_debt returns only active underpaid accommodations" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 6000)
+
+      paid = build_accommodation(required_amount: 10000)
+      attach_files(paid)
+      paid.do_settle!
+
+      result = Accommodation.with_debt
+      assert_includes result, debtor
+      assert_not_includes result, paid
+    end
+
+    test "with_debt excludes pending, completed, and discarded accommodations" do
+      pending = build_accommodation(required_amount: 20000)
+      attach_files(pending)
+      pending.do_register!
+
+      completed = dormitory_accommodations(:active_accommodation)
+      completed.update!(required_amount: 20000)
+      create_receipt_for(completed, amount: 6000)
+      completed.update_columns(status: "completed", actual_end_date: Date.current)
+
+      other_resident = Dormitory::Resident.create!(
+        last_name: "Тестов", first_name: "Тест", gender: :male, course: 1,
+        date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-001", status: :not_settled
+      )
+      discarded = Accommodation.new(
+        resident: other_resident, room: @room,
+        application_number: "З-DEL", contract_number: "Д-DEL",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        required_amount: 20000
+      )
+      discarded.save!
+      create_receipt_for(discarded, amount: 6000)
+      discarded.discard!
+
+      result = Accommodation.with_debt
+      assert_not_includes result, pending
+      assert_not_includes result, completed
+      assert_not_includes result, discarded
+    end
+
+    test "debt_desc orders accommodations by debt descending" do
+      small = dormitory_accommodations(:active_accommodation)
+      small.update!(required_amount: 20000)
+      create_receipt_for(small, amount: 17000)
+
+      other_resident = Dormitory::Resident.create!(
+        last_name: "Тестов", first_name: "Тест", gender: :male, course: 1,
+        date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-002", status: :not_settled
+      )
+      big = Accommodation.new(
+        resident: other_resident, room: @room,
+        application_number: "З-BIG", contract_number: "Д-BIG",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        required_amount: 20000
+      )
+      big.save!
+      create_receipt_for(big, amount: 5000)
+
+      assert_equal [ big, small ], Accommodation.with_debt.debt_desc.to_a
+    end
+
+    test "total_debt is not inflated by eager-loaded receipts" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      scope = Accommodation.with_debt.includes(:receipts)
+
+      assert_equal 12000, Accommodation.total_debt(scope)
+    end
+
+    test "total_debt is zero without debtors" do
+      assert_equal 0, Accommodation.total_debt(Accommodation.with_debt)
+    end
+
+    test "total_debt works with building-filtered scope whose join comes from eager loading" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+
+      scope = Accommodation.includes(:resident, :receipts, room: :building)
+        .where(dormitory_rooms: { building_id: debtor.room.building_id }).with_debt
+
+      assert_equal 15000, Accommodation.total_debt(scope)
+    end
+
+    test "total_paid uses preloaded receipts without extra queries" do
+      acc = dormitory_accommodations(:active_accommodation)
+      acc.update!(required_amount: 20000)
+      create_receipt_for(acc, amount: 5000)
+      create_receipt_for(acc, amount: 3000)
+      acc.receipts.load
+
+      assert_no_queries do
+        assert_equal 8000, acc.total_paid
+        assert_equal(-12000, acc.balance)
+      end
+    end
+
+    test "total_paid_for sums kept receipts of debtors only" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      paid = build_accommodation(required_amount: 10000)
+      attach_files(paid)
+      paid.do_settle!
+
+      assert_equal 8000, Accommodation.total_paid_for(Accommodation.all)
+    end
+
+    test "total_paid_for excludes discarded receipts" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      discarded = create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+      discarded.discard!
+
+      assert_equal 3000, Accommodation.total_paid_for(Accommodation.all)
+    end
+
+    test "total_paid_for uses a single query and is not inflated by eager-loaded receipts" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      scope = Accommodation.with_debt.includes(:receipts)
+
+      assert_queries_count(1) do
+        assert_equal 8000, Accommodation.total_paid_for(scope)
+      end
+    end
+
+    test "total_paid_for works with building-filtered scope whose join comes from eager loading" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      scope = Accommodation.includes(:resident, :receipts, room: :building)
+        .where(dormitory_rooms: { building_id: debtor.room.building_id }).with_debt.debt_desc
+
+      assert_equal 8000, Accommodation.total_paid_for(scope)
+    end
+
     # --- SPEC-DORM-12: pending registration with place issuance ---
 
     test "do_register! happy path creates pending accommodation with bed and course snapshot" do

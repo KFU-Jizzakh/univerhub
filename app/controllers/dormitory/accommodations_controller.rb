@@ -8,11 +8,30 @@ module Dormitory
       authorize Dormitory::Accommodation
       @buildings = policy_scope(Dormitory::Building)
       @academic_years = Dormitory::AcademicYear.kept.order(:start_date)
+      @debtors_mode = params[:debtors].present?
       @accommodations = policy_scope(Dormitory::Accommodation).ordered.includes(:resident, :receipts, room: :building)
       @accommodations = @accommodations.where(dormitory_rooms: { building_id: params[:building_id] }) if params[:building_id].present?
       @accommodations = @accommodations.where(academic_year_id: params[:academic_year_id]) if params[:academic_year_id].present?
       @accommodations = @accommodations.where(status: params[:status]) if params[:status].present?
-      @pagy, @accommodations = pagy(:offset, @accommodations)
+
+      if @debtors_mode
+        @accommodations = @accommodations.with_debt.debt_desc
+        @debtors_count = @accommodations.count
+        @total_debt = Dormitory::Accommodation.total_debt(@accommodations)
+        @total_paid = Dormitory::Accommodation.total_paid_for(@accommodations)
+      end
+
+      respond_to do |format|
+        format.html { @pagy, @accommodations = pagy(:offset, @accommodations) }
+        format.csv do
+          if @debtors_mode
+            csv = Dormitory::ExportService.debtors_csv(@accommodations)
+            send_data csv, filename: "debtors_#{Date.current}.csv", type: "text/csv"
+          else
+            head :not_found
+          end
+        end
+      end
     end
 
     def show

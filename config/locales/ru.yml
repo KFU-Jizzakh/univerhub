@@ -293,6 +293,7 @@ ru:
         residents: Всего проживающих
         occupancy_rate: Заполняемость
         total_beds: Всего мест
+        total_paid: Всего оплачено
         total_debt: Общий долг
       alerts:
         title: Операционные оповещения
@@ -1039,6 +1040,13 @@ ru:
         documents_required: Документы обязательны
         current_room: Текущая комната
         no_accommodations: Нет размещений
+        no_debtors: Нет должников
+        debtors_only: Только должники
+        debtors_count: Должников
+        total_debt: Общий долг
+        total_paid_all: Всего оплачено
+        debt: Долг
+        export_csv: Экспорт CSV
         eviction_reason_transfer: Переселение
         eviction_reason_repair: Ремонт комнаты
         planned_end_date: Плановая дата окончания

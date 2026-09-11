@@ -394,6 +394,145 @@ module Dormitory
       assert_response :success
     end
 
+    # --- SPEC-DORM-09: debtors list ---
+
+    test "index debtors filter shows only debtors with totals and payment columns" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+
+      get dormitory_accommodations_path(debtors: "1")
+
+      assert_response :success
+      assert_includes response.body, @resident.full_name
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.debtors_only")
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.total_debt")
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.required_amount")
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.total_paid")
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.debt")
+      assert_includes response.body, "15 000,00"
+      assert_includes response.body, @resident.phone
+    end
+
+    test "index debtors total debt is not inflated by multiple receipts" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      get dormitory_accommodations_path(debtors: "1")
+
+      assert_response :success
+      assert_includes response.body, "12 000,00"
+      assert_not_includes response.body, "24 000,00"
+    end
+
+    test "index debtors summary shows total paid for debtors" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      get dormitory_accommodations_path(debtors: "1")
+
+      assert_response :success
+      assert_select ".card", text: /#{I18n.t("views.dormitory.accommodations.total_paid_all")}/ do
+        assert_select ".h3", text: "8 000,00"
+      end
+    end
+
+    test "index debtors combined with building filter shows totals" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      get dormitory_accommodations_path, params: { debtors: "1", building_id: @building.id }
+
+      assert_response :success
+      assert_includes response.body, I18n.t("views.dormitory.accommodations.total_debt")
+      assert_select ".card", text: /#{I18n.t("views.dormitory.accommodations.total_paid_all")}/ do
+        assert_select ".h3", text: "8 000,00"
+      end
+    end
+
+    test "index debtors page avoids per-row receipt sum queries" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+      create_receipt_for(debtor, amount: 3000)
+
+      assert_queries_match(/SUM\("dormitory_receipts"/i, count: 1) do
+        get dormitory_accommodations_path(debtors: "1")
+      end
+
+      assert_response :success
+    end
+
+    test "index debtors filter excludes fully paid accommodations" do
+      sign_in @admin
+      paid = dormitory_accommodations(:active_accommodation)
+      paid.update!(required_amount: 10000)
+      create_receipt_for(paid, amount: 10000)
+      create_accommodation(required_amount: 20000)
+
+      get dormitory_accommodations_path(debtors: "1")
+
+      assert_response :success
+      assert_not_includes response.body, paid.resident.full_name
+      assert_includes response.body, @resident.full_name
+    end
+
+    test "index debtors filter is scoped to commandant buildings" do
+      dormitory_commandant_buildings(:commandant_building_two).do_deactivate!
+      own = build_debtor(resident: @resident, room: @room)
+      other_resident = Dormitory::Resident.create!(
+        last_name: "Козлов", first_name: "Пётр", gender: :male, course: 1,
+        date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-001", status: :not_settled
+      )
+      other = build_debtor(resident: other_resident, room: dormitory_rooms(:room_101_building_two))
+
+      sign_in @commandant
+      get dormitory_accommodations_path(debtors: "1")
+
+      assert_response :success
+      assert_includes response.body, own.resident.full_name
+      assert_not_includes response.body, other.resident.full_name
+    end
+
+    test "index debtors CSV returns debtors with headers and values" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+
+      get dormitory_accommodations_path(format: :csv, debtors: "1")
+
+      assert_response :success
+      assert_equal "text/csv", response.media_type
+      assert_includes response.body, "Долг"
+      assert_includes response.body, debtor.resident.full_name
+      assert_includes response.body, "15000.00"
+    end
+
+    test "registrar can download debtors CSV" do
+      sign_in @admin
+      debtor = create_accommodation(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+
+      sign_in @registrar
+      get dormitory_accommodations_path(format: :csv, debtors: "1")
+
+      assert_response :success
+      assert_includes response.body, debtor.resident.full_name
+    end
+
+    test "index CSV without debtors filter returns not found" do
+      sign_in @admin
+      get dormitory_accommodations_path(format: :csv)
+
+      assert_response :not_found
+    end
+
     # --- show ---
 
     test "admin sees accommodation show" do
@@ -491,9 +630,30 @@ module Dormitory
 
     private
 
-    def create_accommodation
-      post dormitory_accommodations_path, params: settle_params
+    def create_accommodation(overrides = {})
+      post dormitory_accommodations_path, params: settle_params(overrides)
       Accommodation.last
+    end
+
+    def create_receipt_for(accommodation, amount:)
+      receipt = accommodation.receipts.build(amount: amount, paid_at: Date.current)
+      receipt.attachment.attach(
+        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+      )
+      receipt.do_create!
+      receipt
+    end
+
+    def build_debtor(resident:, room:, required_amount: 10000, paid: 4000)
+      acc = Accommodation.new(
+        resident: resident, room: room,
+        application_number: "З-Д#{resident.id}", contract_number: "Д-Д#{resident.id}",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        required_amount: required_amount
+      )
+      acc.save!
+      create_receipt_for(acc, amount: paid)
+      acc
     end
 
     def transfer_params(acc, target_room, overrides = {})

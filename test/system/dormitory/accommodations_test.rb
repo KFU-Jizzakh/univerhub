@@ -39,5 +39,30 @@ module Dormitory
       assert_equal 422, page.status_code
       assert_selector "h1", text: "Заселение — Иванов Иван Иванович"
     end
+
+    test "admin filters debtors on accommodations index" do
+      acc = dormitory_accommodations(:active_accommodation)
+      acc.update_columns(required_amount: 12000)
+      receipt = acc.receipts.build(amount: 8000, paid_at: Date.current)
+      receipt.attachment.attach(
+        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+      )
+      receipt.save!
+
+      visit new_session_path
+      fill_in "Email", with: @admin.email_address
+      fill_in "Пароль", with: "password"
+      click_on "Войти"
+
+      visit dormitory_accommodations_path(debtors: "1")
+
+      assert page.has_checked_field?("Только должники")
+      assert_selector "input[type=submit][value='Фильтр']", visible: false
+      assert_text acc.resident.full_name
+      assert_text "Всего оплачено"
+      assert_text "8 000,00"
+      assert_text "Общий долг"
+      assert_text "4 000,00"
+    end
   end
 end

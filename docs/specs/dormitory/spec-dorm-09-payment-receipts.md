@@ -1,6 +1,6 @@
 # SPEC-DORM-09: Payment Receipts & Amount Tracking
 
-Adds financial payment tracking to dormitory accommodations: a required amount field on the accommodation, individual payment receipts with amounts and file attachments, payment summary with balance calculation, and payment status visualization across the UI, dashboard, and CSV exports.
+Adds financial payment tracking to dormitory accommodations: a required amount field on the accommodation, individual payment receipts with amounts and file attachments, payment summary with balance calculation, payment status visualization across the UI, dashboard, and CSV exports, and a debtors list mode on the accommodations index with totals and CSV export.
 
 Depends on: SPEC-CORE-02, SPEC-DORM-04, SPEC-DORM-06, SPEC-DORM-07
 
@@ -72,7 +72,17 @@ Status: PLANNED
 - AC-27: Accommodation history export (SPEC-DORM-06 AC-16) gains three additional columns: "Сумма к оплате", "Уплачено", "Остаток"
 
 ### N+1 prevention
-- AC-28: When loading accommodations with receipts, N+1 queries are avoided via `includes(:receipts)`
+- AC-28: When loading accommodations with receipts, N+1 queries are avoided via `includes(:receipts)`; `total_paid` and `balance` reuse the preloaded receipts instead of issuing per-row SUM queries
+
+### Debtors list
+- AC-29: The accommodations index has a "Только должники" checkbox; when enabled, only active accommodations with balance < 0 (debtors) are shown
+- AC-30: Debtor rows additionally show the resident's phone, required amount, paid amount, and debt (absolute value) columns
+- AC-31: In debtors mode a summary shows the number of debtors and the total debt across the whole filtered scope, not just the current page
+- AC-32: In debtors mode the list is sorted by debt amount descending
+- AC-33: In debtors mode a CSV export is available and preserves the current building/academic year/status filters and the user's building scope
+- AC-34: Access to the debtors list follows the accommodations index policy: admin/dormitory.admin/registrar see all, commandant only assigned buildings, registrar is read-only
+- AC-35: In debtors mode the summary shows "Всего оплачено" — the sum of kept receipts of the filtered debtors — alongside the debtors count and "Общий долг"
+- AC-36: The dashboard shows a "Всего оплачено" metric — the sum of kept receipts of debtors within the user's accessible buildings
 
 ## UI/UX Notes
 
@@ -83,13 +93,18 @@ Status: PLANNED
 - "Pay remaining" button: `btn btn-success`, links to `new_dormitory_accommodation_receipt_path(accommodation, amount: debt_amount)`
 - Balance column in index: inline span with colored badge (green/red)
 - Empty state for receipts: "Нет квитанций" message
+- "Только должники" checkbox placed in the existing index filter panel, auto-submitting on change like the filter selects
+- Debtors summary: three cards above the table — "Должников" (count), "Всего оплачено" (green), and "Общий долг" (red)
+- Debtors table keeps the standard columns and adds "Телефон" after the full name, plus "Сумма к оплате" and "Уплачено" before the balance column; the balance header becomes "Долг" and shows the absolute value in red
+- "Экспорт CSV" button in the page header, shown only in debtors mode
+- Empty state for debtors: "Нет должников" message
 
 ## Business Rules
 
 - BR-1: `required_amount` is a non-negative decimal, default 0
 - BR-2: Receipt amount must be strictly greater than 0
 - BR-3: Receipt `paid_at` must be present (defaults to today in the form)
-- BR-4: `total_paid` = sum(amount) of all kept receipts for the accommodation, computed at read time (no cached column)
+- BR-4: `total_paid` = sum(amount) of all kept receipts for the accommodation, computed at read time (no cached column); when the receipts association is preloaded, the sum is computed from the loaded records to avoid per-row SUM queries
 - BR-5: `balance` = `total_paid` − `required_amount`. Positive = overpayment, negative = debt, zero = settled
 - BR-6: Receipts use Discard::Model for soft-deletion — discarded receipts are excluded from `total_paid`, not displayed in lists, and cannot be restored via the UI
 - BR-7: Receipts are not required for settlement or transfer — they can be added at any time while the accommodation is active via the dedicated ReceiptsController
@@ -103,6 +118,12 @@ Status: PLANNED
 - BR-15: Receipt attachment file validation (format and size) mirrors the existing validation rules for accommodation documents
 - BR-16: A registrar can create receipts for any kept accommodation (global, not building-scoped) but cannot edit, update, or delete receipts
 - BR-17: A receipt created during resident registration (SPEC-DORM-12) stays attached if the pending accommodation is later rejected — it documents money actually received and is not discarded automatically
+- BR-18: A debtor is an accommodation with status active and balance < 0 (total_paid < required_amount), consistent with the dashboard debt metrics (BR-10); pending, completed, cancelled, and discarded accommodations are excluded
+- BR-19: Debtors mode intersects with the existing building, academic year, and status filters and with the user's policy scope
+- BR-20: Debtors count and total debt are computed over the whole filtered scope, not the current page
+- BR-21: Debtors CSV uses the same UTF-8 BOM and semicolon format as other exports; the "Долг" column contains the absolute value of the negative balance; the "Просрочено" column is "Да" when `planned_end_date < today`, otherwise "Нет"; the export is served only when the debtors filter is enabled — a CSV request without it returns 404
+- BR-22: The debtors list uses a SQL subquery on kept receipts so that pagination and totals stay correct without a grouped relation; totals are computed on a relation without eager-loaded joins so receipts cannot multiply accommodation rows
+- BR-23: "Всего оплачено" counts only kept receipts of debtors (active, non-discarded, balance < 0), respects the index filters and the user's building scope, and is computed with a single SQL aggregate without join duplication
 
 ## Behavior
 
@@ -216,6 +237,13 @@ Given building A has debts 3000 and 2000; building B has debt 4000
 When admin visits the dashboard
 Then "Debt by building" table shows: Building A = 5000, Building B = 4000
 
+#### Scenario: Total paid metric for debtors
+Given building A has a debtor with paid amount 2000 and a fully paid accommodation with paid amount 5000
+And building B has a debtor with paid amount 4000
+When admin visits the dashboard
+Then "Всего оплачено" metric = 6000 (only debtors)
+But the fully paid accommodation's 5000 is NOT included
+
 ### Rule: Exports (AC-26, AC-27)
 
 #### Scenario: Settled residents with payment columns
@@ -227,3 +255,77 @@ Then Ivan's row contains: "12000.00", "5000.00", "-7000.00"
 Given Ivan's completed accommodation had required_amount = 12000 and total paid = 12000
 When admin downloads the history CSV
 Then Ivan's row contains: "12000.00", "12000.00", "0.00"
+
+### Rule: Debtors filter (AC-29, AC-30, BR-18, BR-19)
+
+#### Scenario: Only active underpaid accommodations are shown
+Given Ivan's active accommodation has required_amount = 12000 and total paid = 8000
+And Petr's active accommodation has required_amount = 12000 and total paid = 12000
+And Anna has a pending accommodation with required_amount = 12000 and total paid = 5000
+And Olga has a completed accommodation with required_amount = 12000 and total paid = 0
+When admin opens the accommodations index and enables "Только должники"
+Then Ivan's accommodation is shown with debt 4000
+But Petr's, Anna's, and Olga's accommodations are NOT shown
+
+#### Scenario: Debtor row shows contact and payment details
+Given Ivan's active accommodation has required_amount = 12000, total paid = 8000, and phone +7 900 000-00-00
+When admin views the debtors list
+Then the row shows phone "+7 900 000-00-00", "Сумма к оплате" 12 000,00, "Уплачено" 8 000,00, and "Долг" 4 000,00
+
+#### Scenario: Overdue debtor is marked
+Given Ivan's active accommodation has balance -4000 and planned_end_date in the past
+When admin views the debtors list
+Then the row shows the overdue indicator
+
+### Rule: Debtors totals and ordering (AC-31, AC-32, BR-20)
+
+#### Scenario: Totals cover the whole filtered scope
+Given building A has debtors with debts 3000 and 5000
+And building B has a debtor with debt 4000
+When admin enables "Только должники" with building filter "Building A"
+Then the debtors count is 2
+And the total debt is 8000
+And the first row is the debtor with debt 5000
+
+#### Scenario: Total paid covers the whole filtered scope
+Given building A has debtors with paid amounts 2000 and 5000
+And building B has a debtor with paid amount 4000
+When admin enables "Только должники" with building filter "Building A"
+Then "Всего оплачено" shows 7000
+But the building B paid amount is NOT included
+
+#### Scenario: Total paid excludes fully paid accommodations
+Given Ivan is a debtor with paid amount 2000
+And Petr's active accommodation is fully paid (paid amount 5000)
+When admin enables "Только должники"
+Then "Всего оплачено" shows 2000
+But Petr's paid amount is NOT included
+
+#### Scenario: Commandant scope
+Given commandant "Dave" is assigned to building A only
+And building A has a debtor with debt 3000
+And building B has a debtor with debt 4000
+When Dave enables "Только должники"
+Then only the building A debtor is shown
+And the total debt is 3000
+
+### Rule: Debtors CSV (AC-33, BR-21)
+
+#### Scenario: Export debtors with filters
+Given building A has a debtor with debt 4000 and phone +7 900 000-00-00
+And building B has a debtor with debt 3000
+When admin enables "Только должники" with building filter "Building A" and downloads the CSV
+Then the CSV has a UTF-8 BOM and semicolon separator
+And the CSV contains the header "Долг"
+And the CSV contains the building A debtor with "4000.00" and phone "+7 900 000-00-00"
+But the CSV does NOT contain the building B debtor
+
+#### Scenario: Overdue flag in CSV
+Given a debtor has planned_end_date in the past
+When admin downloads the debtors CSV
+Then the debtor's row contains "Да" in the "Просрочено" column
+
+#### Scenario: Registrar can download the debtors CSV
+Given registrar is signed in
+When registrar downloads the debtors CSV
+Then the CSV is returned successfully

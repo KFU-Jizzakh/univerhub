@@ -59,6 +59,62 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".card .text-muted", text: "Общий долг"
   end
 
+  test "dashboard shows total paid metric for debtors" do
+    acc = dormitory_accommodations(:active_accommodation)
+    acc.update!(required_amount: 10000)
+    receipt = acc.receipts.build(amount: 4000, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card", text: /Всего оплачено/ do
+      assert_select ".h2", text: "4 000,00"
+    end
+  end
+
+  test "dashboard total paid is scoped to commandant buildings" do
+    own = dormitory_accommodations(:active_accommodation)
+    own.update!(required_amount: 10000)
+    own_receipt = own.receipts.build(amount: 4000, paid_at: Date.current)
+    own_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    own_receipt.save!
+
+    other_resident = Dormitory::Resident.create!(
+      last_name: "Козлов", first_name: "Пётр", gender: :male, course: 1,
+      date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-ДБ", status: :not_settled
+    )
+    other = Dormitory::Accommodation.new(
+      resident: other_resident, room: dormitory_rooms(:room_101_building_two),
+      application_number: "З-ДБ", contract_number: "Д-ДБ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 10000
+    )
+    other.save!
+    other_receipt = other.receipts.build(amount: 7000, paid_at: Date.current)
+    other_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    other_receipt.save!
+
+    dormitory_commandant_buildings(:commandant_building_two).update!(deactivated_at: Time.current)
+
+    sign_in_as @commandant
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card", text: /Всего оплачено/ do
+      assert_select ".h2", text: "4 000,00"
+    end
+    assert_not_includes response.body, "7 000,00"
+  end
+
   test "dashboard shows debt by building when debt exists" do
     acc = dormitory_accommodations(:active_accommodation)
     acc.update!(status: :active, required_amount: 10000)

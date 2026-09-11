@@ -2,8 +2,8 @@ require "csv"
 
 module Dormitory
   class ExportService
-    # PURPOSE: Generates 4 types of CSV exports (settled residents, free slots, accommodation history, occupancy stats) with UTF-8 BOM and semicolon delimiter
-    # SPECIFICATION: SPEC-DORM-06
+    # PURPOSE: Generates CSV exports (settled residents, free slots, accommodation history, occupancy stats, debtors) with UTF-8 BOM and semicolon delimiter
+    # SPECIFICATION: SPEC-DORM-06, SPEC-DORM-09
     SEPARATOR = ";"
 
     def self.settled_residents_csv(scope, filters = {})
@@ -104,6 +104,32 @@ module Dormitory
             format_amount(acc.required_amount),
             format_amount(acc.total_paid),
             format_amount(acc.balance)
+          ]
+        end
+      end
+    end
+
+    # PURPOSE: Generates a CSV export of active debtors with resident contacts, placement, and payment details
+    # SPECIFICATION: SPEC-DORM-09
+    def self.debtors_csv(scope)
+      accommodations = scope.with_debt.debt_desc.includes(:resident, :receipts, room: :building)
+
+      generate_csv([ "ФИО", "Телефон", "Корпус", "Этаж", "Комната", "Место", "Курс",
+                     "Сумма к оплате", "Уплачено", "Долг", "Плановая дата окончания", "Просрочено" ]) do |csv|
+        accommodations.each do |acc|
+          csv << [
+            acc.resident.full_name,
+            acc.resident.phone,
+            acc.room.building.name,
+            acc.room.floor,
+            acc.room.number,
+            acc.bed_label.presence || "—",
+            acc.course,
+            format_amount(acc.required_amount),
+            format_amount(acc.total_paid),
+            format_amount(acc.balance.abs),
+            acc.planned_end_date,
+            acc.overdue? ? "Да" : "Нет"
           ]
         end
       end

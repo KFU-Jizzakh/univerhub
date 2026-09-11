@@ -79,5 +79,58 @@ module Dormitory
       csv = ExportService.history_csv(Dormitory::Accommodation.all)
       assert csv.include?("0.00")
     end
+
+    # --- SPEC-DORM-09: Debtors CSV ---
+
+    def attach_receipt(receipt)
+      receipt.attachment.attach(
+        io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+      )
+    end
+
+    test "debtors_csv includes debtors with payment and overdue columns" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update_columns(required_amount: 12000, planned_end_date: Date.current - 1.day)
+      receipt = debtor.receipts.build(amount: 8000, paid_at: Date.current)
+      attach_receipt(receipt)
+      receipt.save!
+
+      csv = ExportService.debtors_csv(Dormitory::Accommodation.all)
+
+      assert csv.start_with?("\uFEFF")
+      assert_includes csv, "Долг"
+      assert_includes csv, "Просрочено"
+      assert_includes csv, debtor.resident.full_name
+      assert_includes csv, "4000.00"
+      assert_includes csv, "Да"
+    end
+
+    test "debtors_csv excludes fully paid accommodations" do
+      paid = dormitory_accommodations(:active_accommodation)
+      paid.update!(required_amount: 10000)
+      receipt = paid.receipts.build(amount: 10000, paid_at: Date.current)
+      attach_receipt(receipt)
+      receipt.save!
+
+      csv = ExportService.debtors_csv(Dormitory::Accommodation.all)
+
+      assert_not_includes csv, paid.resident.full_name
+    end
+
+    test "debtors_csv avoids per-row receipt sum queries" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      receipt_one = debtor.receipts.build(amount: 5000, paid_at: Date.current)
+      attach_receipt(receipt_one)
+      receipt_one.save!
+      receipt_two = debtor.receipts.build(amount: 3000, paid_at: Date.current)
+      attach_receipt(receipt_two)
+      receipt_two.save!
+
+      assert_no_queries_match(/SUM\("dormitory_receipts"/i) do
+        csv = ExportService.debtors_csv(Dormitory::Accommodation.all)
+        assert_includes csv, "12000.00"
+      end
+    end
   end
 end
