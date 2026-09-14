@@ -277,6 +277,8 @@ module Dormitory
       self
     end
 
+    # PURPOSE: Transfers a resident between rooms: completes the old accommodation with reason "transfer", creates a new active one, moves all receipts to it, and inherits the required amount
+    # SPECIFICATION: SPEC-DORM-04
     def do_transfer!(new_acc, eviction_reason: "transfer")
       validate_transfer_preconditions!(new_acc)
 
@@ -301,8 +303,20 @@ module Dormitory
         recalculate_room_status!(old_room, eviction_reason)
 
         new_acc.resident = resident
+        new_acc.required_amount = required_amount if new_acc.required_amount.nil? || new_acc.required_amount.zero?
         new_acc.assign_bed!
         new_acc.save!
+
+        moved_count = Dormitory::Receipt.with_discarded.where(accommodation_id: id)
+          .update_all(accommodation_id: new_acc.id, updated_at: Time.current)
+        receipts.reset
+
+        OutboxEvent.create!(
+          actor: Current.user,
+          action: "dormitory.receipts.transferred",
+          record: self,
+          payload: { to_accommodation_id: new_acc.id, count: moved_count }
+        )
 
         OutboxEvent.create!(
           actor: Current.user,

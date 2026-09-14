@@ -339,7 +339,7 @@ module Dormitory
       target_room = dormitory_rooms(:room_102)
       new_acc = build_new_acc(room: target_room, resident: @resident)
 
-      assert_difference -> { OutboxEvent.count }, 4 do
+      assert_difference -> { OutboxEvent.count }, 5 do
         result = old_acc.do_transfer!(new_acc)
 
         assert result.persisted?
@@ -375,11 +375,91 @@ module Dormitory
       assert_equal target_room.id, event.payload["to_room_id"]
     end
 
+    test "do_transfer! moves receipts to the new accommodation" do
+      old_acc = create_settled_accommodation(room: @room)
+      create_receipt_for(old_acc, amount: 5000)
+      create_receipt_for(old_acc, amount: 3000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal 0, Dormitory::Receipt.kept.where(accommodation_id: old_acc.id).count
+      assert_equal 4, Dormitory::Receipt.kept.where(accommodation_id: new_acc.id).count
+      assert_equal 28000, new_acc.total_paid
+    end
+
+    test "do_transfer! moves discarded receipts too" do
+      old_acc = create_settled_accommodation(room: @room)
+      discarded = create_receipt_for(old_acc, amount: 1000)
+      discarded.discard!
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal 0, Dormitory::Receipt.with_discarded.where(accommodation_id: old_acc.id).count
+      assert_equal 3, Dormitory::Receipt.with_discarded.where(accommodation_id: new_acc.id).count
+    end
+
+    test "do_transfer! inherits required_amount when the new accommodation has none" do
+      old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(required_amount: 12000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal 12000, new_acc.reload.required_amount
+    end
+
+    test "do_transfer! keeps explicitly provided required_amount" do
+      old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(required_amount: 12000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+      new_acc.required_amount = 5000
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal 5000, new_acc.reload.required_amount
+    end
+
+    test "do_transfer! inherits required_amount when the form sends blank" do
+      old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(required_amount: 12000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+      new_acc.required_amount = ""
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal 12000, new_acc.reload.required_amount
+    end
+
+    test "do_transfer! records aggregate receipts.transferred event" do
+      old_acc = create_settled_accommodation(room: @room)
+      create_receipt_for(old_acc, amount: 5000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      old_acc.do_transfer!(new_acc)
+
+      event = OutboxEvent.where(record: old_acc, action: "dormitory.receipts.transferred").first
+      assert_equal new_acc.id, event.payload["to_accommodation_id"]
+      assert_equal 2, event.payload["count"]
+    end
+
     test "do_transfer! blocks when not active" do
       old_acc = create_settled_accommodation(room: @room)
       old_acc.actual_end_date = Date.current
       old_acc.complete!
-
       target_room = dormitory_rooms(:room_102)
       new_acc = build_new_acc(room: target_room, resident: @resident)
 

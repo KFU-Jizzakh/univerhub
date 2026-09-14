@@ -34,6 +34,7 @@ Status: IMPLEMENTED
 - AC-24: A registrar (`dormitory.registrar`) has read-only access to accommodations (index and show); settle, transfer, evict, force-settle, and batch operations are denied
 - AC-25: The settlement form prefills application/contract numbers and files from the resident's prepared documents (see SPEC-DORM-03); files uploaded in the form take precedence; if the resident has no documents the form works as before (documents remain required at settlement)
 - AC-26: Discarding an accommodation (model-level `do_discard!`, no UI) reconciles the room and resident state so discarded records never leave phantom occupancy, stuck residents, or reserved beds behind
+- AC-27: A backfill (`Dormitory::TransferReceiptsBackfillService`, run via `bin/rails dormitory:backfill_transfer_receipts`) migrates receipts of completed transfer and repair origins to their successor accommodations
 
 ## UI/UX Notes
 
@@ -67,6 +68,8 @@ Status: IMPLEMENTED
 - BR-18: Discarding a `completed` or `cancelled` accommodation performs no state reconciliation — the record is just discarded
 - BR-19: `do_discard!` is idempotent (a discarded record returns without effects) and atomic (a validation failure changes nothing and records no events)
 - BR-20: Discarding an `active` accommodation whose resident is not settled or temporarily absent fails with a validation error and changes nothing
+- BR-21: Transfer moves all receipts of the old accommodation (including discarded ones) to the new accommodation, so the payment history follows the resident; the new accommodation inherits the old `required_amount` when its own is zero (not explicitly provided in the transfer form)
+- BR-22: Backfill candidate origins are completed accommodations with eviction reason `transfer` or `repair` (discarded origins included) that still have receipts. The successor is the resident's earliest kept accommodation whose `start_date` equals the origin's `actual_end_date` (ties broken by id); when no successor exists the origin is skipped. The successor inherits the origin's `required_amount` only when its own is zero. The move and the amount copy are recorded in the audit log with an aggregate event. The backfill is idempotent and supports a dry run that reports what would change without changing anything.
 ## Behavior
 
 ### Background
@@ -115,7 +118,7 @@ Then an error is raised (gender does not match room restriction)
 When a user sets start date to 2025-09-01 and planned end date to 2025-01-01
 Then a validation error is raised (planned date must be after start date)
 
-### Rule: Transfer (BR-6, BR-7)
+### Rule: Transfer (BR-6, BR-7, BR-21)
 
 #### Scenario: Successful transfer
 Given Ivan is settled in room 101 (active accommodation)
@@ -136,6 +139,47 @@ Then an error about missing files is raised
 Given room 205 is fully occupied and the user is not an admin
 When a user tries to transfer Ivan to room 205
 Then an error about capacity is raised
+
+#### Scenario: Transfer moves receipts and required amount
+Given Ivan's active accommodation in room 101 has required_amount = 12000 and two receipts (5000 and 3000)
+When a user transfers Ivan to room 205
+Then the new accommodation has required_amount = 12000
+And the new accommodation has both receipts (total_paid = 8000, balance = -4000)
+And the old accommodation has no receipts
+And the audit log records a "dormitory.receipts.transferred" event on the old accommodation
+
+### Rule: Transfer receipts backfill (AC-27, BR-22)
+
+#### Scenario: Backfill moves receipts to the successor
+Given Ivan has a completed accommodation with eviction reason "transfer", actual end date 2025-05-01, one receipt, and required_amount = 12000
+And Ivan has an active accommodation with start date 2025-05-01 and required_amount = 0
+When the backfill runs
+Then the receipt moves to the successor accommodation
+And the successor's required_amount becomes 12000
+And an aggregate audit event is recorded
+
+#### Scenario: Backfill processes discarded and repair origins
+Given Ivan has a discarded completed accommodation with eviction reason "repair", actual end date 2025-05-01, and one receipt
+And Ivan has an active accommodation with start date 2025-05-01
+When the backfill runs
+Then the receipt moves to the successor accommodation
+
+#### Scenario: Backfill skips origins without an exact-day successor
+Given Ivan has a completed accommodation with eviction reason "transfer", actual end date 2025-05-01, and one receipt
+And Ivan's only other accommodation starts on 2025-06-01 (a later re-check-in, not a transfer successor)
+When the backfill runs
+Then the receipt stays on the origin and the pair is counted as skipped
+
+#### Scenario: Backfill dry run changes nothing
+Given an origin with a successor as above
+When the backfill runs with the dry-run flag
+Then the reported stats reflect what would change
+But no receipts are moved and no amounts are copied
+
+#### Scenario: Backfill is idempotent
+Given the backfill has already migrated a pair
+When the backfill runs again
+Then no receipts are moved and no amounts are copied on the second run
 
 ### Rule: Evict (BR-8, BR-10)
 

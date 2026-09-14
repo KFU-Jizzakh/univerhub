@@ -491,6 +491,8 @@ ru:
           created: добавил(а) квитанцию
           updated: обновил(а) квитанцию
           destroyed: удалил(а) квитанцию
+        receipts:
+          transferred: перенёс(ла) квитанции при переселении
         commandant_building:
           created: назначил(а) коменданта корпуса
           updated: обновил(а) коменданта корпуса
