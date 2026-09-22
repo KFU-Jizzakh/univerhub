@@ -23,15 +23,19 @@ module Dormitory
     end
 
     def attach_files(accommodation)
+      attach_docs(accommodation)
+      accommodation.receipts.build(
+        amount: 10000, paid_at: Date.current,
+        attachment: { io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf" }
+      )
+    end
+
+    def attach_docs(accommodation)
       accommodation.application_file.attach(
         io: StringIO.new("test"), filename: "app.pdf", content_type: "application/pdf"
       )
       accommodation.contract_file.attach(
         io: StringIO.new("test"), filename: "contract.pdf", content_type: "application/pdf"
-      )
-      accommodation.receipts.build(
-        amount: 10000, paid_at: Date.current,
-        attachment: { io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf" }
       )
     end
 
@@ -1125,6 +1129,86 @@ module Dormitory
         .where(dormitory_rooms: { building_id: debtor.room.building_id }).with_debt.debt_desc
 
       assert_equal 8000, Accommodation.total_paid_for(scope)
+    end
+
+    test "total_paid_within sums kept receipts of all accommodations in scope regardless of status" do
+      debtor = dormitory_accommodations(:active_accommodation)
+      debtor.update!(required_amount: 20000)
+      create_receipt_for(debtor, amount: 5000)
+
+      paid = build_accommodation(required_amount: 10000)
+      attach_files(paid)
+      paid.do_settle!
+
+      assert_equal 15000, Accommodation.total_paid_within(Accommodation.all)
+    end
+
+    test "total_paid_within includes pending, completed, and cancelled accommodations" do
+      pending = build_accommodation
+      attach_docs(pending)
+      pending.do_register!
+      create_receipt_for(pending, amount: 1000)
+
+      cancelled_resident = Dormitory::Resident.create!(
+        last_name: "Орлов", first_name: "Иван", gender: :male, course: 1,
+        date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-ОТМ", status: :not_settled
+      )
+      cancelled = build_accommodation(resident: cancelled_resident, room: dormitory_rooms(:room_102))
+      attach_docs(cancelled)
+      cancelled.do_register!
+      create_receipt_for(cancelled, amount: 3000)
+      cancelled.do_reject!
+
+      room_102 = dormitory_rooms(:room_102)
+      room_102.update_columns(current_occupancy: 1, status: :partially_occupied)
+      completed_resident = Dormitory::Resident.create!(
+        last_name: "Соколов", first_name: "Олег", gender: :male, course: 1,
+        date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-ЗАВ", status: :not_settled
+      )
+      completed_resident.update!(status: :settled, current_room: room_102)
+      completed = Accommodation.create!(
+        resident: completed_resident, room: room_102,
+        application_number: "З-ЗАВ", contract_number: "Д-ЗАВ",
+        start_date: Date.current, planned_end_date: Date.current + 1.year
+      )
+      create_receipt_for(completed, amount: 2000)
+      completed.do_evict!(eviction_reason: "graduation")
+
+      assert_equal 6000, Accommodation.total_paid_within(Accommodation.all)
+    end
+
+    test "total_paid_within excludes discarded receipts" do
+      acc = dormitory_accommodations(:active_accommodation)
+      discarded = create_receipt_for(acc, amount: 5000)
+      create_receipt_for(acc, amount: 3000)
+      discarded.discard!
+
+      assert_equal 3000, Accommodation.total_paid_within(Accommodation.all)
+    end
+
+    test "total_paid_within respects the given scope" do
+      acc = dormitory_accommodations(:active_accommodation)
+      create_receipt_for(acc, amount: 5000)
+
+      other_year = build_accommodation(academic_year: dormitory_academic_years(:pending_year_2026_2027))
+      attach_files(other_year)
+      other_year.do_settle!
+      create_receipt_for(other_year, amount: 3000)
+
+      scope = Accommodation.where(academic_year: dormitory_academic_years(:active_year_2025_2026))
+      assert_equal 5000, Accommodation.total_paid_within(scope)
+    end
+
+    test "total_paid_within uses a single query and is not inflated by eager-loaded receipts" do
+      acc = dormitory_accommodations(:active_accommodation)
+      create_receipt_for(acc, amount: 5000)
+      create_receipt_for(acc, amount: 3000)
+
+      scope = Accommodation.includes(:receipts, room: :building).order(created_at: :desc)
+
+      assert_queries_count(1) do
+        assert_equal 8000, Accommodation.total_paid_within(scope)
+      end
     end
 
     # --- SPEC-DORM-12: pending registration with place issuance ---

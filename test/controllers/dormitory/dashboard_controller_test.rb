@@ -59,7 +59,7 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select ".card .text-muted", text: "Общий долг"
   end
 
-  test "dashboard shows total paid metric for debtors" do
+  test "dashboard shows total paid metric for the active year" do
     acc = dormitory_accommodations(:active_accommodation)
     acc.update!(required_amount: 10000)
     receipt = acc.receipts.build(amount: 4000, paid_at: Date.current)
@@ -68,12 +68,76 @@ class Dormitory::DashboardControllerTest < ActionDispatch::IntegrationTest
     )
     receipt.save!
 
+    paid_resident = Dormitory::Resident.create!(
+      last_name: "Иванова", first_name: "Мария", gender: :female, course: 1,
+      date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-ОПЛ", status: :not_settled
+    )
+    paid = Dormitory::Accommodation.new(
+      resident: paid_resident, room: dormitory_rooms(:room_101),
+      application_number: "З-ОПЛ", contract_number: "Д-ОПЛ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 10000
+    )
+    paid.save!
+    paid_receipt = paid.receipts.build(amount: 10000, paid_at: Date.current)
+    paid_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    paid_receipt.save!
+
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card", text: /Всего оплачено/ do
+      assert_select ".h2", text: "14 000,00"
+    end
+  end
+
+  test "dashboard total paid excludes accommodations of other academic years" do
+    acc = dormitory_accommodations(:active_accommodation)
+    acc.update!(required_amount: 10000)
+    receipt = acc.receipts.build(amount: 4000, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    other_resident = Dormitory::Resident.create!(
+      last_name: "Сидоров", first_name: "Олег", gender: :male, course: 1,
+      date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-ГОД", status: :not_settled
+    )
+    other = Dormitory::Accommodation.new(
+      resident: other_resident, room: dormitory_rooms(:room_101_building_two),
+      application_number: "З-ГОД", contract_number: "Д-ГОД",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      academic_year: dormitory_academic_years(:pending_year_2026_2027)
+    )
+    other.save!
+    other_receipt = other.receipts.build(amount: 7000, paid_at: Date.current)
+    other_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    other_receipt.save!
+
     sign_in_as @admin
     get dormitory_dashboard_path
     assert_response :success
 
     assert_select ".card", text: /Всего оплачено/ do
       assert_select ".h2", text: "4 000,00"
+    end
+  end
+
+  test "dashboard total paid is zero without an active academic year" do
+    Dormitory::AcademicYear.active.update_all(status: :pending)
+
+    sign_in_as @admin
+    get dormitory_dashboard_path
+    assert_response :success
+
+    assert_select ".card", text: /Всего оплачено/ do
+      assert_select ".h2", text: "0,00"
     end
   end
 

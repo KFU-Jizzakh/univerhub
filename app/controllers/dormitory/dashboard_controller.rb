@@ -46,7 +46,13 @@ module Dormitory
 
       @debt_by_building = compute_debt_by_building
       @total_debt = @debt_by_building.values.sum
-      @total_paid_debtors = Dormitory::Accommodation.total_paid_for(Dormitory::Accommodation.where(room: @rooms))
+      @total_paid = if @active_year
+        Dormitory::Accommodation.total_paid_within(
+          Dormitory::Accommodation.kept.where(academic_year: @active_year, room: @rooms)
+        )
+      else
+        0
+      end
 
       @open_violations = Dormitory::Violation.kept.open
         .joins(:resident)

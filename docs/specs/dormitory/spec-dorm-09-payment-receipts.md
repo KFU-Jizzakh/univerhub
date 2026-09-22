@@ -82,7 +82,7 @@ Status: PLANNED
 - AC-33: In debtors mode a CSV export is available and preserves the current building/academic year/status filters and the user's building scope
 - AC-34: Access to the debtors list follows the accommodations index policy: admin/dormitory.admin/registrar see all, commandant only assigned buildings, registrar is read-only
 - AC-35: In debtors mode the summary shows "Всего оплачено" — the sum of kept receipts of the filtered debtors — alongside the debtors count and "Общий долг"
-- AC-36: The dashboard shows a "Всего оплачено" metric — the sum of kept receipts of debtors within the user's accessible buildings
+- AC-36: The dashboard shows a "Всего оплачено" metric — the sum of kept receipts of all accommodations (any status) belonging to the active academic year within the user's accessible buildings; when there is no active academic year the metric is 0
 
 ## UI/UX Notes
 
@@ -124,6 +124,7 @@ Status: PLANNED
 - BR-21: Debtors CSV uses the same UTF-8 BOM and semicolon format as other exports; the "Долг" column contains the absolute value of the negative balance; the "Просрочено" column is "Да" when `planned_end_date < today`, otherwise "Нет"; the export is served only when the debtors filter is enabled — a CSV request without it returns 404
 - BR-22: The debtors list uses a SQL subquery on kept receipts so that pagination and totals stay correct without a grouped relation; totals are computed on a relation without eager-loaded joins so receipts cannot multiply accommodation rows
 - BR-23: "Всего оплачено" counts only kept receipts of debtors (active, non-discarded, balance < 0), respects the index filters and the user's building scope, and is computed with a single SQL aggregate without join duplication
+- BR-24: The dashboard "Всего оплачено" metric sums kept receipts of all kept accommodations (any status) of the active academic year within the user's accessible buildings; accommodations of other academic years are excluded, and the metric is 0 when no academic year is active; it is computed with a single SQL aggregate without join duplication
 
 ## Behavior
 
@@ -237,12 +238,24 @@ Given building A has debts 3000 and 2000; building B has debt 4000
 When admin visits the dashboard
 Then "Debt by building" table shows: Building A = 5000, Building B = 4000
 
-#### Scenario: Total paid metric for debtors
+#### Scenario: Total paid metric for the active year
 Given building A has a debtor with paid amount 2000 and a fully paid accommodation with paid amount 5000
 And building B has a debtor with paid amount 4000
 When admin visits the dashboard
-Then "Всего оплачено" metric = 6000 (only debtors)
-But the fully paid accommodation's 5000 is NOT included
+Then "Всего оплачено" metric = 11000 (all accommodations of the active year)
+And the fully paid accommodation's 5000 IS included
+
+#### Scenario: Accommodations of other academic years are excluded
+Given building A has an active accommodation of the active year with paid amount 2000
+And building A has an accommodation of a closed year with paid amount 5000
+When admin visits the dashboard
+Then "Всего оплачено" metric = 2000
+But the closed year's 5000 is NOT included
+
+#### Scenario: No active academic year
+Given no academic year is active
+When admin visits the dashboard
+Then "Всего оплачено" metric = 0
 
 ### Rule: Exports (AC-26, AC-27)
 

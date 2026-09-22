@@ -95,6 +95,14 @@ module Dormitory
       Dormitory::Receipt.kept.where(accommodation_id: debtors).sum(:amount)
     end
 
+    # PURPOSE: Sums kept receipts of kept accommodations (any status) in the given scope; kept and active-year scoping is the caller's job
+    # SPECIFICATION: SPEC-DORM-09
+    def self.total_paid_within(scope)
+      Dormitory::Receipt.kept
+        .where(accommodation_id: scope.except(:includes, :eager_load, :preload, :order).select(:id))
+        .sum(:amount)
+    end
+
     def planned_duration_days
       return nil unless start_date && planned_end_date
 
