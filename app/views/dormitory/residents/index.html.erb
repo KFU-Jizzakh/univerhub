@@ -49,6 +49,8 @@
           <th scope="col"><%= t("views.dormitory.residents.full_name") %></th>
           <th scope="col"><%= t("views.dormitory.residents.current_room") %></th>
           <th scope="col"><%= t("views.dormitory.residents.course") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.total_paid") %></th>
+          <th scope="col"><%= t("views.dormitory.residents.debt") %></th>
           <th scope="col"><%= t("views.dormitory.residents.gender") %></th>
           <th scope="col"><%= t("views.dormitory.residents.student_ticket") %></th>
           <th scope="col"><%= t("views.dormitory.residents.phone") %></th>
@@ -71,6 +73,13 @@
             <td><%= link_to resident.full_name, dormitory_resident_path(resident) %></td>
             <td><% if resident.current_room.present? %><%= link_to resident.current_room.number, dormitory_room_path(resident.current_room) %><% else %>—<% end %></td>
             <td><%= resident.course.presence || "—" %></td>
+            <td class="text-success">
+              <%= number_to_currency(@paid_totals[resident.id] || 0, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+            </td>
+            <% debt = @debt_totals[resident.id] || 0 %>
+            <td class="<%= debt.positive? ? "text-danger fw-bold" : "text-muted" %>">
+              <%= number_to_currency(debt, unit: "", separator: ",", delimiter: " ", precision: 2) %>
+            </td>
             <td><%= t("views.dormitory.residents.gender_#{resident.gender}") %></td>
             <td><%= resident.student_ticket_number %></td>
             <td><%= resident.phone.presence || "—" %></td>

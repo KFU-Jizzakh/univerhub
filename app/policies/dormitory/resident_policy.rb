@@ -3,11 +3,11 @@ module Dormitory
     # PURPOSE: Authorization rules for Resident — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar global create/edit without destroy
     # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     def index?
-      admin_or_dormitory_admin_or_commandant? || registrar?
+      self.class.higher_privilege?(user) || commandant?
     end
 
     def show?
-      admin_or_dormitory_admin? || commandant_with_access? || registrar?
+      self.class.higher_privilege?(user) || commandant_with_access?
     end
 
     def create?
@@ -39,17 +39,31 @@ module Dormitory
     end
 
     def check_ticket?
-      admin_or_dormitory_admin_or_commandant? || registrar?
+      self.class.higher_privilege?(user) || commandant?
+    end
+
+    # PURPOSE: Whether the residents index payment aggregates must be scoped to the commandant's assigned buildings — only for a user without higher-privilege roles
+    # SPECIFICATION: SPEC-DORM-09
+    def building_scoped_aggregates?
+      self.class.building_scoped_user?(user)
+    end
+
+    # PURPOSE: Whether the user holds a role above commandant (admin, dormitory.admin, or registrar)
+    # SPECIFICATION: SPEC-DORM-09
+    def self.higher_privilege?(user)
+      user.has_role?("admin") || user.has_role?("dormitory.admin") || user.has_role?("dormitory.registrar")
+    end
+
+    # PURPOSE: Whether the user is a pure commandant (no higher-privilege roles), whose dormitory views are scoped to assigned buildings
+    # SPECIFICATION: SPEC-DORM-09
+    def self.building_scoped_user?(user)
+      user.has_role?("dormitory.commandant") && !higher_privilege?(user)
     end
 
     private
 
     def admin_or_dormitory_admin?
       user.has_role?("admin") || user.has_role?("dormitory.admin")
-    end
-
-    def admin_or_dormitory_admin_or_commandant?
-      admin_or_dormitory_admin? || user.has_role?("dormitory.commandant")
     end
 
     def registrar?
@@ -72,11 +86,9 @@ module Dormitory
 
     class Scope < ApplicationPolicy::Scope
       def resolve
-        if user.has_role?("admin") || user.has_role?("dormitory.admin")
+        if Dormitory::ResidentPolicy.higher_privilege?(user)
           scope.kept.includes(:current_room).ordered
-        elsif user.has_role?("dormitory.registrar")
-          scope.kept.includes(:current_room).ordered
-        elsif user.has_role?("dormitory.commandant")
+        elsif Dormitory::ResidentPolicy.building_scoped_user?(user)
           scope.kept
             .includes(:current_room)
             .left_joins(:current_room)

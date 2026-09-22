@@ -1,6 +1,8 @@
 module Dormitory
   class ResidentsController < ApplicationController
     before_action :set_resident, only: [ :show, :edit, :update, :destroy ]
+    # PURPOSE: Lists residents with per-resident payment aggregates ("Всего оплатил"/"Должен"), building-scoped for a pure commandant
+    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-09
     def index
       authorize Dormitory::Resident
       @residents = policy_scope(Dormitory::Resident).includes(:current_room)
@@ -9,7 +11,22 @@ module Dormitory
       @residents = @residents.search_by_name(params[:query]) if params[:query].present?
 
       respond_to do |format|
-        format.html { @pagy, @residents = pagy(:offset, @residents) }
+        format.html do
+          @pagy, @residents = pagy(:offset, @residents)
+          resident_ids = @residents.map(&:id)
+          if resident_ids.any?
+            building_ids = if policy(Dormitory::Resident).building_scoped_aggregates?
+              current_user.assigned_building_ids
+            else
+              nil
+            end
+            @paid_totals = Dormitory::Resident.paid_totals_for(resident_ids, building_ids: building_ids)
+            @debt_totals = Dormitory::Resident.debt_totals_for(resident_ids, building_ids: building_ids)
+          else
+            @paid_totals = {}
+            @debt_totals = {}
+          end
+        end
         format.json do
           if params[:building_id].present?
             building = Dormitory::Building.find(params[:building_id])

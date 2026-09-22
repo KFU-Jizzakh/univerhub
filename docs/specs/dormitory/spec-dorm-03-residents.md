@@ -29,7 +29,7 @@ Status: IMPLEMENTED
 
 ## UI/UX Notes
 
-- Resident index: searchable table with full name, student ticket, gender badge, status badge, current room, photo thumbnail
+- Resident index: searchable table with full name, student ticket, gender badge, status badge, current room, photo thumbnail, and payment aggregates "Всего оплатил"/"Должен" (SPEC-DORM-09 AC-37)
 - Filter by status and gender (dropdown selectors)
 - Resident show: card with all fields, photo, current room, accommodations history, audit events
 - Resident form: text inputs for names, date picker for date of birth, selector for gender, selector for course (1–6), phone and email inputs, student ticket, photo upload with preview

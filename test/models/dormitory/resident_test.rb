@@ -701,4 +701,136 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     )
     assert resident.valid?
   end
+
+  # --- SPEC-DORM-09: residents index aggregates ---
+
+  def create_accommodation_for(resident, room, required_amount: 0, status: :active)
+    attrs = {
+      resident: resident, room: room, course: resident.course,
+      application_number: "З-#{SecureRandom.hex(4)}", contract_number: "Д-#{SecureRandom.hex(4)}",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: required_amount
+    }
+    attrs[:status] = status
+    attrs[:actual_end_date] = Date.current if status.to_sym.in?([ :completed, :cancelled ])
+    Dormitory::Accommodation.create!(attrs)
+  end
+
+  def create_receipt_for(accommodation, amount:)
+    receipt = accommodation.receipts.build(amount: amount, paid_at: Date.current)
+    receipt.attachment.attach(io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf")
+    receipt.save!
+    receipt
+  end
+
+  test "paid_totals_for sums kept receipts across all kept accommodations" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc1 = create_accommodation_for(resident, dormitory_rooms(:room_101))
+    create_receipt_for(acc1, amount: 5000)
+    create_receipt_for(acc1, amount: 3000)
+    acc2 = create_accommodation_for(resident, dormitory_rooms(:room_102), status: :completed)
+    create_receipt_for(acc2, amount: 4000)
+
+    other = dormitory_residents(:resident_three_evicted)
+    other_acc = create_accommodation_for(other, dormitory_rooms(:room_101_building_two))
+    create_receipt_for(other_acc, amount: 7000)
+
+    totals = Dormitory::Resident.paid_totals_for([ resident.id, other.id ])
+
+    assert_equal 12000, totals[resident.id]
+    assert_equal 7000, totals[other.id]
+  end
+
+  test "paid_totals_for excludes discarded receipts and accommodations" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc = create_accommodation_for(resident, dormitory_rooms(:room_101))
+    create_receipt_for(acc, amount: 5000)
+    create_receipt_for(acc, amount: 3000).discard!
+
+    discarded_acc = create_accommodation_for(resident, dormitory_rooms(:room_102), status: :completed)
+    create_receipt_for(discarded_acc, amount: 9000)
+    discarded_acc.update_columns(discarded_at: Time.current)
+
+    totals = Dormitory::Resident.paid_totals_for([ resident.id ])
+
+    assert_equal 5000, totals[resident.id]
+  end
+
+  test "debt_totals_for sums only positive debts across accommodations" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    debtor = create_accommodation_for(resident, dormitory_rooms(:room_101), required_amount: 20000)
+    create_receipt_for(debtor, amount: 8000)
+
+    overpaid = create_accommodation_for(resident, dormitory_rooms(:room_102), required_amount: 10000, status: :completed)
+    create_receipt_for(overpaid, amount: 12000)
+
+    debts = Dormitory::Resident.debt_totals_for([ resident.id ])
+
+    assert_equal 12000, debts[resident.id]
+  end
+
+  test "debt_totals_for excludes discarded accommodations" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc = create_accommodation_for(resident, dormitory_rooms(:room_101), required_amount: 20000)
+    create_receipt_for(acc, amount: 5000)
+    acc.update_columns(discarded_at: Time.current)
+
+    debts = Dormitory::Resident.debt_totals_for([ resident.id ])
+
+    assert_equal({}, debts)
+  end
+
+  test "paid_totals_for uses a single query" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc = create_accommodation_for(resident, dormitory_rooms(:room_101))
+    create_receipt_for(acc, amount: 5000)
+
+    assert_queries_count(1) do
+      Dormitory::Resident.paid_totals_for([ resident.id ])
+    end
+  end
+
+  test "debt_totals_for uses a single query" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc = create_accommodation_for(resident, dormitory_rooms(:room_101), required_amount: 20000)
+    create_receipt_for(acc, amount: 5000)
+
+    assert_queries_count(1) do
+      Dormitory::Resident.debt_totals_for([ resident.id ])
+    end
+  end
+
+  test "paid_totals_for with building_ids counts only accommodations in those buildings" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc1 = create_accommodation_for(resident, dormitory_rooms(:room_101))
+    create_receipt_for(acc1, amount: 5000)
+    acc2 = create_accommodation_for(resident, dormitory_rooms(:room_101_building_two), status: :completed)
+    create_receipt_for(acc2, amount: 3000)
+
+    totals = Dormitory::Resident.paid_totals_for([ resident.id ], building_ids: [ dormitory_buildings(:building_one).id ])
+
+    assert_equal 5000, totals[resident.id]
+  end
+
+  test "paid_totals_for with empty building_ids returns no aggregates" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    acc = create_accommodation_for(resident, dormitory_rooms(:room_101))
+    create_receipt_for(acc, amount: 5000)
+
+    totals = Dormitory::Resident.paid_totals_for([ resident.id ], building_ids: [])
+
+    assert_equal({}, totals)
+  end
+
+  test "debt_totals_for with building_ids counts only debts in those buildings" do
+    resident = dormitory_residents(:resident_one_not_settled)
+    debtor = create_accommodation_for(resident, dormitory_rooms(:room_101), required_amount: 20000)
+    create_receipt_for(debtor, amount: 8000)
+    other = create_accommodation_for(resident, dormitory_rooms(:room_101_building_two), required_amount: 10000, status: :completed)
+    create_receipt_for(other, amount: 2000)
+
+    debts = Dormitory::Resident.debt_totals_for([ resident.id ], building_ids: [ dormitory_buildings(:building_one).id ])
+
+    assert_equal 12000, debts[resident.id]
+  end
 end

@@ -49,7 +49,7 @@ Status: PLANNED
 - AC-14: `total_paid` = sum of all kept receipts' amounts for the accommodation
 - AC-15: `balance` = `total_paid` − `required_amount` (positive = overpayment, negative = debt)
 - AC-16: Balance display is colored: green if ≥ 0, red if < 0
-- AC-17: Accommodation index table includes a balance column with color indicator
+- AC-17: The accommodations index shows a payment column only in debtors mode ("Долг", absolute value in red); the regular mode has no balance column
 - AC-18: Resident history table (on resident show) includes `required_amount`, `total_paid`, and `balance` columns
 
 ### Receipt list on accommodation show
@@ -83,6 +83,7 @@ Status: PLANNED
 - AC-34: Access to the debtors list follows the accommodations index policy: admin/dormitory.admin/registrar see all, commandant only assigned buildings, registrar is read-only
 - AC-35: In debtors mode the summary shows "Всего оплачено" — the sum of kept receipts of the filtered debtors — alongside the debtors count and "Общий долг"
 - AC-36: The dashboard shows a "Всего оплачено" metric — the sum of kept receipts of all accommodations (any status) belonging to the active academic year within the user's accessible buildings; when there is no active academic year the metric is 0
+- AC-37: The residents index shows "Всего оплатил" (green) and "Должен" (red when > 0) columns — aggregates over all kept accommodations of the resident (any year and status); residents without accommodations show 0,00; for a commandant the aggregates cover only accommodations in their assigned buildings
 
 ## UI/UX Notes
 
@@ -91,7 +92,8 @@ Status: PLANNED
 - Payment summary on show: `<div class="card">` with three info-items (required, paid, balance) using colored value display
 - Receipts table: similar to documents table — date, amount, file link, small edit/delete buttons
 - "Pay remaining" button: `btn btn-success`, links to `new_dormitory_accommodation_receipt_path(accommodation, amount: debt_amount)`
-- Balance column in index: inline span with colored badge (green/red)
+- Balance column in index: shown only in debtors mode as "Долг" (absolute value, red); the regular mode has no payment columns
+- Residents index: "Всего оплатил" (green) and "Должен" (red when > 0) columns after "Курс", formatted like other amounts, 0,00 when the resident has no kept accommodations
 - Empty state for receipts: "Нет квитанций" message
 - "Только должники" checkbox placed in the existing index filter panel, auto-submitting on change like the filter selects
 - Debtors summary: three cards above the table — "Должников" (count), "Всего оплачено" (green), and "Общий долг" (red)
@@ -125,6 +127,7 @@ Status: PLANNED
 - BR-22: The debtors list uses a SQL subquery on kept receipts so that pagination and totals stay correct without a grouped relation; totals are computed on a relation without eager-loaded joins so receipts cannot multiply accommodation rows
 - BR-23: "Всего оплачено" counts only kept receipts of debtors (active, non-discarded, balance < 0), respects the index filters and the user's building scope, and is computed with a single SQL aggregate without join duplication
 - BR-24: The dashboard "Всего оплачено" metric sums kept receipts of all kept accommodations (any status) of the active academic year within the user's accessible buildings; accommodations of other academic years are excluded, and the metric is 0 when no academic year is active; it is computed with a single SQL aggregate without join duplication
+- BR-25: The residents index aggregates are computed per resident across all their kept accommodations (any year and status): "Всего оплатил" = sum of kept receipts, "Должен" = sum of positive debts (required_amount − total_paid where > 0); discarded receipts and accommodations are excluded; both are computed with single grouped SQL aggregates without N+1 queries or join duplication; for a commandant the aggregates are scoped to their assigned buildings (matching AccommodationPolicy::Scope), while admin/dormitory.admin/registrar see the full history; for a user holding multiple roles, roles above commandant take precedence and the aggregates are not scoped; a commandant without assigned buildings sees 0,00 aggregates
 
 ## Behavior
 
@@ -256,6 +259,34 @@ But the closed year's 5000 is NOT included
 Given no academic year is active
 When admin visits the dashboard
 Then "Всего оплачено" metric = 0
+
+### Rule: Residents index aggregates (AC-37, BR-25)
+
+#### Scenario: Paid and debt across all accommodations
+Given Ivan has a debtor accommodation with paid amount 8000 and required amount 12000
+And Ivan has a completed accommodation of a previous year with paid amount 3000
+When admin visits the residents index
+Then Ivan's row shows "Всего оплатил" = 11 000,00
+And "Должен" = 4 000,00
+
+#### Scenario: Overpayments do not reduce debt
+Given Ivan has a debtor accommodation with debt 4000
+And Ivan has another accommodation overpaid by 2000
+When admin visits the residents index
+Then Ivan's row shows "Должен" = 4 000,00
+
+#### Scenario: Resident without accommodations
+Given Ivan has no kept accommodations
+When admin visits the residents index
+Then Ivan's row shows "Всего оплатил" = 0,00 and "Должен" = 0,00
+
+#### Scenario: Commandant scope
+Given commandant Dave is assigned to building A only
+And Ivan's accommodations include a debtor in building A (paid 8000, debt 4000)
+And Ivan's completed accommodation in building B has paid amount 5000
+When Dave visits the residents index
+Then Ivan's row shows "Всего оплатил" = 8 000,00 and "Должен" = 4 000,00
+But the building B paid amount of 5000 is NOT included
 
 ### Rule: Exports (AC-26, AC-27)
 

@@ -174,6 +174,39 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert_not policy(@manager, Dormitory::Resident).check_ticket?
   end
 
+  # building_scoped_aggregates?
+  test "building_scoped_aggregates? true for commandant" do
+    assert policy(@commandant, Dormitory::Resident).building_scoped_aggregates?
+  end
+
+  test "building_scoped_aggregates? false for admin" do
+    assert_not policy(@admin, Dormitory::Resident).building_scoped_aggregates?
+  end
+
+  test "building_scoped_aggregates? false for dormitory.admin" do
+    assert_not policy(@dormitory_admin, Dormitory::Resident).building_scoped_aggregates?
+  end
+
+  test "building_scoped_aggregates? false for registrar" do
+    assert_not policy(@registrar, Dormitory::Resident).building_scoped_aggregates?
+  end
+
+  test "building_scoped_aggregates? false for manager" do
+    assert_not policy(@manager, Dormitory::Resident).building_scoped_aggregates?
+  end
+
+  test "building_scoped_aggregates? false when commandant also holds dormitory.admin" do
+    @commandant.add_role!("dormitory.admin")
+
+    assert_not policy(@commandant.reload, Dormitory::Resident).building_scoped_aggregates?
+  end
+
+  test "building_scoped_aggregates? false when commandant also holds registrar" do
+    @commandant.add_role!("dormitory.registrar")
+
+    assert_not policy(@commandant.reload, Dormitory::Resident).building_scoped_aggregates?
+  end
+
   # Scope
   test "scope resolves to all kept for admin" do
     scope = Dormitory::ResidentPolicy::Scope.new(@admin, Dormitory::Resident)

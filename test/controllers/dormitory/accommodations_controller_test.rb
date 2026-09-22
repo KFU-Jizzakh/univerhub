@@ -396,6 +396,14 @@ module Dormitory
 
     # --- SPEC-DORM-09: debtors list ---
 
+    test "index regular mode does not show the balance column" do
+      sign_in @admin
+      get dormitory_accommodations_path
+
+      assert_response :success
+      assert_select "th", text: I18n.t("views.dormitory.accommodations.balance"), count: 0
+    end
+
     test "index debtors filter shows only debtors with totals and payment columns" do
       sign_in @admin
       debtor = create_accommodation(required_amount: 20000)

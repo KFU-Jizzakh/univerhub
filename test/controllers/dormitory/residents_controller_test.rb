@@ -107,6 +107,188 @@ class Dormitory::ResidentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index shows total paid and debt columns" do
+    sign_in_as @admin
+    acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101),
+      application_number: "З-АГГ", contract_number: "Д-АГГ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 20000, status: :completed, actual_end_date: Date.current
+    )
+    receipt = acc.receipts.build(amount: 8123, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    get dormitory_residents_path
+
+    assert_response :success
+    assert_includes response.body, I18n.t("views.dormitory.residents.total_paid")
+    assert_includes response.body, I18n.t("views.dormitory.residents.debt")
+    assert_select "tr.table-row-link", text: /#{Regexp.escape(@settled_resident.full_name)}/ do
+      assert_select "td.text-success", text: "8 123,00"
+      assert_select "td.text-danger", text: "11 877,00"
+    end
+  end
+
+  test "index shows zero aggregates for resident without accommodations" do
+    resident = Dormitory::Resident.create!(
+      last_name: "Нулевой", first_name: "Тест", gender: :male, course: 1,
+      date_of_birth: "2000-01-01", student_ticket_number: "ТЕСТ-НОЛЬ", status: :not_settled
+    )
+
+    sign_in_as @admin
+    get dormitory_residents_path, params: { query: "Нулевой" }
+
+    assert_response :success
+    assert_select "tr.table-row-link", count: 1 do
+      assert_select "td.text-success", text: "0,00"
+      assert_select "td.text-muted", text: "0,00"
+    end
+  end
+
+  test "commandant sees aggregates scoped to assigned buildings" do
+    dormitory_commandant_buildings(:commandant_building_two).update!(deactivated_at: Time.current)
+
+    acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101),
+      application_number: "З-КОМ", contract_number: "Д-КОМ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 20000, status: :completed, actual_end_date: Date.current
+    )
+    receipt = acc.receipts.build(amount: 8123, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    other_acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101_building_two),
+      application_number: "З-КОМ2", contract_number: "Д-КОМ2",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      status: :completed, actual_end_date: Date.current
+    )
+    other_receipt = other_acc.receipts.build(amount: 5000, paid_at: Date.current)
+    other_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    other_receipt.save!
+
+    sign_in_as @commandant
+    get dormitory_residents_path
+
+    assert_response :success
+    assert_select "tr.table-row-link", text: /#{Regexp.escape(@settled_resident.full_name)}/ do
+      assert_select "td.text-success", text: "8 123,00"
+      assert_select "td.text-danger", text: "11 877,00"
+      assert_select "td", text: "5 000,00", count: 0
+      assert_select "td", text: "13 123,00", count: 0
+    end
+  end
+
+  test "user with dormitory.admin and commandant roles sees unscoped aggregates" do
+    @commandant.add_role!("dormitory.admin")
+    dormitory_commandant_buildings(:commandant_building_two).update!(deactivated_at: Time.current)
+
+    acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101),
+      application_number: "З-МИКС", contract_number: "Д-МИКС",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 20000, status: :completed, actual_end_date: Date.current
+    )
+    receipt = acc.receipts.build(amount: 8123, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    other_acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101_building_two),
+      application_number: "З-МИКС2", contract_number: "Д-МИКС2",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      status: :completed, actual_end_date: Date.current
+    )
+    other_receipt = other_acc.receipts.build(amount: 5000, paid_at: Date.current)
+    other_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    other_receipt.save!
+
+    sign_in_as @commandant.reload
+    get dormitory_residents_path
+
+    assert_response :success
+    assert_select "tr.table-row-link", text: /#{Regexp.escape(@settled_resident.full_name)}/ do
+      assert_select "td.text-success", text: "13 123,00"
+      assert_select "td.text-danger", text: "11 877,00"
+      assert_select "td", text: "8 123,00", count: 0
+    end
+  end
+
+  test "commandant without assigned buildings sees zero aggregates" do
+    dormitory_commandant_buildings(:commandant_building_one).update!(deactivated_at: Time.current)
+    dormitory_commandant_buildings(:commandant_building_two).update!(deactivated_at: Time.current)
+
+    acc = Dormitory::Accommodation.create!(
+      resident: @resident, room: dormitory_rooms(:room_101),
+      application_number: "З-НУЛЬ", contract_number: "Д-НУЛЬ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 20000, status: :completed, actual_end_date: Date.current
+    )
+    receipt = acc.receipts.build(amount: 8123, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    sign_in_as @commandant
+    get dormitory_residents_path
+
+    assert_response :success
+    assert_select "tr.table-row-link", text: /#{Regexp.escape(@resident.full_name)}/ do
+      assert_select "td.text-success", text: "0,00"
+      assert_select "td.text-muted", text: "0,00"
+      assert_select "td", text: "8 123,00", count: 0
+    end
+  end
+
+  test "registrar sees unscoped aggregates across all buildings" do
+    acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101),
+      application_number: "З-РЕГ", contract_number: "Д-РЕГ",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      required_amount: 20000, status: :completed, actual_end_date: Date.current
+    )
+    receipt = acc.receipts.build(amount: 8123, paid_at: Date.current)
+    receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    receipt.save!
+
+    other_acc = Dormitory::Accommodation.create!(
+      resident: @settled_resident, room: dormitory_rooms(:room_101_building_two),
+      application_number: "З-РЕГ2", contract_number: "Д-РЕГ2",
+      start_date: Date.current, planned_end_date: Date.current + 1.year,
+      status: :completed, actual_end_date: Date.current
+    )
+    other_receipt = other_acc.receipts.build(amount: 5000, paid_at: Date.current)
+    other_receipt.attachment.attach(
+      io: StringIO.new("test"), filename: "receipt.pdf", content_type: "application/pdf"
+    )
+    other_receipt.save!
+
+    sign_in_as @registrar
+    get dormitory_residents_path
+
+    assert_response :success
+    assert_select "tr.table-row-link", text: /#{Regexp.escape(@settled_resident.full_name)}/ do
+      assert_select "td.text-success", text: "13 123,00"
+      assert_select "td.text-danger", text: "11 877,00"
+      assert_select "td", text: "8 123,00", count: 0
+    end
+  end
+
   test "show renders" do
     sign_in_as @admin
     get dormitory_resident_path(@resident)

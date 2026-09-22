@@ -49,6 +49,29 @@ module Dormitory
       where("last_name ILIKE :q OR first_name ILIKE :q OR middle_name ILIKE :q", q: "%#{sanitize_sql_like(query)}%")
     }
 
+    # PURPOSE: Returns a resident_id => amount hash of kept receipts summed across all kept accommodations of the given residents, optionally scoped to buildings
+    # SPECIFICATION: SPEC-DORM-09
+    def self.paid_totals_for(resident_ids, building_ids: nil)
+      scope = Dormitory::Receipt.kept
+        .joins(:accommodation)
+        .where(dormitory_accommodations: { resident_id: resident_ids, discarded_at: nil })
+      unless building_ids.nil?
+        scope = scope.joins(accommodation: :room).where(dormitory_rooms: { building_id: building_ids })
+      end
+      scope.group(Dormitory::Accommodation.arel_table[:resident_id]).sum(:amount)
+    end
+
+    # PURPOSE: Returns a resident_id => debt hash — the sum of positive debts across all kept accommodations of the given residents, optionally scoped to buildings
+    # SPECIFICATION: SPEC-DORM-09
+    def self.debt_totals_for(resident_ids, building_ids: nil)
+      positive_debt = Arel.sql("GREATEST(#{Dormitory::Accommodation::DEBT_SQL}, 0)")
+      scope = Dormitory::Accommodation.kept.where(resident_id: resident_ids)
+      unless building_ids.nil?
+        scope = scope.joins(:room).where(dormitory_rooms: { building_id: building_ids })
+      end
+      scope.group(Dormitory::Accommodation.arel_table[:resident_id]).sum(positive_debt)
+    end
+
     def full_name
       [ last_name, first_name, middle_name ].compact_blank.join(" ")
     end
