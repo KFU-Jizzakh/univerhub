@@ -47,7 +47,7 @@ module Dormitory
     end
 
     def self.building_scoped_user?(user)
-      user.has_role?("dormitory.commandant") && !higher_privilege?(user)
+      user.has_role?("dormitory.commandant")
     end
 
     private

@@ -62,6 +62,25 @@
                     <i class="bi bi-person"></i> <%= t("navigation.profile") %>
                   <% end %>
                 </li>
+                <% if current_user.role_names.many? %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <h6 class="dropdown-header"><%= t("navigation.active_role") %></h6>
+                  </li>
+                  <% current_user.role_names.each do |role_name| %>
+                    <li>
+                      <%= button_to active_role_path, method: :patch, params: { role_name: },
+                            class: "dropdown-item d-flex align-items-center gap-2" do %>
+                        <% if current_user.effective_role == role_name %>
+                          <i class="bi bi-check2"></i>
+                        <% else %>
+                          <i class="bi bi-dot"></i>
+                        <% end %>
+                        <%= t("roles.#{role_name}", default: role_name) %>
+                      <% end %>
+                    </li>
+                  <% end %>
+                <% end %>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <%= button_to session_path, method: :delete, class: "dropdown-item d-flex align-items-center gap-2" do %>

@@ -25,7 +25,34 @@ class User < ApplicationRecord
   after_discard :terminate_all_sessions
 
   def has_role?(role_name)
+    effective_role == role_name
+  end
+
+  def assigned_role?(role_name)
     user_roles.exists?(role_name: role_name)
+  end
+
+  def active_role_context=(value)
+    invalidate_effective_role
+    @active_role_context = value
+  end
+
+  def active_role_context
+    @active_role_context
+  end
+
+  # active_role_context is set per request from the session (see Authentication);
+  # a stale context (role unassigned while the session lives) falls back to the
+  # highest-privilege assigned role
+  def effective_role
+    return @effective_role if defined?(@effective_role)
+
+    @effective_role =
+      if active_role_context.present? && role_names.include?(active_role_context)
+        active_role_context
+      else
+        role_names.min_by { |name| UserRole::ROLE_PRIORITY.index(name) || UserRole::ROLE_PRIORITY.size }
+      end
   end
 
   def role_names
@@ -38,10 +65,12 @@ class User < ApplicationRecord
 
     user_roles.where.not(role_name: names).find_each(&:do_destroy!)
     (names - current).each { |name| user_roles.build(role_name: name).do_create! }
+    invalidate_effective_role
   end
 
   def add_role!(role_name)
     user_roles.build(role_name: role_name).do_create!
+    invalidate_effective_role
   end
 
   def active?
@@ -63,11 +92,15 @@ class User < ApplicationRecord
   end
 
   def self.last_active_with_role?(user, role_name)
-    return false unless user.has_role?(role_name)
+    return false unless user.assigned_role?(role_name)
     with_role(role_name).kept.active.count <= 1
   end
 
   private
+
+  def invalidate_effective_role
+    remove_instance_variable(:@effective_role) if defined?(@effective_role)
+  end
 
   def terminate_all_sessions
     sessions.destroy_all

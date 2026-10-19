@@ -3,6 +3,20 @@ class UserRole < ApplicationRecord
 
   NAMES = %w[admin reporting.manager reporting.reporter reporting.reviewer reporting.visitor supervisor reporting.admin dormitory.admin dormitory.commandant dormitory.registrar].freeze
 
+  # Default active role when a session has none: the highest-privilege assigned role
+  ROLE_PRIORITY = %w[
+    admin
+    dormitory.admin
+    reporting.admin
+    supervisor
+    dormitory.registrar
+    reporting.manager
+    dormitory.commandant
+    reporting.reviewer
+    reporting.reporter
+    reporting.visitor
+  ].freeze
+
   MODULE_ROLES = {
     "reporting.admin" => %w[reporting.manager reporting.reporter reporting.reviewer reporting.visitor reporting.admin],
     "dormitory.admin" => %w[dormitory.admin dormitory.commandant dormitory.registrar]

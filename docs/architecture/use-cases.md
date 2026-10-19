@@ -74,6 +74,20 @@ unless stated otherwise. Source of truth: controllers in `app/controllers`, mode
 - **Extensions:**
   - *1a. Any other role* — access denied
 
+### UC-C6: Switch Active Role
+
+- **Primary actor:** Any user with more than one assigned role
+- **Preconditions:** User is signed in; a session exists
+- **Main success scenario:**
+  1. User opens the user menu in the navbar — the "Роль" section lists all assigned roles with a check mark on the active one
+  2. User picks another assigned role
+  3. System stores the role on the **current session only** (other devices keep their own role) and redirects to the home page
+  4. All authorization checks (menus, policies, scopes) now use the new role
+- **Extensions:**
+  - *2a. Role not assigned to the user* — alert, active role unchanged
+  - *3a. Active role revoked by an admin while the session lives* — falls back to the highest-privilege assigned role
+- **Notes:** new sessions start with the highest-privilege assigned role (`UserRole::ROLE_PRIORITY`).
+
 ## Dormitory
 
 ### UC-D1: Manage Academic Years

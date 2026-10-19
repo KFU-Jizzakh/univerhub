@@ -117,6 +117,68 @@ class UserTest < ActiveSupport::TestCase
     assert_not users(:reporter_user).has_role?("dormitory.admin")
   end
 
+  test "has_role? matches only the active role from the session context" do
+    user = users(:dormitory_commandant_user)
+    user.add_role!("dormitory.registrar")
+
+    user.active_role_context = "dormitory.registrar"
+    assert_not user.has_role?("dormitory.commandant")
+    assert user.has_role?("dormitory.registrar")
+
+    user.active_role_context = "dormitory.commandant"
+    assert user.has_role?("dormitory.commandant")
+    assert_not user.has_role?("dormitory.registrar")
+  end
+
+  test "effective_role falls back to the highest-privilege assigned role without context" do
+    user = users(:dormitory_commandant_user)
+    user.add_role!("dormitory.registrar")
+
+    assert_equal "dormitory.registrar", user.effective_role
+  end
+
+  test "effective_role falls back when the context role is no longer assigned" do
+    user = users(:dormitory_commandant_user)
+    user.active_role_context = "admin"
+
+    assert_equal "dormitory.commandant", user.effective_role
+    assert_not user.has_role?("admin")
+  end
+
+  test "effective_role is nil for a user without roles" do
+    user = User.create!(email_address: "roleless@test.local", password: "password123", password_confirmation: "password123")
+
+    assert_nil user.effective_role
+    assert_not user.has_role?("admin")
+  end
+
+  test "assigned_role? checks assignment regardless of the active context" do
+    user = users(:dormitory_commandant_user)
+    user.add_role!("dormitory.registrar")
+    user.active_role_context = "dormitory.commandant"
+
+    assert user.assigned_role?("dormitory.registrar")
+    assert_not user.has_role?("dormitory.registrar")
+  end
+
+  test "effective_role is recomputed after roles change on the same instance" do
+    user = users(:dormitory_commandant_user)
+    assert_equal "dormitory.commandant", user.effective_role
+
+    user.add_role!("dormitory.registrar")
+    assert_equal "dormitory.registrar", user.effective_role
+
+    user.role_names = [ "dormitory.commandant" ]
+    assert_equal "dormitory.commandant", user.effective_role
+  end
+
+  test "last_active_with_role? checks assignment, not the active context" do
+    user = users(:dormitory_admin_user)
+    user.active_role_context = "dormitory.commandant"
+
+    assert User.last_active_with_role?(user, "dormitory.admin")
+  end
+
   test "role_names returns assigned role names" do
     assert_includes users(:dormitory_admin_user).role_names, "dormitory.admin"
   end

@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   root "home#index"
 
   resource :session
+  resource :active_role, only: :update
   resource :profile, only: :show
   resources :passwords, param: :token
 

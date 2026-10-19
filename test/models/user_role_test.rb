@@ -8,6 +8,10 @@ class UserRoleTest < ActiveSupport::TestCase
 
   teardown { Current.reset }
 
+  test "ROLE_PRIORITY covers exactly the same roles as NAMES" do
+    assert_equal Set.new(UserRole::NAMES), Set.new(UserRole::ROLE_PRIORITY)
+  end
+
   test "valid with unique user and role" do
     user = users(:manager_user)
     user_role = UserRole.new(user: user, role_name: "reporting.reporter")

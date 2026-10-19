@@ -207,6 +207,18 @@ class Dormitory::ResidentPolicyTest < ActiveSupport::TestCase
     assert_not policy(@commandant.reload, Dormitory::Resident).building_scoped_aggregates?
   end
 
+  test "scope is building-scoped when dormitory.admin user switches to commandant" do
+    user = users(:dormitory_admin_user)
+    user.add_role!("dormitory.commandant")
+
+    unscoped = Dormitory::ResidentPolicy::Scope.new(user.reload, Dormitory::Resident).resolve
+    assert_includes unscoped, @resident_unassigned
+
+    user.active_role_context = "dormitory.commandant"
+    scoped = Dormitory::ResidentPolicy::Scope.new(user, Dormitory::Resident).resolve
+    assert_not_includes scoped, @resident_unassigned
+  end
+
   # Scope
   test "scope resolves to all kept for admin" do
     scope = Dormitory::ResidentPolicy::Scope.new(@admin, Dormitory::Resident)

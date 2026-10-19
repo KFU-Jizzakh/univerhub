@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_13_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_080000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -311,6 +311,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_130000) do
   end
 
   create_table "sessions", force: :cascade do |t|
+    t.string "active_role"
     t.datetime "created_at", null: false
     t.string "ip_address"
     t.datetime "updated_at", null: false

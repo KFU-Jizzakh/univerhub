@@ -9,7 +9,7 @@ module Reporting
       authorize [ :reporting, :reporter ]
       @reporter = User.find(params[:id])
 
-      unless @reporter.has_role?("reporting.reporter")
+      unless @reporter.assigned_role?("reporting.reporter")
         redirect_to reporting_reporters_path, alert: t("reporting.reporters.not_a_reporter")
         return
       end

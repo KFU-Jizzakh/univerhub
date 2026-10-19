@@ -99,9 +99,12 @@ selection is available to `admin` and `dormitory.admin` only.
 - **Protected role**: the last active `dormitory.admin` cannot be deleted or deactivated.
   Nobody can delete or deactivate their own account.
 - **Commandant building scope**: assignments live in `dormitory_commandant_buildings`
-  (with deactivation support). A user holding both `dormitory.commandant` and a
-  higher-privilege dormitory role (`admin`, `dormitory.admin`, `dormitory.registrar`)
-  is NOT scoped — the higher privilege wins.
+  (with deactivation support).
+- **Active role** (single-role sessions): a user with several roles has exactly one
+  *active* role per session (`sessions.active_role`). All role checks see only the
+  active role; switching is available in the user menu. The default active role is
+  the highest-privilege assigned role (`UserRole::ROLE_PRIORITY`); if the active role
+  is revoked while the session lives, the default takes over.
 - **Report visibility** (`Reporting::ReportPolicy::Scope`): `admin`, `supervisor`,
   `reporting.admin` see everything; `reporting.visitor` sees non-draft reports;
   managers see reports they created; reporters/reviewers see reports assigned to them.

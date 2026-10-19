@@ -30,6 +30,10 @@ module Authentication
 
     def resume_session
       Current.session ||= find_session_by_cookie
+      if Current.session
+        Current.session.user.active_role_context = Current.session.active_role
+      end
+      Current.session
     end
 
     def find_session_by_cookie
@@ -56,6 +60,7 @@ module Authentication
     def start_new_session_for(user)
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |session|
         Current.session = session
+        user.active_role_context = session.active_role
         cookies.signed.permanent[:session_id] = { value: session.id, httponly: true, same_site: :lax }
       end
     end

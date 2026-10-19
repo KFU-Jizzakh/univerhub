@@ -51,7 +51,8 @@ class HomeController < ApplicationController
     end
 
     # Restrict activity feed for scoped admins (e.g., reporting.admin, dormitory.admin)
-    scoped_admin_prefixes = @user.role_names.select { |r| r.end_with?(".admin") }.map { |r| r.split(".").first }.uniq
+    scoped_admin_prefixes = [ @user.effective_role ].compact
+      .select { |r| r.end_with?(".admin") }.map { |r| r.split(".").first }.uniq
     if scoped_admin_prefixes.any? && !@user.has_role?("admin")
       @recent_events = OutboxEvent.order(created_at: :desc).includes(:actor).limit(10)
         .where(scoped_admin_prefixes.map { "action LIKE ?" }.join(" OR "), *scoped_admin_prefixes.map { |p| "#{p}.%" })

@@ -1268,10 +1268,27 @@ ru:
     welcome: Добро пожаловать, %{user}
   report_templates:
     page_title: Шаблоны отчётов
+  roles:
+    admin: Администратор
+    supervisor: Наблюдатель
+    reporting:
+      admin: Администратор отчётов
+      manager: Менеджер отчётов
+      reporter: Исполнитель
+      reviewer: Проверяющий
+      visitor: Наблюдатель отчётов
+    dormitory:
+      admin: Администратор общежитий
+      commandant: Комендант
+      registrar: Регистратор
+  active_roles:
+    switched: "Активная роль изменена: %{role}"
+    not_assigned: Эта роль вам не назначена.
   navigation:
     notifications: Уведомления
     logout: Выйти
     home: Главная
+    active_role: Роль
     reports_section: Отчёты
     all_reports: Все отчёты
     templates: Шаблоны

@@ -102,7 +102,7 @@ class ActivityFeedControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "опубликовал(а) отчёт"
   end
 
-  test "user with both reporting.admin and dormitory.admin sees all events" do
+  test "user with both reporting.admin and dormitory.admin sees events of the active role only" do
     dual_admin = User.create!(email_address: "dual@test.com", password: "password", password_confirmation: "password")
     UserRole.create!(user: dual_admin, role_name: "reporting.admin")
     UserRole.create!(user: dual_admin, role_name: "dormitory.admin")
@@ -130,6 +130,14 @@ class ActivityFeedControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_includes response.body, "добавил(а) проживающего"
+    assert_not_includes response.body, "опубликовал(а) отчёт"
+
+    patch active_role_path, params: { role_name: "reporting.admin" }
+    assert_redirected_to root_path
+
+    get activity_feed_index_path
+    assert_response :success
     assert_includes response.body, "опубликовал(а) отчёт"
+    assert_not_includes response.body, "добавил(а) проживающего"
   end
 end
