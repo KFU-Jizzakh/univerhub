@@ -1,7 +1,5 @@
 module Dormitory
   class AcademicYear < ApplicationRecord
-    # PURPOSE: Academic year entity with pending→active→closed lifecycle, unique active year constraint, and auto-assignment to accommodations
-    # SPECIFICATION: SPEC-DORM-01
     include AASM
     include Discard::Model
     include Trackable

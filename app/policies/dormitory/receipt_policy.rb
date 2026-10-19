@@ -1,8 +1,5 @@
 module Dormitory
   class ReceiptPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Receipt — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar can add receipts (create only)
-    # SPECIFICATION: SPEC-DORM-09
-
     def new?
       admin_or_dormitory_admin? || commandant_with_access? || registrar?
     end

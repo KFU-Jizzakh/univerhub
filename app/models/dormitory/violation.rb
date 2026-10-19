@@ -1,7 +1,5 @@
 module Dormitory
   class Violation < ApplicationRecord
-    # PURPOSE: Violation tracking for dormitory residents — type, place, description, status lifecycle (open→reviewed→closed), protocol file, and review details
-    # SPECIFICATION: SPEC-DORM-10
     include Discard::Model
     include Trackable
 

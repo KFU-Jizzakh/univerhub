@@ -53,7 +53,7 @@ module Dormitory
       assert csv.include?("Итого")
     end
 
-    # --- SPEC-DORM-09: Payment columns in exports ---
+    # --- Payment columns in exports ---
 
     test "settled_residents_csv includes payment column headers" do
       csv = ExportService.settled_residents_csv(Dormitory::Resident.all, building_id: @building.id)
@@ -80,7 +80,7 @@ module Dormitory
       assert csv.include?("0.00")
     end
 
-    # --- SPEC-DORM-09: Debtors CSV ---
+    # --- Debtors CSV ---
 
     def attach_receipt(receipt)
       receipt.attachment.attach(

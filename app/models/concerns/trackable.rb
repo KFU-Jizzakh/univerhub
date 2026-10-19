@@ -1,6 +1,4 @@
 module Trackable
-  # PURPOSE: Concern that wraps operations in a transaction and creates an OutboxEvent with actor, action, record, and payload
-  # SPECIFICATION: SPEC-CORE-04
   extend ActiveSupport::Concern
 
   private

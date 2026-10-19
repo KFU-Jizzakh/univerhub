@@ -1,7 +1,5 @@
 module Reporting
   class ReportItem < ApplicationRecord
-    # PURPOSE: Report item with content, attachments, grading, and graded-by tracking
-    # SPECIFICATION: SPEC-REPT-01
     include Trackable
 
 

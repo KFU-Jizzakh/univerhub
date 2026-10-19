@@ -1,7 +1,5 @@
 module Dormitory
   class BatchOperationPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for BatchOperation — admin/dormitory.admin full access, commandant scoped to assigned buildings
-    # SPECIFICATION: SPEC-DORM-05
     def index?
       admin_or_dormitory_admin_or_commandant?
     end

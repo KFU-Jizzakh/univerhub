@@ -1,8 +1,5 @@
 module Dormitory
   class ReceiptsController < ApplicationController
-    # PURPOSE: CRUD for payment receipts nested under an accommodation
-    # SPECIFICATION: SPEC-DORM-09
-
     before_action :set_accommodation
     before_action :set_receipt, only: [ :edit, :update, :destroy ]
 

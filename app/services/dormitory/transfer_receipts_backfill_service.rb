@@ -1,6 +1,4 @@
 module Dormitory
-  # PURPOSE: One-off backfill that moves receipts from completed transfer/repair-origin accommodations to their exact-day successor accommodations and inherits the required amount
-  # SPECIFICATION: SPEC-DORM-04
   class TransferReceiptsBackfillService
     Result = Struct.new(:pairs_processed, :receipts_moved, :amounts_copied, :skipped_without_successor, keyword_init: true)
 
@@ -34,8 +32,6 @@ module Dormitory
 
     private
 
-    # PURPOSE: Returns completed transfer and repair origins (including discarded ones) that still have receipts
-    # SPECIFICATION: SPEC-DORM-04
     def candidates
       receipt_acc_ids = Dormitory::Receipt.with_discarded.select(:accommodation_id)
       Dormitory::Accommodation.with_discarded
@@ -44,8 +40,6 @@ module Dormitory
         .order(:id)
     end
 
-    # PURPOSE: Returns the resident's earliest kept accommodation that starts exactly on the origin's actual end date (the transfer day)
-    # SPECIFICATION: SPEC-DORM-04
     def successor_for(old_acc)
       return nil unless old_acc.actual_end_date
 
@@ -57,8 +51,6 @@ module Dormitory
         .first
     end
 
-    # PURPOSE: Reassigns all receipts (including discarded) to the successor, copies the required amount when the successor has none, and records an aggregate audit event
-    # SPECIFICATION: SPEC-DORM-04
     def migrate_pair!(old_acc, successor)
       ActiveRecord::Base.transaction do
         moved = Dormitory::Receipt.with_discarded.where(accommodation_id: old_acc.id)

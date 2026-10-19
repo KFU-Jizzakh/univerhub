@@ -1,7 +1,5 @@
 module Reporting
   class Report < ApplicationRecord
-    # PURPOSE: Full report lifecycle with AASM state machine (draft→new→in_progress→in_review→accepted/rejected/reopened), items, grading, comments, and deadline tracking
-    # SPECIFICATION: SPEC-REPT-01
     include AASM
     include Discard::Model
     include Trackable

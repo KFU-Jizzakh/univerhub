@@ -2,8 +2,6 @@ require "csv"
 
 module Dormitory
   class ExportService
-    # PURPOSE: Generates CSV exports (settled residents, free slots, accommodation history, occupancy stats, debtors) with UTF-8 BOM and semicolon delimiter
-    # SPECIFICATION: SPEC-DORM-06, SPEC-DORM-09
     SEPARATOR = ";"
 
     def self.settled_residents_csv(scope, filters = {})
@@ -109,8 +107,6 @@ module Dormitory
       end
     end
 
-    # PURPOSE: Generates a CSV export of active debtors with resident contacts, placement, and payment details
-    # SPECIFICATION: SPEC-DORM-09
     def self.debtors_csv(scope)
       accommodations = scope.with_debt.debt_desc.includes(:resident, :receipts, room: :building)
 

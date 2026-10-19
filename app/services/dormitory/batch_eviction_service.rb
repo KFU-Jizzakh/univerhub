@@ -1,7 +1,5 @@
 module Dormitory
   class BatchEvictionService
-    # PURPOSE: Orchestrates mass eviction with best-effort per-resident execution, creating BatchOperation with error tracking
-    # SPECIFICATION: SPEC-DORM-05
     BATCH_EVICTION_REASONS = Dormitory::Accommodation::EVICTION_REASONS - %w[transfer]
 
     def initialize(academic_year:, building:, resident_ids:, eviction_reason:, performed_by:, comment: nil)

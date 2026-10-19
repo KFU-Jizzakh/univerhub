@@ -1,7 +1,5 @@
 module Dormitory
   class ResidentPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Resident — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar global create/edit without destroy
-    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     def index?
       self.class.higher_privilege?(user) || commandant?
     end
@@ -18,8 +16,6 @@ module Dormitory
       create?
     end
 
-    # PURPOSE: Whether the user may register a resident with a place (manual room and bed selection during registration)
-    # SPECIFICATION: SPEC-DORM-12
     def create_with_placement?
       admin_or_dormitory_admin? || commandant_with_building_access? || registrar?
     end
@@ -42,20 +38,14 @@ module Dormitory
       self.class.higher_privilege?(user) || commandant?
     end
 
-    # PURPOSE: Whether the residents index payment aggregates must be scoped to the commandant's assigned buildings — only for a user without higher-privilege roles
-    # SPECIFICATION: SPEC-DORM-09
     def building_scoped_aggregates?
       self.class.building_scoped_user?(user)
     end
 
-    # PURPOSE: Whether the user holds a role above commandant (admin, dormitory.admin, or registrar)
-    # SPECIFICATION: SPEC-DORM-09
     def self.higher_privilege?(user)
       user.has_role?("admin") || user.has_role?("dormitory.admin") || user.has_role?("dormitory.registrar")
     end
 
-    # PURPOSE: Whether the user is a pure commandant (no higher-privilege roles), whose dormitory views are scoped to assigned buildings
-    # SPECIFICATION: SPEC-DORM-09
     def self.building_scoped_user?(user)
       user.has_role?("dormitory.commandant") && !higher_privilege?(user)
     end

@@ -1,7 +1,5 @@
 module Dormitory
   class Receipt < ApplicationRecord
-    # PURPOSE: Payment receipt tracking — stores payment amounts with file attachments, linked to an accommodation
-    # SPECIFICATION: SPEC-DORM-09
     include Discard::Model
     include Trackable
 

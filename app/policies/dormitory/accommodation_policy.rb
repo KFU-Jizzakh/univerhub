@@ -1,7 +1,5 @@
 module Dormitory
   class AccommodationPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Accommodation — admin/dormitory.admin full access, commandant scoped to assigned buildings, registrar read-only
-    # SPECIFICATION: SPEC-DORM-04
     def index?
       admin_or_dormitory_admin? || commandant? || registrar?
     end
@@ -28,14 +26,10 @@ module Dormitory
       admin_or_dormitory_admin? || commandant_with_room_access?
     end
 
-    # PURPOSE: An admin or the registrar can confirm a pending accommodation
-    # SPECIFICATION: SPEC-DORM-12
     def confirm?
       admin_or_dormitory_admin? || registrar?
     end
 
-    # PURPOSE: Only admin/dormitory.admin can reject a pending accommodation
-    # SPECIFICATION: SPEC-DORM-12
     def reject?
       admin_or_dormitory_admin?
     end

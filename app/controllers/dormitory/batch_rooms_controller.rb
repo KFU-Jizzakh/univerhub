@@ -1,8 +1,5 @@
 module Dormitory
   class BatchRoomsController < ApplicationController
-    # PURPOSE: Mass creation of dormitory rooms from a number range with editable preview table
-    # SPECIFICATION: SPEC-DORM-02
-
     def new
       authorize Dormitory::Room, :create?
       @buildings = policy_scope(Dormitory::Building)

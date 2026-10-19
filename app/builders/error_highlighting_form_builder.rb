@@ -1,5 +1,3 @@
-# PURPOSE: Form builder that highlights fields with validation errors: adds the Bootstrap is-invalid class to the control and renders the error message below it
-# SPECIFICATION: SPEC-DORM-12
 class ErrorHighlightingFormBuilder < ActionView::Helpers::FormBuilder
   HIGHLIGHTED_FIELD_HELPERS = (field_helpers - %i[label checkbox check_box radio_button fields_for fields hidden_field]).freeze
 

@@ -1,6 +1,4 @@
 class NotificationPolicy < ApplicationPolicy
-  # PURPOSE: Authorization rules for Notification — user sees own, can mark read
-  # SPECIFICATION: SPEC-CORE-04
   def index?
     true
   end

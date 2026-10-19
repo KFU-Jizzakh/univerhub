@@ -1,7 +1,5 @@
 module Dormitory
   class ExportPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for CSV exports — accessible to admin, dormitory.admin, commandant, and registrar (read-only)
-    # SPECIFICATION: SPEC-DORM-06
     def index?
       admin_or_dormitory_admin_or_commandant? || registrar?
     end

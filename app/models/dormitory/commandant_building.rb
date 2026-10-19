@@ -1,7 +1,5 @@
 module Dormitory
   class CommandantBuilding < ApplicationRecord
-    # PURPOSE: Links commandant users to buildings they manage, with soft-deactivation support
-    # SPECIFICATION: SPEC-DORM-08
     include Trackable
 
     belongs_to :user

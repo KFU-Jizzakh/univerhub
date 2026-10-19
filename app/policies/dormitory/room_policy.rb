@@ -1,7 +1,5 @@
 module Dormitory
   class RoomPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Room — admin/dormitory.admin manage, commandant views assigned buildings' rooms only, registrar views all
-    # SPECIFICATION: SPEC-DORM-02
     def index?
       admin_or_dormitory_admin_or_commandant? || registrar?
     end

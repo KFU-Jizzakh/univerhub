@@ -1,7 +1,5 @@
 module Reporting
   class ReportTemplatePolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for ReportTemplate — manager/admin manage, published visible to all
-    # SPECIFICATION: SPEC-REPT-02
     def index?
       true
     end

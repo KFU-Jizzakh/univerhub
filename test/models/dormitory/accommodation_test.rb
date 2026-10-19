@@ -827,7 +827,7 @@ module Dormitory
       assert_equal target_room.reload.status, new_room_event.payload["to"]
     end
 
-    # --- SPEC-DORM-09: Payment receipts & amount tracking ---
+    # --- Payment receipts & amount tracking ---
 
     def attach_receipt_to(receipt)
       receipt.attachment.attach(
@@ -977,7 +977,7 @@ module Dormitory
       assert_not acc.payment_overdue?
     end
 
-    # --- SPEC-DORM-09: debtors scope ---
+    # --- debtors scope ---
 
     test "with_debt returns only active underpaid accommodations" do
       debtor = dormitory_accommodations(:active_accommodation)
@@ -1211,7 +1211,7 @@ module Dormitory
       end
     end
 
-    # --- SPEC-DORM-12: pending registration with place issuance ---
+    # --- pending registration with place issuance ---
 
     test "do_register! happy path creates pending accommodation with bed and course snapshot" do
       acc = build_accommodation

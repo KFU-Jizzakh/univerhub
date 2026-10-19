@@ -4,8 +4,6 @@ require "tmpdir"
 
 module Reporting
   class PdfGenerator
-    # PURPOSE: Generates PDF documents from Typst templates with ERB rendering, status watermarks, and cache-based invalidation
-    # SPECIFICATION: SPEC-REPT-03
     def initialize(report, force: false)
       @report = report
       @force = force

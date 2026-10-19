@@ -1,7 +1,5 @@
 module Reporting
   class ReportCommentPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for ReportComment — participants can create, author/admin can delete
-    # SPECIFICATION: SPEC-REPT-01
     def show?
       Reporting::ReportPolicy.new(user, record.report).access_comments?
     end

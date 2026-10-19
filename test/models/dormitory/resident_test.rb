@@ -702,7 +702,7 @@ class Dormitory::ResidentTest < ActiveSupport::TestCase
     assert resident.valid?
   end
 
-  # --- SPEC-DORM-09: residents index aggregates ---
+  # --- residents index aggregates ---
 
   def create_accommodation_for(resident, room, required_amount: 0, status: :active)
     attrs = {

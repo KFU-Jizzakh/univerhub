@@ -1,8 +1,6 @@
 module Dormitory
   class ResidentsController < ApplicationController
     before_action :set_resident, only: [ :show, :edit, :update, :destroy ]
-    # PURPOSE: Lists residents with per-resident payment aggregates ("Всего оплатил"/"Должен"), building-scoped for a pure commandant
-    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-09
     def index
       authorize Dormitory::Resident
       @residents = policy_scope(Dormitory::Resident).includes(:current_room)
@@ -128,8 +126,6 @@ module Dormitory
       end
     end
 
-    # PURPOSE: Server-side suggestion of the next free room and bed for a given gender and course, used to prefill the placement selects
-    # SPECIFICATION: SPEC-DORM-12
     def preview_place
       authorize Dormitory::Resident, :create_with_placement?
       resident = Dormitory::Resident.new(gender: params[:gender], course: params[:course])
@@ -150,8 +146,6 @@ module Dormitory
 
     private
 
-    # PURPOSE: Prefills the placement selects with the next free room and bed, or keeps the previously chosen values on form re-render
-    # SPECIFICATION: SPEC-DORM-12
     def set_placement_suggestion
       @placement_start_date = params.dig(:placement, :start_date).presence || Date.current
       @placement_end_date = params.dig(:placement, :planned_end_date).presence || Date.current + 1.year

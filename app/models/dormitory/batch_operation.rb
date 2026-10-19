@@ -1,7 +1,5 @@
 module Dormitory
   class BatchOperation < ApplicationRecord
-    # PURPOSE: Tracks mass eviction batch operations with success/error counts, best-effort execution
-    # SPECIFICATION: SPEC-DORM-05
     belongs_to :academic_year, class_name: "Dormitory::AcademicYear"
     belongs_to :building, class_name: "Dormitory::Building"
     belongs_to :performed_by, class_name: "User", optional: true

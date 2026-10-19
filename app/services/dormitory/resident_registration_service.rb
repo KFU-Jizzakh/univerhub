@@ -1,6 +1,4 @@
 module Dormitory
-  # PURPOSE: Creates a resident and, when placement is requested, registers a pending accommodation into the user-chosen room and bed; a missing room or bed is a form error and the resident is not created. Optionally sets the accommodation required amount and creates a payment receipt on the pending accommodation when receipt fields are provided
-  # SPECIFICATION: SPEC-DORM-12
   class ResidentRegistrationService
     attr_reader :resident, :accommodation, :receipt
 
@@ -49,8 +47,6 @@ module Dormitory
 
     private
 
-    # PURPOSE: Returns the user-chosen room within the visible scope, or nil when the room is missing or out of scope
-    # SPECIFICATION: SPEC-DORM-12
     def chosen_room(manual_room_id)
       return nil if manual_room_id.to_s.strip.blank?
 
@@ -70,8 +66,6 @@ module Dormitory
       accommodation
     end
 
-    # PURPOSE: Creates a receipt on the pending accommodation, raising RecordInvalid (transaction rollback) when the receipt is invalid
-    # SPECIFICATION: SPEC-DORM-12
     def create_receipt!(receipt_params)
       @receipt = Dormitory::Receipt.new(
         accommodation: @accommodation,
@@ -82,8 +76,6 @@ module Dormitory
       @receipt.do_create!
     end
 
-    # PURPOSE: A receipt is requested when any of its fields (file, amount, or paid date) is present
-    # SPECIFICATION: SPEC-DORM-12
     def receipt_requested?(receipt_params)
       receipt_params[:attachment].present? || cast_decimal(receipt_params[:amount]).present? ||
         receipt_params[:paid_at].present?

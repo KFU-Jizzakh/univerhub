@@ -1,7 +1,5 @@
 module Dormitory
   class DashboardPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Dormitory dashboard — accessible to admin, dormitory.admin, commandant, and registrar (global stats)
-    # SPECIFICATION: SPEC-DORM-07
     def index?
       admin_or_dormitory_admin? || commandant? || registrar?
     end

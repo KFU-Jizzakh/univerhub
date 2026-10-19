@@ -1,7 +1,5 @@
 module Dormitory
   class AcademicYearPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for AcademicYear — admin/dormitory.admin manage, commandant and registrar view only
-    # SPECIFICATION: SPEC-DORM-01
     def index?
       admin_or_dormitory_admin_or_commandant? || registrar?
     end

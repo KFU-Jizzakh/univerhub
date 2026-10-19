@@ -1,6 +1,4 @@
 class UserRole < ApplicationRecord
-  # PURPOSE: User-role assignment storing the role name as a string (roles are defined in code, not the database), audit-trailed CRUD
-  # SPECIFICATION: SPEC-CORE-02
   include Trackable
 
   NAMES = %w[admin reporting.manager reporting.reporter reporting.reviewer reporting.visitor supervisor reporting.admin dormitory.admin dormitory.commandant dormitory.registrar].freeze

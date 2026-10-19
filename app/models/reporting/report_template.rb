@@ -1,7 +1,5 @@
 module Reporting
   class ReportTemplate < ApplicationRecord
-    # PURPOSE: Report template defining ordered items structure, publish/archive lifecycle, and Typst PDF template selection
-    # SPECIFICATION: SPEC-REPT-02
     include Trackable
 
     PDF_TEMPLATES_DIR = Rails.root.join("app/views/reporting/pdf_templates")

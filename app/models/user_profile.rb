@@ -1,6 +1,4 @@
 class UserProfile < ApplicationRecord
-  # PURPOSE: User profile with name fields and avatar upload, belongs to user
-  # SPECIFICATION: SPEC-CORE-03
   include Trackable
 
   belongs_to :user

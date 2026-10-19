@@ -23,8 +23,6 @@ module Dormitory
     end
 
     def show
-      # PURPOSE: Display building details with bed statistics and room list
-      # SPECIFICATION: SPEC-DORM-02, SPEC-DORM-11
       authorize @building
 
       rooms_for_stats = @building.rooms.kept

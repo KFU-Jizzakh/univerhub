@@ -77,8 +77,6 @@ module Dormitory
       render :edit, status: :unprocessable_entity
     end
 
-    # PURPOSE: Confirms a pending accommodation (admin only)
-    # SPECIFICATION: SPEC-DORM-12
     def confirm
       authorize @accommodation
       @accommodation.do_confirm!(force: policy(@accommodation).force?)
@@ -90,8 +88,6 @@ module Dormitory
       redirect_to dormitory_accommodation_path(@accommodation), alert: @accommodation.errors.full_messages.join(", ")
     end
 
-    # PURPOSE: Rejects a pending accommodation, releasing the reserved place (admin only)
-    # SPECIFICATION: SPEC-DORM-12
     def reject
       authorize @accommodation
       @accommodation.do_reject!

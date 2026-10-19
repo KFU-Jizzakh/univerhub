@@ -1,6 +1,4 @@
 class Notification < ApplicationRecord
-  # PURPOSE: In-app notification with polymorphic notifiable record, read/unread state, and recipient scoping
-  # SPECIFICATION: SPEC-CORE-04
   belongs_to :recipient, class_name: "User"
   belongs_to :notifiable, polymorphic: true
 

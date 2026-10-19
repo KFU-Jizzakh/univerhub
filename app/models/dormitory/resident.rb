@@ -1,7 +1,5 @@
 module Dormitory
   class Resident < ApplicationRecord
-    # PURPOSE: Resident personal data, status lifecycle (not_settled→settled→temporarily_absent→evicted), course, search, and photo management
-    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     include Discard::Model
     include Trackable
     include PreservesAttachmentChanges
@@ -49,8 +47,6 @@ module Dormitory
       where("last_name ILIKE :q OR first_name ILIKE :q OR middle_name ILIKE :q", q: "%#{sanitize_sql_like(query)}%")
     }
 
-    # PURPOSE: Returns a resident_id => amount hash of kept receipts summed across all kept accommodations of the given residents, optionally scoped to buildings
-    # SPECIFICATION: SPEC-DORM-09
     def self.paid_totals_for(resident_ids, building_ids: nil)
       scope = Dormitory::Receipt.kept
         .joins(:accommodation)
@@ -61,8 +57,6 @@ module Dormitory
       scope.group(Dormitory::Accommodation.arel_table[:resident_id]).sum(:amount)
     end
 
-    # PURPOSE: Returns a resident_id => debt hash — the sum of positive debts across all kept accommodations of the given residents, optionally scoped to buildings
-    # SPECIFICATION: SPEC-DORM-09
     def self.debt_totals_for(resident_ids, building_ids: nil)
       positive_debt = Arel.sql("GREATEST(#{Dormitory::Accommodation::DEBT_SQL}, 0)")
       scope = Dormitory::Accommodation.kept.where(resident_id: resident_ids)
@@ -84,8 +78,6 @@ module Dormitory
       track_event("dormitory.resident.updated") { update!(attrs) }
     end
 
-    # PURPOSE: Soft-deletes the resident, rejecting pending accommodations first so reserved beds and room occupancy are released; serialized via room and resident locks, idempotent for already discarded records
-    # SPECIFICATION: SPEC-DORM-03, SPEC-DORM-12
     def do_discard!
       return true if discarded?
 
@@ -117,7 +109,7 @@ module Dormitory
       true
     end
 
-    # PURPOSE: Copies prepared application/contract documents (numbers and files) into the accommodation, only on the first settlement of the resident
+    # only on the first settlement of the resident
     def copy_documents_to(accommodation)
       return unless accommodations.kept.none?
 
@@ -127,8 +119,6 @@ module Dormitory
       accommodation.contract_file.attach(contract_file.blob) if contract_file.attached? && !accommodation.contract_file.attached?
     end
 
-    # PURPOSE: Whether the course can still be changed: only while not settled (or evicted) and without a pending accommodation
-    # SPECIFICATION: SPEC-DORM-12
     def course_editable?
       (not_settled? || evicted?) && accommodations.kept.where(status: :pending).none?
     end

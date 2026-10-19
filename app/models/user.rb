@@ -1,6 +1,4 @@
 class User < ApplicationRecord
-  # PURPOSE: User entity with email/password authentication, role assignment, account activation/deactivation, soft-delete, and profile delegation
-  # SPECIFICATION: SPEC-CORE-01, SPEC-CORE-02
   include Discard::Model
 
   delegate :full_name, to: :profile, allow_nil: true

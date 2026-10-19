@@ -51,19 +51,7 @@ bin/brakeman             # security scan
 
 - After work with code show commit message
 - Don't read @docs/* if explicit instructions not provided
-- Don't commit
+- Don't commit if explicit instructions not provided
 - Use ripgrep instead of grep if available
-- Before implementing a feature, add or update detailed specs in @docs using the template @docs/_spec-template.md. Ask questions if anything is more than 1% unclear.
 - The feature’s behavior and key points from Acceptance Criteria and Business Rules must be covered by tests.
 
-
-## Docblock format
-All classes and key methods must have a docblock in the format below
-
-```
- # PURPOSE: [one-line summary of what the class or method does]
- # SPECIFICATION: [spec-item-id], [spec-item-id], ...
- 
-```
-- `PURPOSE:` — single sentence describing the class or method purpose
-- `SPECIFICATION:` — comma-separated list of identifiers referencing the relevant items in `docs/spec-*.md`. Format mirrors the spec's own numbering (e.g. `SPEC-01, SPEC-03, SPEC-05` for the main spec). Omit for cross-cutting infrastructure files (User, Profile, Setting, etc.).

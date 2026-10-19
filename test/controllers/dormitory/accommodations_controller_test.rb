@@ -394,7 +394,7 @@ module Dormitory
       assert_response :success
     end
 
-    # --- SPEC-DORM-09: debtors list ---
+    # --- debtors list ---
 
     test "index regular mode does not show the balance column" do
       sign_in @admin
@@ -968,7 +968,7 @@ module Dormitory
       assert_equal "free", original_room.reload.status
     end
 
-    # --- SPEC-DORM-09: Payment fields in settlement ---
+    # --- Payment fields in settlement ---
 
     def settle_params_with_amount(overrides = {})
       {
@@ -1023,7 +1023,7 @@ module Dormitory
       assert_redirected_to dormitory_accommodation_path(acc)
     end
 
-    # --- SPEC-DORM-12: pending registration flow ---
+    # --- pending registration flow ---
 
     def create_pending_accommodation
       acc = Accommodation.new(

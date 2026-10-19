@@ -1,7 +1,5 @@
 module Dormitory
   class Accommodation < ApplicationRecord
-    # PURPOSE: Core settlement operations: pending registration with automatic place issuance, confirmation, settlement, transfer between rooms, and eviction with document management, payment tracking, and date tracking
-    # SPECIFICATION: SPEC-DORM-04, SPEC-DORM-09, SPEC-DORM-12
     include AASM
     include Discard::Model
     include Trackable
@@ -74,29 +72,21 @@ module Dormitory
     scope :ordered, -> { order(created_at: :desc) }
     scope :overdue, -> { active.where("planned_end_date < ?", Date.current) }
 
-    # PURPOSE: Returns active, non-discarded accommodations whose kept receipts total less than the required amount (debtors)
-    # SPECIFICATION: SPEC-DORM-09
     scope :with_debt, -> { kept.active.where(Arel.sql("#{DEBT_SQL} > 0")) }
 
-    # PURPOSE: Orders accommodations by debt amount descending (largest debt first)
-    # SPECIFICATION: SPEC-DORM-09
     scope :debt_desc, -> { reorder(Arel.sql("#{DEBT_SQL} DESC")) }
 
-    # PURPOSE: Sums the outstanding debt over the given accommodation scope without join duplication from eager-loaded receipts
-    # SPECIFICATION: SPEC-DORM-09
+    # .except(:includes, ...) prevents join duplication from eager-loaded receipts
     def self.total_debt(scope)
       scope.except(:includes, :eager_load, :preload).left_outer_joins(:room).sum(Arel.sql(DEBT_SQL))
     end
 
-    # PURPOSE: Sums kept receipt amounts for debtors in the given accommodation scope
-    # SPECIFICATION: SPEC-DORM-09
     def self.total_paid_for(scope)
       debtors = scope.except(:includes, :eager_load, :preload, :order).left_outer_joins(:room).with_debt.select(:id)
       Dormitory::Receipt.kept.where(accommodation_id: debtors).sum(:amount)
     end
 
-    # PURPOSE: Sums kept receipts of kept accommodations (any status) in the given scope; kept and active-year scoping is the caller's job
-    # SPECIFICATION: SPEC-DORM-09
+    # kept and active-year scoping of the given scope is the caller's job
     def self.total_paid_within(scope)
       Dormitory::Receipt.kept
         .where(accommodation_id: scope.except(:includes, :eager_load, :preload, :order).select(:id))
@@ -119,16 +109,13 @@ module Dormitory
       active? && planned_end_date && planned_end_date < Date.current
     end
 
-    # PURPOSE: Sums the amounts of kept receipts, reusing the preloaded association to avoid per-row SUM queries
-    # SPECIFICATION: SPEC-DORM-09
+    # reuses the preloaded association to avoid a per-row SUM query
     def total_paid
       return receipts.sum(:amount) unless receipts.loaded?
 
       receipts.select(&:kept?).sum(&:amount)
     end
 
-    # PURPOSE: Returns the difference between the paid amount and the required amount (positive = overpayment, negative = debt)
-    # SPECIFICATION: SPEC-DORM-09
     def balance
       total_paid - required_amount
     end
@@ -162,8 +149,6 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Registers a resident into a room as a pending accommodation, reserving the place (bed label) without settling the resident
-    # SPECIFICATION: SPEC-DORM-12
     def do_register!(force: false, bed_label: nil)
       raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
 
@@ -186,8 +171,6 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Confirms a pending accommodation: resident becomes settled, accommodation becomes active, reserved place is kept
-    # SPECIFICATION: SPEC-DORM-12
     def do_confirm!(force: false)
       raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
 
@@ -209,8 +192,6 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Rejects a pending accommodation: releases the reserved place, accommodation becomes cancelled, resident stays not settled
-    # SPECIFICATION: SPEC-DORM-12
     def do_reject!
       track_event("dormitory.accommodation.rejected",
                   { resident_id: resident.id, room_id: room.id, room_number: room.number }) do
@@ -226,8 +207,6 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Releases a pending accommodation reserved on a zero-occupancy room: cancels without decrementing the counter and recalibrates the room status
-    # SPECIFICATION: SPEC-DORM-12
     def do_cancel_without_occupancy!
       track_event("dormitory.accommodation.rejected",
                   { resident_id: resident.id, room_id: room.id, room_number: room.number }) do
@@ -238,8 +217,6 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Updates a pending accommodation, releasing the old room and reserving a new one when the room changes
-    # SPECIFICATION: SPEC-DORM-12
     def do_update_pending!(attrs, force: false)
       raise ActiveRecord::RecordInvalid.new(self) unless resident&.present? && room&.present?
 
@@ -285,8 +262,6 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Transfers a resident between rooms: completes the old accommodation with reason "transfer", creates a new active one, moves all receipts to it, and inherits the required amount
-    # SPECIFICATION: SPEC-DORM-04
     def do_transfer!(new_acc, eviction_reason: "transfer")
       validate_transfer_preconditions!(new_acc)
 
@@ -363,15 +338,11 @@ module Dormitory
       self
     end
 
-    # PURPOSE: Assigns the first free bed label of the current room; under force leaves the label empty on a full room unless a bed label was explicitly requested
-    # SPECIFICATION: SPEC-DORM-12
     def assign_bed!(force = false)
       self.bed_label = room.free_bed_labels.first if bed_label.blank? && room.free_bed_labels.any?
       self.bed_label = nil if force && bed_label.blank? && room.free_bed_labels.none?
     end
 
-    # PURPOSE: Soft-deletes the accommodation, reconciling room and resident state first: active becomes a full eviction equivalent, pending a rejection equivalent; serialized via room and resident locks, idempotent for already discarded records
-    # SPECIFICATION: SPEC-DORM-04
     def do_discard!
       return true if discarded?
 
@@ -495,8 +466,6 @@ module Dormitory
       end
     end
 
-    # PURPOSE: Returns the sorted ids of the rooms that must be locked before a pending update: the current room and, when present, the requested target room
-    # SPECIFICATION: SPEC-DORM-12
     def lock_room_ids_for(attrs)
       target = attrs[:room_id].to_s.strip.presence
       [ room_id.to_s, target ].compact.map(&:to_i).uniq.sort

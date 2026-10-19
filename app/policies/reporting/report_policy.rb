@@ -1,7 +1,5 @@
 module Reporting
   class ReportPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for Report — role-based lifecycle access (manager creates, reporter submits, reviewer grades)
-    # SPECIFICATION: SPEC-REPT-01
     def index?
       true
     end

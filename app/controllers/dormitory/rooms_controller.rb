@@ -4,8 +4,6 @@ module Dormitory
     before_action :set_buildings, only: [ :index, :new, :create, :edit, :update ]
 
     def index
-      # PURPOSE: List rooms with aggregated bed statistics and building filter
-      # SPECIFICATION: SPEC-DORM-02, SPEC-DORM-11
       authorize Dormitory::Room
       @rooms = policy_scope(Dormitory::Room)
       @rooms = @rooms.where(building_id: params[:building_id]) if params[:building_id].present?
@@ -92,8 +90,6 @@ module Dormitory
       }
     end
 
-    # PURPOSE: Returns the free bed labels of a room as JSON for the bed select
-    # SPECIFICATION: SPEC-DORM-12
     def beds
       authorize Dormitory::Room, :index?
       room = policy_scope(Dormitory::Room).find(params[:id])

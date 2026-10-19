@@ -1,7 +1,5 @@
 module Dormitory
   class Room < ApplicationRecord
-    # PURPOSE: Dormitory room with AASM occupancy state machine, gender and course restrictions, capacity management, and bed place labeling
-    # SPECIFICATION: SPEC-DORM-02, SPEC-DORM-12
     include AASM
     include Discard::Model
     include Trackable

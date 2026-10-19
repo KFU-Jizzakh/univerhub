@@ -1,7 +1,5 @@
 module Admin
   class UserPolicy < ApplicationPolicy
-    # PURPOSE: Authorization rules for admin user management — super-admin full access, scoped admins manage module users only
-    # SPECIFICATION: SPEC-CORE-02, SPEC-CORE-03
     MODULE_ROLES = UserRole::MODULE_ROLES
 
     PROTECTED_ROLES = %w[dormitory.admin].freeze

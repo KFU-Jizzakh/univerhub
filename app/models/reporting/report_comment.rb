@@ -1,7 +1,5 @@
 module Reporting
   class ReportComment < ApplicationRecord
-    # PURPOSE: Comment on a report by any participant in the reporting workflow
-    # SPECIFICATION: SPEC-REPT-01
     include Trackable
 
     belongs_to :report, class_name: "Reporting::Report"

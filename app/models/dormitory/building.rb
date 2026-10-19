@@ -1,7 +1,5 @@
 module Dormitory
   class Building < ApplicationRecord
-    # PURPOSE: Dormitory building with rooms, address, floor count, and discard protection
-    # SPECIFICATION: SPEC-DORM-02
     include Discard::Model
     include Trackable
 
