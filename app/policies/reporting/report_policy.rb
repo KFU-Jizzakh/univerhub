@@ -1,7 +1,10 @@
 module Reporting
   class ReportPolicy < ApplicationPolicy
     def index?
-      true
+      user.has_role?("admin") || user.has_role?("supervisor") ||
+        user.has_role?("reporting.admin") || user.has_role?("reporting.manager") ||
+        user.has_role?("reporting.reporter") || user.has_role?("reporting.reviewer") ||
+        user.has_role?("reporting.visitor")
     end
 
     def show?

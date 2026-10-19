@@ -105,19 +105,21 @@
                 </ul>
               </div>
 
-              <div class="sidebar-section">
-                <div class="sidebar-heading"><%= t("navigation.reports_section") %></div>
-                <ul>
-                  <li><%= sidebar_link t("navigation.all_reports"), reporting_reports_path, icon: "bi-file-earmark-text" %></li>
-                  <% if policy(Reporting::ReportTemplate).create? %>
-                    <li><%= sidebar_link t("navigation.templates"), reporting_report_templates_path, icon: "bi-layout-text-window-reverse" %></li>
-                    <li><%= sidebar_link t("navigation.create_report"), new_reporting_report_path, exact: true, icon: "bi-plus-circle" %></li>
-                  <% end %>
-                  <% if policy([:reporting, :reporter]).index? %>
-                    <li><%= sidebar_link t("navigation.reporters"), reporting_reporters_path, icon: "bi-people" %></li>
-                  <% end %>
-                </ul>
-              </div>
+              <% if policy(Reporting::Report).index? %>
+                <div class="sidebar-section">
+                  <div class="sidebar-heading"><%= t("navigation.reports_section") %></div>
+                  <ul>
+                    <li><%= sidebar_link t("navigation.all_reports"), reporting_reports_path, icon: "bi-file-earmark-text" %></li>
+                    <% if policy(Reporting::ReportTemplate).create? %>
+                      <li><%= sidebar_link t("navigation.templates"), reporting_report_templates_path, icon: "bi-layout-text-window-reverse" %></li>
+                      <li><%= sidebar_link t("navigation.create_report"), new_reporting_report_path, exact: true, icon: "bi-plus-circle" %></li>
+                    <% end %>
+                    <% if policy([:reporting, :reporter]).index? %>
+                      <li><%= sidebar_link t("navigation.reporters"), reporting_reporters_path, icon: "bi-people" %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
 
               <% if policy(:activity_feed).index? %>
                 <div class="sidebar-section">

@@ -28,6 +28,20 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "reporting menu is hidden for users without reporting access" do
+    sign_in_as(users(:dormitory_commandant_user))
+    get root_url
+    assert_response :success
+    assert_not_includes response.body, reporting_reports_path
+  end
+
+  test "reporting menu is shown for reporting users" do
+    sign_in_as(users(:reporter_user))
+    get root_url
+    assert_response :success
+    assert_includes response.body, reporting_reports_path
+  end
+
   test "dual admin dashboard recent events follow the active role" do
     dual_admin = users(:dormitory_admin_user)
     dual_admin.add_role!("reporting.admin")

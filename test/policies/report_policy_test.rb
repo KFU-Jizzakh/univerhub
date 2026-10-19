@@ -16,10 +16,20 @@ class Reporting::ReportPolicyTest < ActiveSupport::TestCase
   end
 
   # ── index? ───────────────────────────────────────────────────
-  test "index? is true for all users" do
+  test "index? is true for roles with a non-empty report scope" do
     [ @admin, @manager, @reporter, @reviewer, @supervisor, @visitor, @reporting_admin ].each do |u|
-      assert policy(u, reporting_reports(:new_report)).index?
+      assert policy(u, reporting_reports(:new_report)).index?, "expected index? true for #{u.email_address}"
     end
+  end
+
+  test "index? is false for users without reporting access" do
+    record = Reporting::Report
+    [ users(:dormitory_admin_user), users(:dormitory_commandant_user), users(:dormitory_registrar_user) ].each do |u|
+      assert_not policy(u, record).index?, "expected index? false for #{u.email_address}"
+    end
+
+    roleless = User.create!(email_address: "roleless@test.local", password: "password123", password_confirmation: "password123")
+    assert_not policy(roleless, record).index?
   end
 
   # ── show? ────────────────────────────────────────────────────

@@ -108,3 +108,5 @@ selection is available to `admin` and `dormitory.admin` only.
 - **Report visibility** (`Reporting::ReportPolicy::Scope`): `admin`, `supervisor`,
   `reporting.admin` see everything; `reporting.visitor` sees non-draft reports;
   managers see reports they created; reporters/reviewers see reports assigned to them.
+  Users without any reporting role (pure dormitory staff, role-less users) have no
+  reports access at all — the list page is denied and the sidebar menu is hidden.
