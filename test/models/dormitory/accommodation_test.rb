@@ -501,16 +501,81 @@ module Dormitory
       assert_includes old_acc.errors[:room], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.room.gender_conflict")
     end
 
-    test "do_transfer! blocks without files on new accommodation" do
+    test "do_transfer! copies documents from the old accommodation when the new one has none" do
       old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(application_number: "З-СРЦ", contract_number: "Д-СРЦ")
+      target_room = dormitory_rooms(:room_102)
+      new_acc = Accommodation.new(
+        resident: @resident, room: target_room,
+        start_date: Date.current, planned_end_date: Date.current + 1.year
+      )
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal "З-СРЦ", new_acc.reload.application_number
+      assert_equal "Д-СРЦ", new_acc.reload.contract_number
+      assert new_acc.application_file.attached?
+      assert new_acc.contract_file.attached?
+      assert_equal old_acc.reload.application_file.blob_id, new_acc.application_file.blob_id
+      assert_equal old_acc.contract_file.blob_id, new_acc.contract_file.blob_id
+    end
+
+    test "do_transfer! keeps explicitly provided documents on the new accommodation" do
+      old_acc = create_settled_accommodation(room: @room)
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+      provided_number = new_acc.application_number
+      provided_contract_number = new_acc.contract_number
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal provided_number, new_acc.reload.application_number
+      assert_equal provided_contract_number, new_acc.contract_number
+      assert new_acc.application_file.attached?
+      assert new_acc.contract_file.attached?
+      assert_not_equal old_acc.reload.application_file.blob_id, new_acc.application_file.blob_id
+      assert_not_equal old_acc.contract_file.blob_id, new_acc.contract_file.blob_id
+    end
+
+    test "do_transfer! blocks when neither accommodation has files" do
+      old_acc = Accommodation.create!(
+        resident: @resident, room: @room,
+        application_number: "З-БД", contract_number: "Д-БД",
+        start_date: Date.current, planned_end_date: Date.current + 1.year,
+        academic_year: dormitory_academic_years(:active_year_2025_2026)
+      )
+      @resident.update!(status: :settled, current_room: @room)
       target_room = dormitory_rooms(:room_102)
       new_acc = Accommodation.new(
         resident: @resident, room: target_room,
         application_number: "З-ТР", contract_number: "Д-ТР",
-        start_date: Date.current
+        start_date: Date.current, planned_end_date: Date.current + 1.year
       )
 
       assert_raises(ActiveRecord::RecordInvalid) { old_acc.do_transfer!(new_acc) }
+      assert_includes new_acc.errors[:base], I18n.t("activerecord.errors.models.dormitory/accommodation.attributes.base.files_required")
+    end
+
+    test "do_transfer! keeps explicitly provided bed label" do
+      old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(bed_label: "A")
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+      new_acc.bed_label = "B"
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal "B", new_acc.reload.bed_label
+    end
+
+    test "do_transfer! auto-picks the first free bed when none provided" do
+      old_acc = create_settled_accommodation(room: @room)
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal "A", new_acc.reload.bed_label
     end
 
     test "do_transfer! works for temporarily absent resident" do

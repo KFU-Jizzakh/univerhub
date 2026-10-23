@@ -105,7 +105,9 @@ module Dormitory
 
       @resident = @accommodation.resident
       @buildings = buildings_for_select
-      @new_accommodation = Dormitory::Accommodation.new(resident: @resident, start_date: Date.current)
+      @new_accommodation = Dormitory::Accommodation.new(
+        resident: @resident, start_date: Date.current, planned_end_date: @accommodation.planned_end_date
+      )
     end
 
     def transfer
@@ -186,12 +188,9 @@ module Dormitory
 
     def transfer_params
       params.require(:dormitory_accommodation).permit(
-        :room_id,
-        :application_number, :contract_number,
+        :room_id, :bed_label,
         :start_date, :planned_end_date, :comment,
-        :application_file, :contract_file,
-        :eviction_reason,
-        :required_amount
+        :eviction_reason
       )
     end
 

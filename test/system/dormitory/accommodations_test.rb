@@ -64,5 +64,51 @@ module Dormitory
       assert_text "Общий долг"
       assert_text "4 000,00"
     end
+
+    test "admin sees transfer form without document and amount fields" do
+      acc = dormitory_accommodations(:active_accommodation)
+      acc.application_file.attach(io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf")
+      acc.contract_file.attach(io: StringIO.new("con"), filename: "con.pdf", content_type: "application/pdf")
+      acc.update!(required_amount: 12000)
+
+      visit new_session_path
+      fill_in "Email", with: @admin.email_address
+      fill_in "Пароль", with: "password"
+      click_on "Войти"
+
+      visit new_transfer_dormitory_accommodation_path(acc)
+
+      assert_selector "h1", text: "Переселение — #{acc.resident.full_name}"
+      assert_text "Документы и сумма к оплате переносятся на новое размещение автоматически"
+
+      assert_text acc.application_number
+      assert_text acc.contract_number
+      assert_text "12 000,00"
+
+      assert_no_field "Номер заявления"
+      assert_no_field "Номер договора"
+      assert_no_selector "input[type=file]"
+      assert_no_selector "input[type=number]"
+
+      assert_selector "select#dormitory_accommodation_room_id[required]"
+      assert_selector "select#dormitory_accommodation_bed_label[required]"
+    end
+
+    test "transfer form re-renders on incomplete submission" do
+      acc = dormitory_accommodations(:active_accommodation)
+      acc.application_file.attach(io: StringIO.new("app"), filename: "app.pdf", content_type: "application/pdf")
+      acc.contract_file.attach(io: StringIO.new("con"), filename: "con.pdf", content_type: "application/pdf")
+
+      visit new_session_path
+      fill_in "Email", with: @admin.email_address
+      fill_in "Пароль", with: "password"
+      click_on "Войти"
+
+      visit new_transfer_dormitory_accommodation_path(acc)
+      click_on "Переселить"
+
+      assert_equal 422, page.status_code
+      assert_selector "h1", text: "Переселение — #{acc.resident.full_name}"
+    end
   end
 end

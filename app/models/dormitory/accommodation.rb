@@ -276,7 +276,6 @@ module Dormitory
         new_room.reload
 
         validate_transfer_room!(new_room)
-        validate_transfer_files!(new_acc)
 
         self.eviction_reason = eviction_reason
         self.actual_end_date = Date.current
@@ -287,6 +286,8 @@ module Dormitory
 
         new_acc.resident = resident
         new_acc.required_amount = required_amount if new_acc.required_amount.nil? || new_acc.required_amount.zero?
+        copy_documents_to!(new_acc)
+        validate_transfer_files!(new_acc)
         new_acc.assign_bed!
         new_acc.save!
 
@@ -531,6 +532,11 @@ module Dormitory
     end
 
     def validate_transfer_preconditions!(new_acc)
+      if new_acc.room_id.blank?
+        new_acc.errors.add(:room, :blank)
+        raise ActiveRecord::RecordInvalid.new(new_acc)
+      end
+
       unless active?
         errors.add(:status, :not_active)
         raise ActiveRecord::RecordInvalid.new(self)
@@ -567,6 +573,14 @@ module Dormitory
         errors.add(:room, :course_conflict)
         raise ActiveRecord::RecordInvalid.new(self)
       end
+    end
+
+    # documents carry over from the current placement; explicit values on the new one win
+    def copy_documents_to!(new_acc)
+      new_acc.application_number = application_number if new_acc.application_number.blank?
+      new_acc.contract_number = contract_number if new_acc.contract_number.blank?
+      new_acc.application_file.attach(application_file.blob) if application_file.attached? && !new_acc.application_file.attached?
+      new_acc.contract_file.attach(contract_file.blob) if contract_file.attached? && !new_acc.contract_file.attached?
     end
 
     def validate_transfer_files!(new_acc)

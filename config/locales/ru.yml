@@ -1011,6 +1011,7 @@ ru:
         view_details: Подробнее
         evict_button: Выселить
         transfer_button: Переселить
+        transfer_carry_over_hint: Документы и сумма к оплате переносятся на новое размещение автоматически
         settle_button: Заселить
         section_documents: Документы
         section_current: Текущее размещение

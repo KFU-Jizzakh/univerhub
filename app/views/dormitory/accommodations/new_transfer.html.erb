@@ -11,21 +11,17 @@
 </div>
 
 <%= form_with(model: @new_accommodation, url: transfer_dormitory_accommodation_path(@accommodation), method: :patch,
-               multipart: true,
                data: { controller: "room-select",
                         room_select_resident_gender_value: @resident.gender,
                         room_select_resident_course_value: @resident.course,
                         room_select_is_admin_value: false.to_s,
                         room_select_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
-                        room_select_room_template_value: t("views.shared.room_select.room_template") }) do |f| %>
+                        room_select_room_template_value: t("views.shared.room_select.room_template"),
+                        room_select_bed_prompt_value: t("views.dormitory.rooms.bed_prompt") }) do |f| %>
   <%= render "shared/form_errors", object: @accommodation %>
   <%= render "shared/form_errors", object: @new_accommodation %>
 
   <div class="row">
-    <div class="col-md-6">
-      <%= render "document_fields", f: f %>
-    </div>
-
     <div class="col-md-6">
       <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_current") %></h5>
 
@@ -36,11 +32,67 @@
 
       <div class="mb-3">
         <span class="info-label d-block"><%= t("views.dormitory.accommodations.current_room") %></span>
-        <span class="info-value"><%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %> (<%= @accommodation.room.building.name %>)</span>
+        <span class="info-value">
+          <%= link_to @accommodation.room.number, dormitory_room_path(@accommodation.room) %> (<%= @accommodation.room.building.name %>)
+          <% if @accommodation.bed_label.present? %>
+            <span class="badge bg-secondary ms-1"><%= t("views.dormitory.rooms.bed_label") %> <%= @accommodation.bed_label %></span>
+          <% end %>
+        </span>
       </div>
 
       <hr class="my-3">
 
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_documents") %></h5>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.application_number") %></span>
+        <span class="info-value"><%= @accommodation.application_number %></span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.application_file") %></span>
+        <span class="info-value">
+          <% if @accommodation.application_file.attached? %>
+            <i class="bi <%= file_icon_class(@accommodation.application_file) %> me-1"></i>
+            <%= link_to @accommodation.application_file.filename, url_for(@accommodation.application_file), target: "_blank" %>
+          <% else %>
+            <span class="text-muted"><%= t("views.dormitory.accommodations.no_file") %></span>
+          <% end %>
+        </span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.contract_number") %></span>
+        <span class="info-value"><%= @accommodation.contract_number %></span>
+      </div>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.contract_file") %></span>
+        <span class="info-value">
+          <% if @accommodation.contract_file.attached? %>
+            <i class="bi <%= file_icon_class(@accommodation.contract_file) %> me-1"></i>
+            <%= link_to @accommodation.contract_file.filename, url_for(@accommodation.contract_file), target: "_blank" %>
+          <% else %>
+            <span class="text-muted"><%= t("views.dormitory.accommodations.no_file") %></span>
+          <% end %>
+        </span>
+      </div>
+
+      <hr class="my-3">
+
+      <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_payments") %></h5>
+
+      <div class="mb-3">
+        <span class="info-label d-block"><%= t("views.dormitory.accommodations.required_amount") %></span>
+        <span class="info-value"><%= number_to_currency(@accommodation.required_amount, unit: "", separator: ",", delimiter: " ", precision: 2) %></span>
+      </div>
+
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-1"></i> <%= t("views.dormitory.accommodations.transfer_carry_over_hint") %>
+      </div>
+    </div>
+
+    <div class="col-md-6">
       <h5 class="mb-3"><%= t("views.dormitory.accommodations.section_new_room") %></h5>
 
       <div class="mb-3">
@@ -74,13 +126,21 @@
       </div>
 
       <div class="mb-3">
+        <%= f.label :bed_label, t("views.dormitory.rooms.bed_label"), class: "form-label" %>
+        <%= f.select :bed_label, [],
+                     { prompt: t("views.dormitory.rooms.bed_prompt") },
+                     { class: "form-select", required: true,
+                       data: { room_select_target: "bed" } } %>
+      </div>
+
+      <div class="mb-3">
         <%= f.label :start_date, t("views.dormitory.accommodations.start_date"), class: "form-label" %>
         <%= f.date_field :start_date, required: true, class: "form-control" %>
       </div>
 
       <div class="mb-3">
         <%= f.label :planned_end_date, t("views.dormitory.accommodations.planned_end_date"), class: "form-label" %>
-        <%= f.date_field :planned_end_date, required: true, value: Date.current + 1.year, class: "form-control" %>
+        <%= f.date_field :planned_end_date, required: true, class: "form-control" %>
       </div>
 
       <div class="mb-3">

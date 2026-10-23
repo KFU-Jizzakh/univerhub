@@ -668,13 +668,9 @@ module Dormitory
       {
         dormitory_accommodation: {
           room_id: target_room.id,
-          application_number: "З-ТР001",
-          contract_number: "Д-ТР001",
           start_date: Date.current,
           planned_end_date: Date.current + 1.year,
-          eviction_reason: "transfer",
-          application_file: file_upload,
-          contract_file: file_upload
+          eviction_reason: "transfer"
         }.merge(overrides)
       }
     end
@@ -792,19 +788,46 @@ module Dormitory
     test "transfer with validation error re-renders form" do
       sign_in @admin
       acc = create_accommodation
-      target_room = dormitory_rooms(:room_102)
 
       patch transfer_dormitory_accommodation_path(acc), params: {
         dormitory_accommodation: {
-          room_id: target_room.id,
-          application_number: "",
-          contract_number: "",
+          room_id: acc.room_id,
           start_date: Date.current,
+          planned_end_date: Date.current + 1.year,
           eviction_reason: "transfer"
         }
       }
 
       assert_response :unprocessable_entity
+    end
+
+    test "transfer carries over documents and required amount without re-entering them" do
+      sign_in @admin
+      acc = create_accommodation(application_number: "З-ИСХ", contract_number: "Д-ИСХ", required_amount: 15000)
+      target_room = dormitory_rooms(:room_102)
+
+      patch transfer_dormitory_accommodation_path(acc), params: transfer_params(acc, target_room)
+
+      new_acc = Accommodation.order(:id).last
+      assert_equal "active", new_acc.status
+      assert_equal "З-ИСХ", new_acc.application_number
+      assert_equal "Д-ИСХ", new_acc.contract_number
+      assert new_acc.application_file.attached?
+      assert new_acc.contract_file.attached?
+      assert_equal acc.reload.application_file.blob_id, new_acc.application_file.blob_id
+      assert_equal acc.contract_file.blob_id, new_acc.contract_file.blob_id
+      assert_equal 15000, new_acc.required_amount
+    end
+
+    test "transfer assigns the explicitly chosen bed label" do
+      sign_in @admin
+      acc = create_accommodation
+      target_room = dormitory_rooms(:room_102)
+
+      patch transfer_dormitory_accommodation_path(acc), params: transfer_params(acc, target_room, bed_label: "B")
+
+      new_acc = Accommodation.order(:id).last
+      assert_equal "B", new_acc.bed_label
     end
 
     test "transfer with repair eviction reason" do
