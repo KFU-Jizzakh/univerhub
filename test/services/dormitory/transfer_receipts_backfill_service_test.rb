@@ -65,10 +65,12 @@ module Dormitory
       assert_equal 1, stats.pairs_processed
       assert_equal 1, stats.receipts_moved
       assert_equal 1, stats.amounts_copied
+      assert_equal 1, stats.amounts_cleared
       assert_equal 0, stats.skipped_without_successor
       assert_equal 0, Receipt.with_discarded.where(accommodation_id: old_acc.id).count
       assert_equal 1, Receipt.with_discarded.where(accommodation_id: successor.id).count
       assert_equal 12000, successor.reload.required_amount
+      assert_equal 0, old_acc.reload.required_amount
     end
 
     test "keeps explicitly set required_amount on the successor" do
@@ -81,7 +83,24 @@ module Dormitory
 
       assert_equal 1, stats.receipts_moved
       assert_equal 0, stats.amounts_copied
+      assert_equal 1, stats.amounts_cleared
       assert_equal 9000, successor.reload.required_amount
+      assert_equal 0, old_acc.reload.required_amount
+    end
+
+    test "clears required_amount on origins whose receipts were moved earlier" do
+      resident = create_resident
+      old_acc = create_origin(resident)
+      successor = create_successor(resident, start_date: Date.current - 3.days, required_amount: 12000)
+
+      stats = TransferReceiptsBackfillService.new.call
+
+      assert_equal 1, stats.pairs_processed
+      assert_equal 0, stats.receipts_moved
+      assert_equal 0, stats.amounts_copied
+      assert_equal 1, stats.amounts_cleared
+      assert_equal 0, old_acc.reload.required_amount
+      assert_equal 12000, successor.reload.required_amount
     end
 
     test "processes repair origins" do
@@ -136,6 +155,7 @@ module Dormitory
       assert_equal 0, stats.pairs_processed
       assert_equal 1, stats.skipped_without_successor
       assert_equal 1, Receipt.with_discarded.where(accommodation_id: old_acc.id).count
+      assert_equal 12000, old_acc.reload.required_amount
     end
 
     test "skips origins whose successor starts on a different day" do
@@ -193,9 +213,11 @@ module Dormitory
       assert_equal 1, stats.pairs_processed
       assert_equal 1, stats.receipts_moved
       assert_equal 1, stats.amounts_copied
+      assert_equal 1, stats.amounts_cleared
       assert_equal 1, Receipt.with_discarded.where(accommodation_id: old_acc.id).count
       assert_equal 0, Receipt.with_discarded.where(accommodation_id: successor.id).count
       assert_equal 0, successor.reload.required_amount
+      assert_equal 12000, old_acc.reload.required_amount
     end
 
     test "is idempotent" do
@@ -208,8 +230,11 @@ module Dormitory
       second = TransferReceiptsBackfillService.new.call
 
       assert_equal 1, first.receipts_moved
+      assert_equal 1, first.amounts_cleared
       assert_equal 0, second.receipts_moved
+      assert_equal 0, second.amounts_cleared
       assert_equal 0, second.pairs_processed
+      assert_equal 0, old_acc.reload.required_amount
       assert_equal 1, Receipt.with_discarded.where(accommodation_id: successor.id).count
     end
   end

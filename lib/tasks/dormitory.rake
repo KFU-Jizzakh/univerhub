@@ -10,6 +10,7 @@ namespace :dormitory do
     puts format("%-35s %d", "Pairs processed", stats.pairs_processed)
     puts format("%-35s %d", "Receipts moved", stats.receipts_moved)
     puts format("%-35s %d", "Required amounts copied", stats.amounts_copied)
+    puts format("%-35s %d", "Required amounts cleared", stats.amounts_cleared)
     puts format("%-35s %d", "Skipped (no successor found)", stats.skipped_without_successor)
     puts dry_run ? "=== DRY RUN finished: rerun without DRY_RUN to apply ===" : "=== Done ==="
   end

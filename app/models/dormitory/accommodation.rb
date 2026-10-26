@@ -291,6 +291,9 @@ module Dormitory
         new_acc.assign_bed!
         new_acc.save!
 
+        # the obligation and all payments now live on the successor placement
+        update_column(:required_amount, 0)
+
         moved_count = Dormitory::Receipt.with_discarded.where(accommodation_id: id)
           .update_all(accommodation_id: new_acc.id, updated_at: Time.current)
         receipts.reset

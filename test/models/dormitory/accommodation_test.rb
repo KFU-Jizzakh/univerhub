@@ -446,6 +446,36 @@ module Dormitory
       assert_equal 12000, new_acc.reload.required_amount
     end
 
+    test "do_transfer! clears required_amount on the old accommodation" do
+      old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(required_amount: 12000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      old_acc.do_transfer!(new_acc)
+
+      assert_equal 0, old_acc.reload.required_amount
+      assert_equal 0, old_acc.balance
+      assert_equal 12000, new_acc.reload.required_amount
+    end
+
+    test "do_transfer! does not add phantom debt to resident debt totals" do
+      old_acc = create_settled_accommodation(room: @room)
+      old_acc.update!(required_amount: 10000)
+
+      target_room = dormitory_rooms(:room_102)
+      new_acc = build_new_acc(room: target_room, resident: @resident)
+
+      debt_before = Dormitory::Resident.debt_totals_for([ @resident.id ])[@resident.id]
+      assert_equal 0, debt_before
+
+      old_acc.do_transfer!(new_acc)
+
+      debt_after = Dormitory::Resident.debt_totals_for([ @resident.id ])[@resident.id]
+      assert_equal 0, debt_after
+    end
+
     test "do_transfer! records aggregate receipts.transferred event" do
       old_acc = create_settled_accommodation(room: @room)
       create_receipt_for(old_acc, amount: 5000)
