@@ -684,6 +684,16 @@ module Dormitory
       assert_response :success
     end
 
+    test "transfer form passes empty room list notice to room-select controller" do
+      sign_in @admin
+      acc = create_accommodation
+      get new_transfer_dormitory_accommodation_path(acc)
+      assert_response :success
+      assert_match \
+        'data-room-select-no-rooms-value="Нет свободных мест, подходящих проживающему (пол/курс)"',
+        response.body
+    end
+
     test "dormitory admin sees transfer form" do
       sign_in @dormitory_admin
       acc = create_accommodation

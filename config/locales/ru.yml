@@ -806,6 +806,7 @@ ru:
       room_select:
         room_template: "(этаж {floor}, свободно {slots})"
         loading: Загрузка комнат...
+        no_rooms: Нет свободных мест, подходящих проживающему (пол/курс)
     admin:
       users:
         show:

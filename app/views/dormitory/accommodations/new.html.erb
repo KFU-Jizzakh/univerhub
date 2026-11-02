@@ -17,7 +17,8 @@
                         room_select_resident_course_value: @resident.course,
                         room_select_is_admin_value: (Current.user.has_role?("admin") || Current.user.has_role?("dormitory.admin")).to_s,
                         room_select_room_prompt_value: t("views.dormitory.accommodations.room_prompt"),
-                        room_select_room_template_value: t("views.shared.room_select.room_template") }) do |f| %>
+                        room_select_room_template_value: t("views.shared.room_select.room_template"),
+                        room_select_no_rooms_value: t("views.shared.room_select.no_rooms") }) do |f| %>
   <%= f.hidden_field :resident_id, value: @resident.id %>
 
   <%= render "shared/form_errors", object: @accommodation %>

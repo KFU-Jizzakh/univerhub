@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["building", "room", "forceGroup", "forceInput", "loading", "bed"]
-  static values = { residentGender: String, residentCourse: String, isAdmin: String, roomPrompt: String, roomTemplate: String, bedPrompt: String, currentRoomData: String, currentBedLabel: String }
+  static values = { residentGender: String, residentCourse: String, isAdmin: String, roomPrompt: String, roomTemplate: String, noRooms: String, bedPrompt: String, currentRoomData: String, currentBedLabel: String }
 
   connect() {
     this._updateRooms({ preserveCurrent: true })
@@ -39,7 +39,7 @@ export default class extends Controller {
     fetch(url, { headers: { Accept: "application/json" } })
       .then(response => response.json())
       .then(rooms => {
-        this._setRoomOptions(rooms)
+        this._setRoomOptions(rooms, { notifyEmpty: true })
         if (preserveCurrent && this.currentRoomDataValue) {
           this._applyCurrentSelection()
         } else {
@@ -70,17 +70,31 @@ export default class extends Controller {
     }
   }
 
-  _setRoomOptions(rooms) {
+  _setRoomOptions(rooms, { notifyEmpty = false } = {}) {
+    this.roomTarget.innerHTML = ""
+
+    if (notifyEmpty && rooms.length === 0) {
+      this.roomTarget.appendChild(this._emptyOption())
+      this._hideForce()
+      return
+    }
+
     const promptOption = document.createElement("option")
     promptOption.value = ""
     promptOption.textContent = this.roomPromptValue
-
-    this.roomTarget.innerHTML = ""
     this.roomTarget.appendChild(promptOption)
 
     rooms.forEach(room => this.roomTarget.appendChild(this._roomOption(room)))
 
     this._hideForce()
+  }
+
+  _emptyOption() {
+    const option = document.createElement("option")
+    option.value = ""
+    option.disabled = true
+    option.textContent = this.noRoomsValue
+    return option
   }
 
   _roomOption(room) {

@@ -241,6 +241,32 @@ class Dormitory::RoomsControllerTest < ActionDispatch::IntegrationTest
     assert_includes json.map { |r| r["id"] }, room_101.id
   end
 
+  test "available filters rooms by gender" do
+    room_101 = dormitory_rooms(:room_101)
+    room_101.update!(gender_restriction: :female)
+    sign_in_as @admin
+
+    get available_dormitory_rooms_path, params: { gender: "male" }, as: :json
+    json = JSON.parse(response.body)
+    assert_not_includes json.map { |r| r["id"] }, room_101.id
+
+    get available_dormitory_rooms_path, params: { gender: "female" }, as: :json
+    json = JSON.parse(response.body)
+    assert_includes json.map { |r| r["id"] }, room_101.id
+  end
+
+  test "available returns empty list when no rooms in building match gender and course" do
+    Dormitory::Room.kept.where(building: @building).each do |room|
+      room.update_columns(gender_restriction: 0, status: "fully_occupied", current_occupancy: room.capacity)
+    end
+    sign_in_as @admin
+
+    get available_dormitory_rooms_path, params: { building_id: @building.id, gender: "female", course: "2" }, as: :json
+
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)
+  end
+
   test "available with out-of-range course ignores the filter" do
     room_101 = dormitory_rooms(:room_101)
     room_101.update!(allowed_courses: [ 5 ])
