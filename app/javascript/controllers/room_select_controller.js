@@ -8,6 +8,10 @@ export default class extends Controller {
     this._updateRooms({ preserveCurrent: true })
   }
 
+  disconnect() {
+    this._abortPendingRoomsRequest()
+  }
+
   changeBuilding() {
     this._updateRooms({ preserveCurrent: false })
   }
@@ -24,6 +28,7 @@ export default class extends Controller {
     const course = this.residentCourseValue
 
     if (!buildingId) {
+      this._abortPendingRoomsRequest()
       this._setRoomOptions([])
       this._setBedOptions([])
       this._hideForce()
@@ -31,12 +36,13 @@ export default class extends Controller {
     }
 
     this._showLoading()
+    const request = this._abortPendingRoomsRequest()
 
     const params = new URLSearchParams({ building_id: buildingId, gender: gender })
     if (course) params.append("course", course)
     const url = `/dormitory/rooms/available?${params}`
 
-    fetch(url, { headers: { Accept: "application/json" } })
+    fetch(url, { headers: { Accept: "application/json" }, signal: request.signal })
       .then(response => response.json())
       .then(rooms => {
         this._setRoomOptions(rooms, { notifyEmpty: true })
@@ -47,7 +53,21 @@ export default class extends Controller {
         }
         this._hideLoading()
       })
-      .catch((error) => { this._hideLoading(); console.error("Failed to load rooms:", error) })
+      .catch((error) => {
+        if (error.name === "AbortError") return
+
+        this._hideLoading()
+        console.error("Failed to load rooms:", error)
+      })
+  }
+
+  // отменяет висящий запрос комнат и возвращает контроллер для нового fetch:
+  // без этого медленный ответ предыдущего корпуса мог затереть свежий список
+  _abortPendingRoomsRequest() {
+    if (this._roomsRequest) this._roomsRequest.abort()
+
+    this._roomsRequest = new AbortController()
+    return this._roomsRequest
   }
 
   changeRoom() {

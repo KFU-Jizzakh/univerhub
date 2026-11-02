@@ -277,6 +277,20 @@ class Dormitory::RoomsControllerTest < ActionDispatch::IntegrationTest
     assert_includes json.map { |r| r["id"] }, room_101.id
   end
 
+  test "available responses are marked no-store" do
+    sign_in_as @admin
+    get available_dormitory_rooms_path, params: { building_id: @building.id }, as: :json
+    assert_response :success
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
+  test "beds responses are marked no-store" do
+    sign_in_as @admin
+    get beds_dormitory_rooms_path, params: { id: @room.id }, as: :json
+    assert_response :success
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
   test "available denied for manager" do
     sign_in_as @manager
     get available_dormitory_rooms_path, as: :json

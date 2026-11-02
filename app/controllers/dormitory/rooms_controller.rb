@@ -66,6 +66,8 @@ module Dormitory
 
     def available
       authorize Dormitory::Room, :index?
+      # живые данные о заселённости — кэшировать в браузере нельзя
+      response.headers["Cache-Control"] = "no-store"
 
       rooms = policy_scope(Dormitory::Room)
         .where(status: [ :free, :partially_occupied ])
@@ -92,6 +94,7 @@ module Dormitory
 
     def beds
       authorize Dormitory::Room, :index?
+      response.headers["Cache-Control"] = "no-store"
       room = policy_scope(Dormitory::Room).find(params[:id])
       render json: room.free_bed_labels
     end
